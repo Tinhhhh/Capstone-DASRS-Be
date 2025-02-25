@@ -1,34 +1,52 @@
 package com.sep490.dasrsbackend.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.Date;
+import java.util.List;
 
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Builder
-@Table(name = "car")
+@Table(name = "team")
 @EntityListeners(AuditingEntityListener.class)
-public class Car {
+public class Team {
     @Id
     @GeneratedValue
-    @Column(name = "car_id")
-    @JsonProperty("car_id")
-    private Long roleId;
+    @Column(name = "team_id")
+    @JsonProperty("team_id")
+    private Long teamId;
 
-    @JsonProperty("car_name")
-    @Column(name = "car_name")
-    private String roleName;
+    @JsonProperty("team_name")
+    @Column(name = "team_name")
+    private String teamName;
 
-    @JsonProperty("last_modified_date")
-    @Column(name = "last_modified_date", insertable = false)
-    private Date lastModifiedDate;
+    @JsonProperty("team_tag")
+    @Column(name = "team_tag")
+    private String teamTag;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private TeamStatus status;
+
+    @JsonIgnore
+    @CreatedDate
+    @Column(name = "created_date", nullable = false, updatable = false)
+    private Date createdDate;
+
+    @OneToMany(mappedBy = "team")
+    private List<Account> accountList;
+
+    @OneToMany(mappedBy = "team")
+    private List<Leaderboard> leaderboardList;
+
 }

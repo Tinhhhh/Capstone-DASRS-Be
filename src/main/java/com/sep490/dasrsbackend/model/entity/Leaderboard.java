@@ -1,2 +1,46 @@
-package com.sep490.dasrsbackend.model.entity;public class Leaderboard {
+package com.sep490.dasrsbackend.model.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.util.Date;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Builder
+@Table(name = "leaderboard")
+@EntityListeners(AuditingEntityListener.class)
+public class Leaderboard {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "leaderboard_id")
+    private Long leaderboardId;
+
+    @Column(name = "ranking")
+    private int ranking;
+
+    @JsonProperty("team_id")
+    @Column(name = "team_score")
+    private double teamScore;
+
+    @JsonIgnore
+    @CreatedDate
+    @Column(name = "created_date", nullable = false, updatable = false)
+    private Date createdDate;
+
+    @ManyToOne
+    @JoinColumn(name = "team_id", nullable = false)
+    private Team team;
+
+    @ManyToOne
+    @JoinColumn(name = "round_id", nullable = false)
+    private Round round;
 }

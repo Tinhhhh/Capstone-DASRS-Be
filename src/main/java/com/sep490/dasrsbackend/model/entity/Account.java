@@ -1,4 +1,4 @@
-package com.exe201.ilink.model.entity;
+package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,7 +27,7 @@ import java.util.*;
 @Table(name = "account", indexes = {
     @Index(name = "idx_email", columnList = "email"),
 })
-public class Account implements UserDetails, Principal {
+public class Account {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -68,79 +68,31 @@ public class Account implements UserDetails, Principal {
     @Column(name = "is_locked")
     private boolean isLocked;
 
-    @Column(name = "is_enable")
-    private boolean isEnable;
+    @Column(name = "is_leader")
+    private boolean isLeader;
 
     @JsonIgnore
     @CreatedDate
     @Column(name = "created_date", nullable = false, updatable = false)
     private Date createdDate;
 
-    @JsonIgnore
-    @LastModifiedDate
-    @Column(name = "last_modified_date")
-    private Date lastModifiedDate;
+    @OneToMany(mappedBy = "account")
+    private List<CarConfiguration> carConfigurations;
+
+    @OneToMany(mappedBy = "account")
+    private List<MatchAccount> matchAccounts;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-
-    @JsonIgnore
-    @Override
-    public String getName() {
-        return email;
-    }
-
-    @JsonIgnore
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority(role.getRoleName()));
-        return authorities;
-    }
-
-    @JsonIgnore
-    @Override
-    public String getPassword() {
-        return password;
-    }
-
-    @JsonIgnore
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-    @JsonIgnore
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @JsonIgnore
-    @Override
-    public boolean isAccountNonLocked() {
-        return isLocked;
-    }
-
-    @JsonIgnore
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @JsonIgnore
-    @Override
-    public boolean isEnabled() {
-        return isEnable;
-    }
+    @ManyToOne
+    @JoinColumn(name = "team_id", nullable = false)
+    private Team team;
 
     @JsonIgnore
     public String fullName() {
         return firstName + " " + lastName;
     }
-
-
 }

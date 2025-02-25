@@ -1,14 +1,12 @@
-package com.exe201.ilink.model.entity;
+package com.sep490.dasrsbackend.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -18,7 +16,7 @@ public class PasswordResetToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private int passwordResetTokenId;
 
     @Column(name = "reset_password_token", nullable = false, unique = true)
     private String token;
