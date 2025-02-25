@@ -82,6 +82,9 @@ public class Account {
     @OneToMany(mappedBy = "account")
     private List<MatchAccount> matchAccounts;
 
+    @OneToMany(mappedBy = "account")
+    private List<AccessToken> accessTokens;
+
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
