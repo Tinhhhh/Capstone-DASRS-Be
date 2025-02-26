@@ -88,7 +88,7 @@ public class ExcelImportService {
         accountDTO.setPassword(generateRandomPassword(8));
         // Set default Role object
         Role defaultRole = new Role();
-        defaultRole.setRoleId(2L); // Default role ID
+        defaultRole.setRoleId(1L); // Default role ID
         defaultRole.setRoleName("PLAYER"); // Default role name
         accountDTO.setRoleId(defaultRole);
 
