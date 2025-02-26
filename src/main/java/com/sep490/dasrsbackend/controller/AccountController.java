@@ -2,12 +2,14 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.service.AccountService;
+import com.sep490.dasrsbackend.service.implement.ExcelImportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -16,15 +18,16 @@ public class AccountController {
 
     @Autowired
     private AccountService accountService;
+    @Autowired
+    private ExcelImportService excelImportService;
 
     @PostMapping("/import")
-    public ResponseEntity<?> importAccounts(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<List<AccountDTO>> importAccounts(@RequestParam("file") MultipartFile file) {
         try {
-            List<AccountDTO> importedAccounts = accountService.importAccounts(file.getInputStream());
-            return ResponseEntity.ok(importedAccounts);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to import accounts: " + e.getMessage());
+            List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream());
+            return ResponseEntity.ok(accounts);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }

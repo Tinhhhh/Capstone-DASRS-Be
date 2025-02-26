@@ -15,10 +15,16 @@ public class AccountConverter {
     }
 
     public AccountDTO convertToDTO(Account account) {
+        if (account == null) {
+            return null;
+        }
         return modelMapper.map(account, AccountDTO.class);
     }
 
     public Account convertToEntity(AccountDTO accountDTO) {
+        if (accountDTO == null) {
+            return null;
+        }
         return modelMapper.map(accountDTO, Account.class);
     }
 }
