@@ -1,7 +1,7 @@
 package com.sep490.dasrsbackend.service;
 
-import com.sep490.dasrsbackend.model.Payload.request.AuthenticationRequest;
-import com.sep490.dasrsbackend.model.Payload.response.AuthenticationResponse;
+import com.sep490.dasrsbackend.model.payload.request.AuthenticationRequest;
+import com.sep490.dasrsbackend.model.payload.response.AuthenticationResponse;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

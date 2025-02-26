@@ -1,7 +1,7 @@
 package com.sep490.dasrsbackend.service.Impl;
 
-import com.sep490.dasrsbackend.model.Payload.request.AuthenticationRequest;
-import com.sep490.dasrsbackend.model.Payload.response.AuthenticationResponse;
+import com.sep490.dasrsbackend.model.payload.request.AuthenticationRequest;
+import com.sep490.dasrsbackend.model.payload.response.AuthenticationResponse;
 import com.sep490.dasrsbackend.model.entity.AccessToken;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.RefreshToken;
@@ -41,8 +41,8 @@ public class AuthenServiceImpl implements AuthenService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        Account account = accountRepository.findAccountByEmailAndPassword(request.getEmail(), request.getPassword())
-                .orElseThrow(() -> new DasrsException(HttpStatus.UNAUTHORIZED, "Authentication fails, your email and password is invalid"));
+        Account account = accountRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new DasrsException(HttpStatus.UNAUTHORIZED, "Authentication fails, your email is not exist"));
 
         //Create new token
         String accessToken = jwtTokenProvider.generateAccessToken(authentication);
