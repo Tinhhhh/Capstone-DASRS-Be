@@ -1,6 +1,10 @@
-package com.sep490.dasrsbackend.service.Impl;
+package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.model.entity.Role;
+import com.sep490.dasrsbackend.model.enums.EmailTemplateName;
+import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
 import com.sep490.dasrsbackend.model.payload.request.AuthenticationRequest;
+import com.sep490.dasrsbackend.model.payload.request.newAccountByAdminRequest;
 import com.sep490.dasrsbackend.model.payload.response.AuthenticationResponse;
 import com.sep490.dasrsbackend.model.entity.AccessToken;
 import com.sep490.dasrsbackend.model.entity.Account;
@@ -9,8 +13,10 @@ import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.repository.AccessTokenRepository;
 import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.RefreshTokenRepository;
+import com.sep490.dasrsbackend.repository.RoleRepository;
 import com.sep490.dasrsbackend.security.JwtTokenProvider;
 import com.sep490.dasrsbackend.service.AuthenService;
+import com.sep490.dasrsbackend.service.EmailService;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,6 +26,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.NoSuchAlgorithmException;
@@ -33,6 +40,9 @@ public class AuthenServiceImpl implements AuthenService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AccessTokenRepository accessTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Override
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -127,5 +137,37 @@ public class AuthenServiceImpl implements AuthenService {
     @Override
     public void resetPassword(String email, String token) {
 
+    }
+
+    @Override
+    public void newAccountByAdmin(newAccountByAdminRequest request) throws MessagingException {
+        Role role = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Registration fails, role not found !"));
+
+        if (accountRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RegisterAccountExistedException("Account already exists");
+        }
+
+        Account account = Account.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .address(request.getAddress())
+                .phone(request.getPhone())
+                .gender("")
+                .dob(null)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .isLocked(false)
+                .isLeader(false)
+                .role(role)
+                .build();
+        accountRepository.save(account);
+        sendRegistrationEmail(account);
+    }
+
+    private void sendRegistrationEmail(Account account) throws MessagingException {
+        emailService.sendMimeMessageWithHtml(
+                account.fullName(), account.getEmail(), account.getPassword(), account.getEmail(),
+                EmailTemplateName.ADMIN_CREATE_ACCOUNT.getName(), "[Dasrs] Thông tin tài khoản của bạn");
     }
 }

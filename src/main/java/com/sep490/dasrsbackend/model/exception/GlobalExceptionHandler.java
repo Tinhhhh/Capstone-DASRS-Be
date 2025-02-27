@@ -80,4 +80,18 @@ public class GlobalExceptionHandler {
                 );
 
     }
+
+    @ExceptionHandler(RegisterAccountExistedException.class)
+    public ResponseEntity<ExceptionResponse> handleRegistrationAccountExistedReponse(RegisterAccountExistedException exception) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST.value())
+                .body(
+                        ExceptionResponse.builder()
+                                .httpStatus(HttpStatus.BAD_REQUEST.value())
+                                .timestamp(DateUtil.formatTimestamp(new Date()))
+                                .message("Registration request failed. Account already existed.")
+                                .error(exception.getMessage())
+                                .build()
+                );
+    }
 }
