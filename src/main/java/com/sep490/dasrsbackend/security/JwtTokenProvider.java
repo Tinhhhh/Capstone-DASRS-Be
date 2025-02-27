@@ -24,7 +24,7 @@ public class JwtTokenProvider {
     @Value("${app.jwt-refresh-expiration-milliseconds}")
     private long jwtRefreshExpiration;
 
-    private Key key(){
+    private Key key() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
@@ -73,8 +73,34 @@ public class JwtTokenProvider {
                 .setSubject(username)
                 .setIssuedAt(currentDate)
                 .setExpiration(expirationDate)
+                .claim("role", authentication.getAuthorities())
                 .signWith(key())
                 .compact();
         return token;
+    }
+
+    public String getUsernameFromJwt(String jwt) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key())
+                .build()
+                .parseClaimsJws(jwt)
+                .getBody();
+        String username = claims.getSubject();
+        return username;
+    }
+
+    public boolean isTokenValid(String jwt, String username) {
+        String tokenUsername = getUsernameFromJwt(jwt);
+        return tokenUsername.equals(username) && !isTokenExpired(jwt);
+    }
+
+    private boolean isTokenExpired(String jwt) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key())
+                .build()
+                .parseClaimsJws(jwt)
+                .getBody();
+        Date expiration = claims.getExpiration();
+        return expiration.before(new Date());
     }
 }

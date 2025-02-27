@@ -1,4 +1,4 @@
-package com.sep490.dasrsbackend.model.Payload.response;
+package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
