@@ -6,6 +6,7 @@ public interface TournamentService {
     void createTournament(NewTournament newTournament);
     void editTournament(NewTournament newTournament);
 
-//    void getAllTournaments();
-//    void getTournamentById(Long tournamentId);
+    Object getAllTournaments(int pageNo, int pageSize, String sortBy, String sortDirection);
+
+    Object getTournament(Long id);
 }

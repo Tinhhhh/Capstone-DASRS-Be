@@ -88,7 +88,7 @@ public class ExcelImportService {
         accountDTO.setPassword(generateRandomPassword(8));
         // Set default Role object
         Role defaultRole = new Role();
-        defaultRole.setRoleId(1L); // Default role ID
+        defaultRole.setId(1L); // Default role ID
         defaultRole.setRoleName("PLAYER"); // Default role name
         accountDTO.setRoleId(defaultRole);
 
@@ -97,10 +97,10 @@ public class ExcelImportService {
 
     private void validateTeamLeader(Team team, boolean isLeader, Map<Long, Boolean> teamLeaderMap) {
         if (isLeader) {
-            if (teamLeaderMap.getOrDefault(team.getTeamId(), false)) {
+            if (teamLeaderMap.getOrDefault(team.getId(), false)) {
                 throw new IllegalArgumentException("Team already has a leader: " + team.getTeamName());
             }
-            teamLeaderMap.put(team.getTeamId(), true);
+            teamLeaderMap.put(team.getId(), true);
         }
     }
 

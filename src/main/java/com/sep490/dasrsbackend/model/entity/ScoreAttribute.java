@@ -27,7 +27,7 @@ public class ScoreAttribute {
     @GeneratedValue
     @Column(name = "score_attribute_id")
     @JsonProperty("score_attribute_id")
-    private Long scoreId;
+    private Long id;
 
 
     @Column(name = "lap")

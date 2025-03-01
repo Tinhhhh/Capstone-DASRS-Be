@@ -1,15 +1,19 @@
-package com.sep490.dasrsbackend.model.payload.request;
+package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Column;
+import com.sep490.dasrsbackend.model.enums.EnvironmentStatus;
+import jakarta.persistence.*;
 import lombok.*;
 
 @Getter
 @Setter
 @Builder
-@AllArgsConstructor
 @NoArgsConstructor
-public class NewEnvironment {
+@AllArgsConstructor
+public class EnvironmentResponse {
+
+    @JsonProperty("environment_id")
+    private Long id;
 
     @JsonProperty("environment_name")
     private String name;
@@ -26,5 +30,7 @@ public class NewEnvironment {
 
     @JsonProperty("reaction_delay")
     private double reactionDelay;
+
+    private EnvironmentStatus status;
 
 }

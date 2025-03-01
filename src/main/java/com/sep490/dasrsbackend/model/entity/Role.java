@@ -28,7 +28,7 @@ public class Role {
     @GeneratedValue
     @Column(name = "role_id")
     @JsonProperty("role_id")
-    private Long roleId;
+    private Long id;
 
     @JsonProperty("role_name")
     @Column(name = "role_name")

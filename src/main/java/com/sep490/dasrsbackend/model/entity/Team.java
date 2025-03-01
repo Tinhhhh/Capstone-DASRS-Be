@@ -24,7 +24,7 @@ public class Team {
     @GeneratedValue
     @Column(name = "team_id")
     @JsonProperty("team_id")
-    private Long teamId;
+    private Long id;
 
     @JsonProperty("team_name")
     @Column(name = "team_name")

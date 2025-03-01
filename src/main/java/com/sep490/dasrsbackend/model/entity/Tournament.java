@@ -26,7 +26,7 @@ public class Tournament {
     @GeneratedValue
     @Column(name = "tournament_id")
     @JsonProperty("tournament_id")
-    private Long tournamentId;
+    private Long id;
 
     @JsonProperty("tournament_name")
     @Column(name = "tournament_name")

@@ -22,7 +22,7 @@ public class Leaderboard {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "leaderboard_id")
-    private Long leaderboardId;
+    private Long id;
 
     @Column(name = "ranking")
     private int ranking;

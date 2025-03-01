@@ -1,18 +1,26 @@
 package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.model.entity.ScoredMethod;
 import com.sep490.dasrsbackend.model.entity.Tournament;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
+import com.sep490.dasrsbackend.model.payload.response.ListScoredMethod;
+import com.sep490.dasrsbackend.model.payload.response.ScoredMethodResponse;
 import com.sep490.dasrsbackend.repository.TournamentRepository;
 import com.sep490.dasrsbackend.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -76,5 +84,15 @@ public class TournamentServiceImpl implements TournamentService {
     @Override
     public void editTournament(NewTournament newTournament) {
 
+    }
+
+    @Override
+    public Object getAllTournaments(int pageNo, int pageSize, String sortBy, String sortDirection) {
+        return null;
+    }
+
+    @Override
+    public Object getTournament(Long id) {
+        return null;
     }
 }

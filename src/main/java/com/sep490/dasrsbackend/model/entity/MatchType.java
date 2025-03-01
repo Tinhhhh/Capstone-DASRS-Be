@@ -22,7 +22,7 @@ public class MatchType {
     @GeneratedValue
     @Column(name = "match_type_id")
     @JsonProperty("match_type_id")
-    private Long matchTypeId;
+    private Long id;
 
     @JsonProperty("match_type_name")
     @Column(name = "match_type_name")

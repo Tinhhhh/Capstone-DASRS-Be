@@ -28,7 +28,7 @@ public class ScoredMethod {
     @GeneratedValue
     @Column(name = "scored_method_id")
     @JsonProperty("scored_method_id")
-    private Long scoreId;
+    private Long id;
 
     @Column(name = "lap")
     private double lap;
@@ -71,7 +71,7 @@ public class ScoredMethod {
 
     @LastModifiedDate
     @JsonProperty("last_modified_date")
-    @Column(name = "last_modified_date", insertable = false)
+    @Column(name = "last_modified_date",  nullable = false)
     private Date lastModifiedDate;
 
     @JsonIgnore

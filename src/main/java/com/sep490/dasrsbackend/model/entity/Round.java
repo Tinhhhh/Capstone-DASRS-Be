@@ -28,7 +28,7 @@ public class Round {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonProperty("round_id")
     @Column(name = "round_id")
-    private Long roundId;
+    private Long id;
 
     @JsonProperty("round_name")
     @Column(name = "round_name")

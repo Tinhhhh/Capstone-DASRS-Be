@@ -20,7 +20,7 @@ import java.util.List;
 public class ScoredMethodResponse {
 
     @JsonProperty("scored_method_id")
-    private Long scoreId;
+    private Long id;
 
     private double lap;
 
