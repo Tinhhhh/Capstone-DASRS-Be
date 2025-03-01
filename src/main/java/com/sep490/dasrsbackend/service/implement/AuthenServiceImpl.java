@@ -4,7 +4,7 @@ import com.sep490.dasrsbackend.model.entity.Role;
 import com.sep490.dasrsbackend.model.enums.EmailTemplateName;
 import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
 import com.sep490.dasrsbackend.model.payload.request.AuthenticationRequest;
-import com.sep490.dasrsbackend.model.payload.request.newAccountByAdminRequest;
+import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.response.AuthenticationResponse;
 import com.sep490.dasrsbackend.model.entity.AccessToken;
 import com.sep490.dasrsbackend.model.entity.Account;
@@ -140,7 +140,7 @@ public class AuthenServiceImpl implements AuthenService {
     }
 
     @Override
-    public void newAccountByAdmin(newAccountByAdminRequest request) throws MessagingException {
+    public void newAccountByAdmin(NewAccountByAdmin request) throws MessagingException {
         Role role = roleRepository.findById(request.getRoleId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Registration fails, role not found !"));
 
@@ -160,6 +160,7 @@ public class AuthenServiceImpl implements AuthenService {
                 .isLocked(false)
                 .isLeader(false)
                 .role(role)
+                .team(null)
                 .build();
         accountRepository.save(account);
         sendRegistrationEmail(account);

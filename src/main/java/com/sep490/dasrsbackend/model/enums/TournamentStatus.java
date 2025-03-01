@@ -4,8 +4,11 @@ import lombok.Getter;
 
 @Getter
 public enum TournamentStatus {
+    PENDING("PENDING"),
     ACTIVE("ACTIVE"),
-    INACTIVE("INACTIVE");
+    TERMINATED("TERMINATED"),
+    SUSPENDED("SUSPENDED"),
+    COMPLETED("COMPLETED");
 
     private final String status;
 

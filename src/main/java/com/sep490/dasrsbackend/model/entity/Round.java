@@ -34,6 +34,9 @@ public class Round {
     @Column(name = "round_name")
     private String roundName;
 
+    @Column(name = "description")
+    private String description;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private RoundStatus status;

@@ -37,8 +37,8 @@ public class SecurityCofig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .authorizeHttpRequests(request ->
-                        request.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api/v1/auth/**"
-                                        ).permitAll()
+                        request.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api/v1/auth/**").permitAll()
+                                .requestMatchers("/api/v1/auth/registration-admin-admin").hasAuthority("ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)

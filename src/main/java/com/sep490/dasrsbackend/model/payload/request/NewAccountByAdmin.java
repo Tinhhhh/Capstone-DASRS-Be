@@ -15,15 +15,18 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(description = "Request body for registration")
-public class newAccountByAdminRequest {
+public class NewAccountByAdmin {
+
     @Schema(description = "User's first name", example = "Vo Van")
     @NotEmpty(message = "First name is mandatory")
     @JsonProperty("first_name")
+    @Pattern(regexp = "^[^0-9]*$", message = "first name must not contain numbers")
     private String firstName;
 
     @Schema(description = "User's last name", example = "Tinh")
     @NotEmpty(message = "Last name is mandatory")
     @JsonProperty("last_name")
+    @Pattern(regexp = "^[^0-9]*$", message = "first name must not contain numbers")
     private String lastName;
 
     @Schema(description = "User's email address", example = "Java@example.com")
@@ -45,7 +48,7 @@ public class newAccountByAdminRequest {
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d).{8,16}$", message = "Minimum 8 characters, at least one uppercase letter and number")
     private String password;
 
-    @Schema(description = "Register's role", example = "STAFF")
+    @Schema(description = "Register's role", example = "2")
     @JsonProperty("role_id")
     private Long roleId;
 }
