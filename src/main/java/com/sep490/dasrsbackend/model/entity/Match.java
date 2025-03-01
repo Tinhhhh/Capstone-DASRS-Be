@@ -28,7 +28,7 @@ public class Match {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "match_id")
-    private Long matchId;
+    private Long id;
 
     @JsonProperty("match_name")
     @Column(name = "match_name")

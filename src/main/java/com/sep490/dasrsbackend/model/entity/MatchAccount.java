@@ -17,7 +17,7 @@ import java.util.UUID;
 public class MatchAccount {
 
     @EmbeddedId
-    private MatchAccountId matchAccountId;
+    private MatchAccountId id;
 
     @JsonProperty("team_tag")
     @Column(name = "team_tag")
