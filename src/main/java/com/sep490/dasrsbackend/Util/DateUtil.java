@@ -3,6 +3,8 @@ package com.sep490.dasrsbackend.Util;
 import lombok.experimental.UtilityClass;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 @UtilityClass
@@ -16,5 +18,13 @@ public class DateUtil {
     public static String formatTimestamp(Date date, String format) {
         SimpleDateFormat dateFormat = new SimpleDateFormat(format);
         return dateFormat.format(date);
+    }
+
+    public static Date convertToDate(LocalDateTime dateTime) {
+        return Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    public static LocalDateTime convertToLocalDateTime(Date date) {
+        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
 }

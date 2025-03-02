@@ -28,7 +28,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     private final ModelMapper modelMapper;
 
     @Override
-    public void NewEnvironment(NewEnvironment request) {
+    public void newEnvironment(NewEnvironment request) {
         Environment environment = modelMapper.map(request, Environment.class);
         environment.setStatus(EnvironmentStatus.ACTIVE);
         environmentRepository.save(environment);

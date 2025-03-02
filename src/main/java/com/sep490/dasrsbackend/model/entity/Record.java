@@ -18,7 +18,6 @@ public class Record {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @JsonProperty("record_link")
     @Column(name = "record_link")
     private String recordLink;
 

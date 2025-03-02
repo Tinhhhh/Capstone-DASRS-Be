@@ -40,6 +40,7 @@ public class TournamentServiceImpl implements TournamentService {
 
         Tournament tournament = Tournament.builder()
                 .tournamentName(newTournament.getTournamentName())
+                .teamNumber(newTournament.getTeamNumber())
                 .startDate(begin)
                 .endDate(end)
                 .status(TournamentStatus.PENDING)
@@ -72,12 +73,12 @@ public class TournamentServiceImpl implements TournamentService {
         Date minEnd = calendar.getTime();
 
         calendar.setTime(begin);
-        calendar.add(Calendar.MONTH, 3);
+        calendar.add(Calendar.MONTH, 1);
         Date maxEnd = calendar.getTime();
 
         if (end.before(minEnd) || end.after(maxEnd)) {
             throw new DasrsException(HttpStatus.BAD_REQUEST,
-                    "End date must be at least 2 weeks and no more than 3 months after the start date.");
+                    "End date must be at least 2 weeks and no more than 1 months after the start date.");
         }
     }
 

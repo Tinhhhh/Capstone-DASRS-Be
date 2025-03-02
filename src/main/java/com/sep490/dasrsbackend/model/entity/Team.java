@@ -23,14 +23,11 @@ public class Team {
     @Id
     @GeneratedValue
     @Column(name = "team_id")
-    @JsonProperty("team_id")
     private Long id;
 
-    @JsonProperty("team_name")
     @Column(name = "team_name")
     private String teamName;
 
-    @JsonProperty("team_tag")
     @Column(name = "team_tag")
     private String teamTag;
 

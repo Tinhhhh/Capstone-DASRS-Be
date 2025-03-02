@@ -19,15 +19,12 @@ public class MatchAccount {
     @EmbeddedId
     private MatchAccountId id;
 
-    @JsonProperty("team_tag")
     @Column(name = "team_tag")
     private String teamTag;
 
-    @JsonProperty("car_friction")
     @Column(name = "car_friction")
     private double carFriction;
 
-    @JsonProperty("car_acceleration")
     @Column(name = "car_acceleration")
     private double carAcceleration;
 

@@ -25,12 +25,10 @@ import java.util.Set;
 public class Role {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "role_id")
-    @JsonProperty("role_id")
     private Long id;
 
-    @JsonProperty("role_name")
     @Column(name = "role_name")
     private String roleName;
 
@@ -40,7 +38,6 @@ public class Role {
     private Date createdDate;
 
     @LastModifiedDate
-    @JsonProperty("last_modified_date")
     @Column(name = "last_modified_date", insertable = false)
     private Date lastModifiedDate;
 

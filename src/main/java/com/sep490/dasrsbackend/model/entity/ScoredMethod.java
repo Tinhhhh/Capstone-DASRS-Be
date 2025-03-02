@@ -25,43 +25,34 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 public class ScoredMethod {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "scored_method_id")
-    @JsonProperty("scored_method_id")
     private Long id;
 
     @Column(name = "lap")
     private double lap;
 
-    @JsonProperty("fastest_lap_time")
     @Column(name = "fastest_lap_time")
     private double fastestLapTime;
 
-    @JsonProperty("collision")
     @Column(name = "collision")
     private double collision;
 
-    @JsonProperty("total_race_time")
     @Column(name = "total_race_time")
     private double totalRaceTime;
 
-    @JsonProperty("off_track")
     @Column(name = "off_track")
     private double offTrack;
 
-    @JsonProperty("assist_usage")
     @Column(name = "assist_usage")
     private double assistUsageCount;
 
-    @JsonProperty("top_speed")
     @Column(name = "top_speed")
     private double topSpeed;
 
-    @JsonProperty("average_speed")
     @Column(name = "average_speed")
     private double averageSpeed;
 
-    @JsonProperty("total_distance")
     @Column(name = "total_distance")
     private double totalDistance;
 
@@ -70,7 +61,6 @@ public class ScoredMethod {
     private ScoredMethodStatus status;
 
     @LastModifiedDate
-    @JsonProperty("last_modified_date")
     @Column(name = "last_modified_date",  nullable = false)
     private Date lastModifiedDate;
 

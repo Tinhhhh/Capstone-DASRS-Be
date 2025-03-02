@@ -22,10 +22,8 @@ public class CarConfiguration {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "car_configuration_id")
-    @JsonProperty("car_configuration_id")
     private Long id;
 
-    @JsonProperty("car_configuration_name")
     @Column(name = "car_configuration_name")
     private String carConfigurationName;
 
@@ -41,7 +39,6 @@ public class CarConfiguration {
     private Date createdDate;
 
     @LastModifiedDate
-    @JsonProperty("last_modified_date")
     @Column(name = "last_modified_date", insertable = false)
     private Date lastModifiedDate;
 

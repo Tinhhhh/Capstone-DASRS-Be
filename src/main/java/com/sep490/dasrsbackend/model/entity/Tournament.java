@@ -23,27 +23,26 @@ import java.util.List;
 public class Tournament {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "tournament_id")
-    @JsonProperty("tournament_id")
     private Long id;
 
-    @JsonProperty("tournament_name")
     @Column(name = "tournament_name")
     private String tournamentName;
 
     @Column(name = "context")
     private String context;
 
+    @Column(name = "team_number")
+    private int teamNumber;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private TournamentStatus status;
 
-    @JsonProperty("start_date")
     @Column(name = "start_date")
     private Date startDate;
 
-    @JsonProperty("end_date")
     @Column(name = "end_date")
     private Date endDate;
 

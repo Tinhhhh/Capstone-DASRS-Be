@@ -28,6 +28,9 @@ public class NewTournament {
     @Pattern(regexp = "^[a-zA-ZÀ-ỹ\\s-_!,]+$", message = "Tournament context contains invalid characters")
     private String tournamentContext;
 
+    @Size(min = 10, max = 20, message = "Team number must be between 10 and 20")
+    private int teamNumber;
+
     @Future(message = "Start date must be in the future")
     @JsonProperty("start_date")
     private Date startDate;
