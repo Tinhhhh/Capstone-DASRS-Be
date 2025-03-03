@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -51,69 +52,175 @@ public class RoundServiceImpl implements RoundService {
         //validate số lượng vòng đã tạo
         if (!isAbleToCreateRound(tournament, rounds)) {
             throw new DasrsException(HttpStatus.BAD_REQUEST,
-                    "You can't create new round. Tournament team is: " + tournament.getTeamNumber() + " and round is: " + rounds.size());
+                    "Round creation is not allowed, the tournament has reached the maximum number of rounds. Tournament team is: " + tournament.getTeamNumber() + " and round is: " + rounds.size());
         }
 
-        //valida thời gian bắt đầu và kết thúc của vòng mới
-        if (!isScheduleValid(tournament, rounds, matchType, newRound)) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round schedule is invalid");
+        //Trường hợp vòng đầu tiên
+        if (rounds.isEmpty()) {
+            if (!isNewRoundvalid(tournament, newRound)) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round schedule is invalid");
+            }
         }
 
-        Round round = modelMapper.map(newRound, Round.class);
-        round.setStatus(RoundStatus.ACTIVE);
+        //Trường hợp đã có ít nhất 1 vòng và số lượng team tham gia < 15
+        if (!rounds.isEmpty() && tournament.getTeamNumber() < Schedule.TEAM_THRESHOLD) {
+            if (rounds.size() < 3) {
+                if (!addNewRound(tournament, rounds, newRound)) {
+                    throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round schedule is invalid");
+                }
+            } else {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Round creation is not allowed, the tournament has reached the maximum number of rounds");
+            }
+        }
+
+        //Trường hợp đã có ít nhất 1 vòng và số lượng team tham gia >= 15
+        if (!rounds.isEmpty() && tournament.getTeamNumber() >= Schedule.TEAM_THRESHOLD) {
+            if (rounds.size() < 4) {
+                if (!addNewRound(tournament, rounds, newRound)) {
+                    throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round schedule is invalid");
+                }
+            } else {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Round creation is not allowed, the tournament has reached the maximum number of rounds");
+            }
+        }
+
+        Round round = Round.builder()
+                .roundName(newRound.getRoundName())
+                .description(newRound.getDescription())
+                .status(RoundStatus.ACTIVE)
+                .startDate(newRound.getStartDate())
+                .endDate(newRound.getEndDate())
+                .tournament(tournament)
+                .matchType(matchType)
+                .scoredMethod(scoredMethod)
+                .environment(environment)
+                .build();
         roundRepository.save(round);
 
     }
 
-    private boolean isScheduleValid(Tournament tournament, List<Round> rounds, MatchType matchType, NewRound newRound) {
+    private boolean addNewRound(Tournament tournament, List<Round> rounds, NewRound newRound) {
 
-        LocalDateTime roundStartTime = DateUtil.convertToLocalDateTime(newRound.getStartDate());
+        double totalHours = getTotalHours(tournament, rounds);
 
-        if (roundStartTime.getDayOfWeek() == DayOfWeek.SATURDAY || roundStartTime.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round start date is invalid, round start date is not on weekend");
-        }
-
-        //Ví dụ có 13 team và 1 match là 0.5h
-        int totalMatches = tournament.getTeamNumber();
-        double matchDuration = matchType.getMatchDuration();
-        double totalHours = totalMatches * matchDuration;
-
-        //Vậy 1 vòng sẽ cần 13x0.5 = 6.5h / 8 => Làm tròn cần ít nhất 1 ngày.
-        double atLeastDays = Math.ceil(totalHours / Schedule.MAX_WORKING_HOURS);
-
-        if (atLeastDays > Schedule.MAX_WORKING_DAYS) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round duration is too long, round duration is no more than 5 days");
-        }
-
-        if (!rounds.isEmpty()) {
-            //Lấy thời gian kết thúc của vòng trước
-            roundStartTime = DateUtil.convertToLocalDateTime(rounds.get(rounds.size() - 1).getEndDate());
-            //Luôn bắt đầu từ 8h sáng
-            roundStartTime = adjustToNextWorkingDayForStartTime(roundStartTime).withHour(Schedule.WORKING_HOURS_START);
-
-        }
+        Date lastDate = rounds.get(rounds.size() - 1).getEndDate();
+        //Giãn cách ít nhất 1 ngày từ ngày kết thúc vòng trước đến ngày bắt đầu vòng mới
+        LocalDateTime roundStartTime = DateUtil.convertToLocalDateTime(lastDate).plusDays(1);
 
         LocalDateTime roundEndTime = roundStartTime;
+        while (roundEndTime.getDayOfWeek() != DayOfWeek.SUNDAY) {
+            roundEndTime = roundEndTime.plusDays(1);
+        }
 
-        roundEndTime =  plusAtleastMatchHours(roundEndTime, totalHours);
+        LocalDateTime earliestStartTime = roundStartTime.withHour(Schedule.WORKING_HOURS_START);
+        LocalDateTime earliestEndTime = plusAtleastMatchHoursForStartTime(earliestStartTime, totalHours);
 
-        LocalDateTime minStartTime = roundStartTime;
-        LocalDateTime maxStartTime = plusDayForMaxStartTime(roundStartTime, (long) (Schedule.MAX_WORKING_DAYS - atLeastDays));
-        LocalDateTime minEndTime = roundEndTime;
-        LocalDateTime maxEndTime = plusAtleastMatchHours(maxStartTime, totalHours);
+        LocalDateTime latestEndTime = roundEndTime.withHour(Schedule.WORKING_HOURS_END + 1);
+        LocalDateTime latestStartTime = minusAtLeastMatchHours(latestEndTime, totalHours);
 
         LocalDateTime localNewRoundStartTime = DateUtil.convertToLocalDateTime(newRound.getStartDate());
         LocalDateTime localNewRoundEndTime = DateUtil.convertToLocalDateTime(newRound.getEndDate());
 
-        if (localNewRoundStartTime.isBefore(minStartTime) || localNewRoundStartTime.isAfter(maxStartTime)) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round start date is invalid, round start date is between " + minStartTime + " and " + maxStartTime);
+        if (localNewRoundStartTime.isBefore(earliestStartTime) || localNewRoundStartTime.isAfter(latestStartTime)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round start date is invalid, round start date is between " + earliestStartTime + " and " + latestStartTime);
         }
 
-        if (localNewRoundEndTime.isBefore(minEndTime) || localNewRoundEndTime.isAfter(maxEndTime)) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round end date is invalid, round end date is between " + minEndTime + " and " + maxEndTime);
+        if (localNewRoundEndTime.isBefore(earliestEndTime) || localNewRoundEndTime.isAfter(latestEndTime)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round end date is invalid, round end date is between " + earliestEndTime + " and " + latestEndTime);
         }
 
         return true;
+    }
+
+    private static double getTotalHours(Tournament tournament, List<Round> rounds) {
+        //Mặc định số trận đấu của vòng cuối cùng là 3
+        int totalMatches = 3;
+        if (tournament.getTeamNumber() < Schedule.TEAM_THRESHOLD) {
+            //Nếu số lượng team tham gia < 15 và số lượng vòng đã tạo = 1 thì round 2 tổng số trận đấu là 5
+            if (rounds.size() == 1) {
+                totalMatches = 5;
+            }
+
+        } else {
+            if (rounds.size() < 4) {
+                //Nếu số lượng team tham gia >= 15 và số lượng vòng đã tạo = 1 thì round 2 tổng số trận đấu là 10
+                if (rounds.size() == 1) {
+                    totalMatches = 10;
+                }
+                //Nếu số lượng team tham gia >= 15 và số lượng vòng đã tạo = 2 thì round 3 tổng số trận đấu là 5
+                if (rounds.size() == 2) {
+                    totalMatches = 5;
+                }
+            }
+        }
+
+        double totalHours = totalMatches * Schedule.SLOT_DURATION;
+
+        if (Math.ceil(totalHours / Schedule.MAX_WORKING_HOURS) > Schedule.MAX_WORKING_DAYS) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round duration is too long, round duration is no more than 5 days");
+        }
+        return totalHours;
+    }
+
+    private boolean isNewRoundvalid(Tournament tournament, NewRound newRound) {
+
+        LocalDateTime tStartTime = DateUtil.convertToLocalDateTime(tournament.getStartDate());
+        LocalDateTime roundStartTime = DateUtil.convertToLocalDateTime(newRound.getStartDate());
+
+        if (roundStartTime.isBefore(tStartTime)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round start date is invalid, round start date must be after tournament start date");
+        }
+
+        //Ví dụ có 13 team, 1 match cố định là 1h
+        int totalMatches = tournament.getTeamNumber();
+        double totalHours = totalMatches * Schedule.SLOT_DURATION;
+
+        if (Math.ceil(totalHours / Schedule.MAX_WORKING_HOURS) > Schedule.MAX_WORKING_DAYS) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round duration is too long, round duration is no more than 5 days");
+        }
+
+        //Lấy ngày bắt đầu vòng đầu tiên để tìm ngày cuối tuần
+        LocalDateTime roundEndTime = roundStartTime;
+        while (roundEndTime.getDayOfWeek() != DayOfWeek.SUNDAY) {
+            roundEndTime = roundEndTime.plusDays(1);
+        }
+
+        LocalDateTime earliestStartTime = tStartTime.withHour(Schedule.WORKING_HOURS_START);
+
+        LocalDateTime earliestEndTime = plusAtleastMatchHours(earliestStartTime, totalHours);
+
+        //Lấy ngày cuối tuần đổi thành ngày cuôi cùng có thể baắt dđầu vòng đấu trừ đi số giờ trận đấu
+        LocalDateTime latestEndTime = roundEndTime.withHour(Schedule.WORKING_HOURS_END + 1);
+
+        LocalDateTime latestStartTime = minusAtLeastMatchHours(latestEndTime, totalHours);
+
+        LocalDateTime localNewRoundStartTime = DateUtil.convertToLocalDateTime(newRound.getStartDate());
+        LocalDateTime localNewRoundEndTime = DateUtil.convertToLocalDateTime(newRound.getEndDate());
+
+        if (localNewRoundStartTime.isBefore(earliestStartTime) || localNewRoundStartTime.isAfter(latestStartTime)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round start date is invalid, round start date is between " + earliestStartTime + " and " + latestStartTime);
+        }
+
+        if (localNewRoundEndTime.isBefore(earliestEndTime) || localNewRoundEndTime.isAfter(latestEndTime)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round end date is invalid, round end date is between " + earliestEndTime + " and " + latestEndTime);
+        }
+
+        return true;
+
+    }
+
+
+    private LocalDateTime minusAtLeastMatchHours(LocalDateTime roundStartTime, double totalHours) {
+        for (int i = 0; i < totalHours; i++) {
+            roundStartTime = roundStartTime.minusHours(Schedule.SLOT_DURATION);
+            if (roundStartTime.getHour() == Schedule.LUNCH_BREAK_END) {
+                roundStartTime = roundStartTime.withHour(Schedule.LUNCH_BREAK_START);
+            }
+            if (roundStartTime.getHour() == Schedule.WORKING_HOURS_START) {
+                roundStartTime = roundStartTime.minusDays(1).withHour(Schedule.WORKING_HOURS_END);
+            }
+        }
+        return roundStartTime;
     }
 
     private LocalDateTime plusAtleastMatchHours(LocalDateTime roundEndTime, double totalHours) {
@@ -122,44 +229,24 @@ public class RoundServiceImpl implements RoundService {
             if (isLunchBreak(roundEndTime)) {
                 roundEndTime = roundEndTime.withHour(Schedule.LUNCH_BREAK_END);
             }
-            if (roundEndTime.getDayOfWeek() == DayOfWeek.FRIDAY && roundEndTime.getHour() > Schedule.WORKING_HOURS_END) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round duration is too long, round duration is no more than 5 days");
+            if (roundEndTime.getHour() > Schedule.WORKING_HOURS_END) {
+                roundEndTime = roundEndTime.plusDays(1).withHour(Schedule.WORKING_HOURS_START);
             }
         }
+        return roundEndTime;
     }
 
-
-    private LocalDateTime adjustToNextWorkingDayForStartTime(LocalDateTime dateTime) {
-        if (dateTime.getDayOfWeek() == DayOfWeek.FRIDAY && dateTime.getHour() >= 17) {
-            dateTime = dateTime.plusDays(3);
-        } else if (dateTime.getDayOfWeek() == DayOfWeek.SATURDAY) {
-            dateTime = dateTime.plusDays(2);
-        } else if (dateTime.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            dateTime = dateTime.plusDays(1);
-        } else if (dateTime.getHour() >= 17) {
-            dateTime = dateTime.plusDays(1);
-        }
-        return dateTime;
-    }
-
-    private LocalDateTime plusDayForMaxStartTime(LocalDateTime startTime, long days) {
-
-        for (int i = 0; i < days; i++) {
-            startTime = startTime.plusDays(1);
-            if (startTime.getDayOfWeek() == DayOfWeek.FRIDAY) {
-                return startTime;
-            } else if (startTime.getDayOfWeek() == DayOfWeek.SATURDAY) {
-                startTime = startTime.minusDays(1);
-                return startTime;
+    private LocalDateTime plusAtleastMatchHoursForStartTime(LocalDateTime roundEndTime, double totalHours) {
+        for (int i = 0; i < totalHours; i++) {
+            roundEndTime = roundEndTime.plusHours(Schedule.SLOT_DURATION);
+            if (isLunchBreak(roundEndTime)) {
+                roundEndTime = roundEndTime.withHour(Schedule.LUNCH_BREAK_END);
+            }
+            if (roundEndTime.getHour() == Schedule.WORKING_HOURS_END) {
+                roundEndTime = roundEndTime.plusDays(1).withHour(Schedule.WORKING_HOURS_START);
             }
         }
-
-        return startTime;
-    }
-
-    private LocalDateTime plusDayForMaxEndTime(LocalDateTime dateTime) {
-
-        return dateTime;
+        return roundEndTime;
     }
 
     private boolean isLunchBreak(LocalDateTime dateTime) {

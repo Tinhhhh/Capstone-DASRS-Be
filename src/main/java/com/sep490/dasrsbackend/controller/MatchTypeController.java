@@ -20,7 +20,7 @@ public class MatchTypeController {
     private final MatchTypeService matchTypeService;
 
     @PostMapping("/new")
-    public ResponseEntity<Object> NewMatchType(@RequestBody @Valid NewMatchType request) {
+    public ResponseEntity<Object> newMatchType(@RequestBody @Valid NewMatchType request) {
         matchTypeService.newMatchType(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "New match type created successfully");
     }

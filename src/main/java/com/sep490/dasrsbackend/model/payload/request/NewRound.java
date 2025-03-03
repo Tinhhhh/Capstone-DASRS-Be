@@ -35,18 +35,14 @@ public class NewRound {
     private Date endDate;
 
     @JsonProperty("tournament_id")
-    @NotBlank(message = "Tournament id is required")
     private Long tournamentId;
 
     @JsonProperty("scored_method_id")
-    @NotBlank(message = "ScoredMethodId id is required")
     private Long scoredMethodId;
 
     @JsonProperty("environment_id")
-    @NotBlank(message = "EnvironmentId id is required")
     private Long environmentId;
 
     @JsonProperty("match_type_id")
-    @NotBlank(message = "MatchTypeId id is required")
     private Long matchTypeId;
 }

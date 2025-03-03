@@ -20,7 +20,7 @@ public class EnvironmentController {
     private final EnvironmentService environmentService;
 
     @PostMapping("/new")
-    public ResponseEntity<Object> NewEnvironment(@RequestBody @Valid NewEnvironment request) {
+    public ResponseEntity<Object> newEnvironment(@RequestBody @Valid NewEnvironment request) {
         environmentService.newEnvironment(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "New environment created successfully");
     }

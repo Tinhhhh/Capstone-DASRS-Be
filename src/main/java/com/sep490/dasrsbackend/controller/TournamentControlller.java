@@ -20,7 +20,7 @@ public class TournamentControlller {
     private final TournamentService tournamentService;
 
     @PostMapping("/new")
-    public ResponseEntity<Object> NewTournament(@RequestBody @Valid NewTournament request) {
+    public ResponseEntity<Object> newTournament(@RequestBody @Valid NewTournament request) {
         tournamentService.createTournament(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Tournament created successfully");
     }
