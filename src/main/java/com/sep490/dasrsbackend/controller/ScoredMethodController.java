@@ -20,7 +20,7 @@ public class ScoredMethodController {
     private final ScoredMethodService scoredMethodService;
 
     @PostMapping("/new")
-    public ResponseEntity<Object> NewScoredMethod(@RequestBody @Valid NewScoreMethod request) {
+    public ResponseEntity<Object> newScoredMethod(@RequestBody @Valid NewScoreMethod request) {
         scoredMethodService.createNewScoredMethod(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Scored method created successfully");
     }

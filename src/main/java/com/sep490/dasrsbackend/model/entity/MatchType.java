@@ -18,15 +18,21 @@ import java.util.List;
 @Builder
 @Table(name = "match_type")
 public class MatchType {
+
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "match_type_id")
     @JsonProperty("match_type_id")
     private Long id;
 
-    @JsonProperty("match_type_name")
     @Column(name = "match_type_name")
     private String matchTypeName;
+
+    @Column(name = "match_type_code")
+    private String matchTypeCode;
+
+    @Column(name = "match_duration")
+    private double matchDuration;
 
     @JsonProperty("finish_type")
     @Column(name = "finish_type")

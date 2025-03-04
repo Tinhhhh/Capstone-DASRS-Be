@@ -27,7 +27,6 @@ public class Leaderboard {
     @Column(name = "ranking")
     private int ranking;
 
-    @JsonProperty("team_id")
     @Column(name = "team_score")
     private double teamScore;
 

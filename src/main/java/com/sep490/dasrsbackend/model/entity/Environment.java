@@ -24,7 +24,6 @@ public class Environment {
     @Column(name = "environment_id")
     private Long id;
 
-    @JsonProperty("environment_name")
     @Column(name = "environment_name")
     private String name;
 

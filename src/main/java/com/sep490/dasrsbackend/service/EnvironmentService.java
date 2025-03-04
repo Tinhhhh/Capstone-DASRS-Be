@@ -5,7 +5,7 @@ import com.sep490.dasrsbackend.model.payload.response.EnvironmentResponse;
 import com.sep490.dasrsbackend.model.payload.response.ListEnvironment;
 
 public interface EnvironmentService {
-    void NewEnvironment(NewEnvironment request);
+    void newEnvironment(NewEnvironment request);
 
     EnvironmentResponse getEnvironment(Long id);
 

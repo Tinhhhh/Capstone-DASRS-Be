@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.ScoredMethod;
 import com.sep490.dasrsbackend.model.entity.Tournament;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
@@ -16,8 +17,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -33,13 +36,18 @@ public class TournamentServiceImpl implements TournamentService {
     @Override
     public void createTournament(NewTournament newTournament) {
 
-        Date begin = newTournament.getStartDate();
-        Date end = newTournament.getEndDate();
+        LocalDateTime startDate = DateUtil.convertToLocalDateTime(newTournament.getStartDate()).withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime endDate = DateUtil.convertToLocalDateTime(newTournament.getEndDate()).withHour(23).withMinute(59).withSecond(59);
+
+        Date begin = DateUtil.convertToDate(startDate);
+        Date end = DateUtil.convertToDate(endDate);
 
         TournamentValidation(begin, end);
 
         Tournament tournament = Tournament.builder()
                 .tournamentName(newTournament.getTournamentName())
+                .context(newTournament.getTournamentContext())
+                .teamNumber(newTournament.getTeamNumber())
                 .startDate(begin)
                 .endDate(end)
                 .status(TournamentStatus.PENDING)
@@ -72,12 +80,12 @@ public class TournamentServiceImpl implements TournamentService {
         Date minEnd = calendar.getTime();
 
         calendar.setTime(begin);
-        calendar.add(Calendar.MONTH, 3);
+        calendar.add(Calendar.MONTH, 1);
         Date maxEnd = calendar.getTime();
 
         if (end.before(minEnd) || end.after(maxEnd)) {
             throw new DasrsException(HttpStatus.BAD_REQUEST,
-                    "End date must be at least 2 weeks and no more than 3 months after the start date.");
+                    "End date must be at least 2 weeks and no more than 1 months after the start date.");
         }
     }
 
@@ -95,4 +103,9 @@ public class TournamentServiceImpl implements TournamentService {
     public Object getTournament(Long id) {
         return null;
     }
+
+//    @Scheduled(cron = "0 0 2 * * *")
+//    public void scheduledDeleteExpiredResetPasswordToken() {
+//        resetPasswordTokenRepository.deleteTokensByRevokedTrue();
+//    }
 }

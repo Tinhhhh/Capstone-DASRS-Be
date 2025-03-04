@@ -30,25 +30,20 @@ public class Match {
     @Column(name = "match_id")
     private Long id;
 
-    @JsonProperty("match_name")
     @Column(name = "match_name")
     private String matchName;
 
-    @JsonProperty("match_code")
     @Column(name = "match_code")
     private String matchCode;
 
-    @JsonProperty("match_score")
     @Column(name = "match_score")
     private double matchScore;
 
     @FutureOrPresent
-    @JsonProperty("time_start")
     @Column(name = "time_start")
     private Date timeStart;
 
     @Future
-    @JsonProperty("time_end")
     @Column(name = "time_end")
     private Date timeEnd;
 

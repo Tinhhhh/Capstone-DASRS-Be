@@ -26,11 +26,9 @@ public class Round {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonProperty("round_id")
     @Column(name = "round_id")
     private Long id;
 
-    @JsonProperty("round_name")
     @Column(name = "round_name")
     private String roundName;
 
@@ -41,21 +39,17 @@ public class Round {
     @Column(name = "status")
     private RoundStatus status;
 
-    @JsonProperty("start_date")
     @Column(name = "start_date")
     private Date startDate;
 
-    @JsonProperty("end_date")
     @Column(name = "end_date")
     private Date endDate;
 
     @LastModifiedDate
-    @JsonProperty("last_modified_date")
-    @Column(name = "last_modified_date", insertable = false)
+    @Column(name = "last_modified_date", nullable = false)
     private Date lastModifiedDate;
 
     @CreatedDate
-    @JsonProperty("created_date")
     @Column(name = "created_date", nullable = false, updatable = false)
     private Date createdDate;
 

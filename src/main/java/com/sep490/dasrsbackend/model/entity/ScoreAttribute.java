@@ -24,9 +24,8 @@ import java.util.Set;
 @EntityListeners(AuditingEntityListener.class)
 public class ScoreAttribute {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "score_attribute_id")
-    @JsonProperty("score_attribute_id")
     private Long id;
 
 
@@ -34,7 +33,6 @@ public class ScoreAttribute {
     private int lap;
 
     @JsonFormat(pattern = "mm:ss.SSS")
-    @JsonProperty("fastest_lap_time")
     @Column(name = "fastest_lap_time")
     private LocalTime fastestLapTime;
 
@@ -43,27 +41,21 @@ public class ScoreAttribute {
     private int collision;
 
     @JsonFormat(pattern = "mm:ss.SSS")
-    @JsonProperty("total_race_time")
     @Column(name = "total_race_time")
     private LocalTime totalRaceTime;
 
-    @JsonProperty("off_track")
     @Column(name = "off_track")
     private int offTrack;
 
-    @JsonProperty("assist_usage")
     @Column(name = "assist_usage")
     private int assistUsageCount;
 
-    @JsonProperty("top_speed")
     @Column(name = "top_speed")
     private double topSpeed;
 
-    @JsonProperty("average_speed")
     @Column(name = "average_speed")
     private double averageSpeed;
 
-    @JsonProperty("total_distance")
     @Column(name = "total_distance")
     private double totalDistance;
 

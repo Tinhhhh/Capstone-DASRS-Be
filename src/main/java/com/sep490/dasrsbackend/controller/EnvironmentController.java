@@ -3,12 +3,7 @@ package com.sep490.dasrsbackend.controller;
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.NewEnvironment;
-import com.sep490.dasrsbackend.model.payload.request.NewScoreMethod;
 import com.sep490.dasrsbackend.service.EnvironmentService;
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.info.Contact;
-import io.swagger.v3.oas.annotations.info.Info;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +20,8 @@ public class EnvironmentController {
     private final EnvironmentService environmentService;
 
     @PostMapping("/new")
-    public ResponseEntity<Object> NewEnvironment(@RequestBody @Valid NewEnvironment request) {
-        environmentService.NewEnvironment(request);
+    public ResponseEntity<Object> newEnvironment(@RequestBody @Valid NewEnvironment request) {
+        environmentService.newEnvironment(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "New environment created successfully");
     }
 
