@@ -46,7 +46,7 @@ public class Round {
     private Date endDate;
 
     @LastModifiedDate
-    @Column(name = "last_modified_date", insertable = false)
+    @Column(name = "last_modified_date", nullable = false)
     private Date lastModifiedDate;
 
     @CreatedDate

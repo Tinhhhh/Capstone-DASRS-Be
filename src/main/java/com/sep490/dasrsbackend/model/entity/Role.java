@@ -38,7 +38,7 @@ public class Role {
     private Date createdDate;
 
     @LastModifiedDate
-    @Column(name = "last_modified_date", insertable = false)
+    @Column(name = "last_modified_date", nullable = false)
     private Date lastModifiedDate;
 
     @OneToMany(mappedBy = "role")

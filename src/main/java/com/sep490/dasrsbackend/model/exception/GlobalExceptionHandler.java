@@ -94,4 +94,18 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
+    @ExceptionHandler(TournamentRuleException.class)
+    public ResponseEntity<ExceptionResponse> handleTournamentRuleException(TournamentRuleException exception) {
+        return ResponseEntity
+                .status(exception.getHttpStatus().value())
+                .body(
+                        ExceptionResponse.builder()
+                                .httpStatus(exception.getHttpStatus().value())
+                                .timestamp(DateUtil.formatTimestamp(new Date()))
+                                .message(exception.getMessage())
+                                .data(exception.getData())
+                                .build()
+                );
+    }
 }

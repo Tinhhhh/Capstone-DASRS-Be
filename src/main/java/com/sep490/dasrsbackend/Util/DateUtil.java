@@ -12,7 +12,8 @@ import java.util.TimeZone;
 
 @UtilityClass
 public class DateUtil {
-    private final String DEFAULT_DATE_FORMAT = "MM/dd/yyyy HH:mm:ss";
+    public final String DEFAULT_DATE_FORMAT = "MM/dd/yyyy HH:mm:ss";
+    public final String DATE_FORMAT = "yyyy-MM-dd";
 
     public static String formatTimestamp(Date date) {
         return formatTimestamp(date, DEFAULT_DATE_FORMAT);
@@ -55,4 +56,5 @@ public class DateUtil {
             return null;
         }
     }
+
 }
