@@ -41,7 +41,7 @@ public class SecurityCofig {
 //                                .requestMatchers("/api/v1/environment/**", "/api/v1/match-type/**","/api/v1/scored-method/**").hasAuthority("ADMIN")
                                 .requestMatchers("/api/v1/environment/**", "/api/v1/match-type/**","/api/v1/scored-method/**").permitAll()
                                 .requestMatchers("/api/v1/tournament/**").permitAll()
-                                .requestMatchers("/api/v1/round/**").permitAll()
+                                .requestMatchers("/api/v1/round/**", "/api/v1/records/**","/api/v1/reviews").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
