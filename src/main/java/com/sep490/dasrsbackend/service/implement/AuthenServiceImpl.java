@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -299,4 +300,5 @@ public class AuthenServiceImpl implements AuthenService {
         byte[] hash = digest.digest(codeBuilder.toString().getBytes());
         return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
     }
+
 }

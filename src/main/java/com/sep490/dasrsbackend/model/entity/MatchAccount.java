@@ -38,4 +38,8 @@ public class MatchAccount {
     @JoinColumn(name = "account_Id")
     Account account;
 
+    @ManyToOne
+    @JoinColumn(name = "score_attribute_id", nullable = false)
+    private ScoreAttribute scoreAttribute;
+
 }

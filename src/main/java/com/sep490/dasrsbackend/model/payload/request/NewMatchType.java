@@ -22,7 +22,7 @@ public class NewMatchType {
     private String matchTypeName;
 
     @JsonProperty("match_type_code")
-    @Pattern(regexp = "^[A-Za-z]{2,3}-\\d{2}[A-Za-z]{1}$", message = "Match type code contains few letters and numbers, example: AB-12")
+    @Pattern(regexp = "^[A-Za-z]{2,3}-[1-5]{2}[A-Za-z]{1}$", message = "Match type code contains few letters and numbers, example: AB-12")
     private String matchTypeCode;
 
     @JsonProperty("match_duration")

@@ -66,10 +66,6 @@ public class Match {
     private List<Review> reviewList;
 
     @ManyToOne
-    @JoinColumn(name = "score_attribute_id", nullable = false)
-    private ScoreAttribute scoreAttribute;
-
-    @ManyToOne
     @JoinColumn(name = "round_id", nullable = false)
     private Round round;
 
