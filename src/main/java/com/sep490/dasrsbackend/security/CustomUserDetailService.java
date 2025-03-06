@@ -17,7 +17,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class CustomUserDetailService implements UserDetailsService {
 
-    private AccountRepository accountRepository;
+    private final AccountRepository accountRepository;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -29,7 +29,7 @@ public class CustomUserDetailService implements UserDetailsService {
         Set<GrantedAuthority> authorities = new HashSet<>();
         authorities.add(authority);
 
-        return new org.springframework.security.core.userdetails.User(email, account.getPassword(), authorities);
+        return new org.springframework.security.core.userdetails.User(account.getEmail(), account.getPassword(), authorities);
     }
 
 }

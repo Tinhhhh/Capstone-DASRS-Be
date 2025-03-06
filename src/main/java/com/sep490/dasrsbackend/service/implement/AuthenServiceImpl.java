@@ -1,19 +1,13 @@
 package com.sep490.dasrsbackend.service.implement;
 
-import com.sep490.dasrsbackend.model.entity.Role;
+import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.EmailTemplateName;
+import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
 import com.sep490.dasrsbackend.model.payload.request.AuthenticationRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.response.AuthenticationResponse;
-import com.sep490.dasrsbackend.model.entity.AccessToken;
-import com.sep490.dasrsbackend.model.entity.Account;
-import com.sep490.dasrsbackend.model.entity.RefreshToken;
-import com.sep490.dasrsbackend.model.exception.DasrsException;
-import com.sep490.dasrsbackend.repository.AccessTokenRepository;
-import com.sep490.dasrsbackend.repository.AccountRepository;
-import com.sep490.dasrsbackend.repository.RefreshTokenRepository;
-import com.sep490.dasrsbackend.repository.RoleRepository;
+import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.security.JwtTokenProvider;
 import com.sep490.dasrsbackend.service.AuthenService;
 import com.sep490.dasrsbackend.service.EmailService;
@@ -21,15 +15,24 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -43,6 +46,14 @@ public class AuthenServiceImpl implements AuthenService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final UserDetailsService userDetailsService;
+    private final PasswordResetTokenRepository resetPasswordTokenRepository;
+
+    @Value("${application.email.url}")
+    private String forgotPasswordUrl;
+
+    @Value("${application.email.secure.characters}")
+    private String emailSecureChar;
 
     @Override
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -79,9 +90,9 @@ public class AuthenServiceImpl implements AuthenService {
         if (token != null) {
             //Terminate old refreshToken
             RefreshToken refreshToken = token.getRefreshToken();
-            token.setRevoked(true);
-            token.setExpired(true);
-            accessTokenRepository.save(token);
+            refreshToken.setRevoked(true);
+            refreshToken.setExpired(true);
+            refreshTokenRepository.save(refreshToken);
         }
 
     }
@@ -121,22 +132,124 @@ public class AuthenServiceImpl implements AuthenService {
 
     @Override
     public void logout(HttpServletRequest request) {
+        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        final String jwtToken;
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new DasrsException(HttpStatus.UNAUTHORIZED, "No jwt Token found in the request header");
+        }
+
+        jwtToken = authHeader.substring(7);
+
+        AccessToken token = accessTokenRepository.findByToken(jwtToken);
+        Account account = token.getAccount();
+        revokeAccessTokensFromUser(account);
+        revokeRefreshTokens(jwtToken);
 
     }
 
     @Override
     public AuthenticationResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
+
+        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        final String refreshToken;
+        final String userEmail;
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        refreshToken = authHeader.substring(7);
+        userEmail = jwtTokenProvider.getUsernameFromJwt(refreshToken);
+
+        //validate
+        if (userEmail != null) {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
+            RefreshToken curRefreshToken = refreshTokenRepository.findByToken(refreshToken)
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Token is invalid or not exist"));
+            if (!curRefreshToken.isRevoked() && !curRefreshToken.isExpired()) {
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+
+                Account account = accountRepository.findByEmail(userEmail)
+                        .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Invalid user. User not found"));
+
+                //Revoke old tokens
+                revokeAccessTokensFromUser(account);
+
+                curRefreshToken.setRevoked(true);
+                curRefreshToken.setExpired(true);
+                refreshTokenRepository.save(curRefreshToken);
+
+                //generate new token
+                String newAccessToken = jwtTokenProvider.generateAccessToken(authentication);
+                String newRefreshToken = jwtTokenProvider.generateRefreshToken(authentication);
+
+                saveAccountToken(account, newAccessToken, newRefreshToken);
+
+                return AuthenticationResponse.builder()
+                        .accessToken(newAccessToken)
+                        .refreshToken(newRefreshToken)
+                        .build();
+
+            } else {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Token is invalid or not exist");
+            }
+        }
+
+
         return null;
     }
 
     @Override
     public void forgotPassword(String email) throws NoSuchAlgorithmException, MessagingException {
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Account not found"));
 
+        String token = generateResetPasswordToken(32);
+        StringBuilder link = new StringBuilder();
+        link.append(forgotPasswordUrl).append("/").append(token);
+        emailService.sendMimeMessageWithHtml(
+                account.fullName(),
+                account.getEmail(),
+                link.toString(),
+                EmailTemplateName.FORGOT_PASSWORD.getName(),
+                "Reset your password");
+
+        PasswordResetToken passwordResetToken = PasswordResetToken.builder()
+                .token(token)
+                .expired(LocalDateTime.now().plusMinutes(30))
+                .revoked(false)
+                .account(account)
+                .build();
+
+        resetPasswordTokenRepository.save(passwordResetToken);
     }
 
     @Override
-    public void resetPassword(String email, String token) {
+    public void resetPassword(String newPassword, String token) {
+        PasswordResetToken resetPasswordToken = resetPasswordTokenRepository.findByToken(token)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Token not found"));
 
+        if (resetPasswordToken.isRevoked()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Token is invalid or revoked");
+        }
+
+        if (resetPasswordToken.getExpired().isBefore(LocalDateTime.now())) {
+            resetPasswordToken.setRevoked(true);
+            resetPasswordTokenRepository.save(resetPasswordToken);
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Token is expired");
+        }
+
+        Account account = accountRepository.findById(resetPasswordToken.getAccount().getAccountId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Account not found"));
+
+        account.setPassword(passwordEncoder.encode(newPassword));
+        accountRepository.save(account);
+        resetPasswordToken.setRevoked(true);
+        resetPasswordTokenRepository.save(resetPasswordToken);
     }
 
     @Override
@@ -167,8 +280,23 @@ public class AuthenServiceImpl implements AuthenService {
     }
 
     private void sendRegistrationEmail(Account account) throws MessagingException {
-        emailService.sendMimeMessageWithHtml(
+        emailService.sendAccountInformation(
                 account.fullName(), account.getEmail(), account.getPassword(), account.getEmail(),
                 EmailTemplateName.ADMIN_CREATE_ACCOUNT.getName(), "[Dasrs] Thông tin tài khoản của bạn");
+    }
+
+    private String generateResetPasswordToken(int codelength) throws NoSuchAlgorithmException {
+        StringBuilder codeBuilder = new StringBuilder();
+        SecureRandom random = new SecureRandom();
+        //lay ngau nhien 1 ki tu trong chuoi emailSecurecHar
+        for (int i = 0; i < codelength; i++) {
+            int randomIndex = random.nextInt(emailSecureChar.length());
+            codeBuilder.append(emailSecureChar.charAt(randomIndex));
+        }
+
+        //Hash token with SHA-256
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(codeBuilder.toString().getBytes());
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
     }
 }

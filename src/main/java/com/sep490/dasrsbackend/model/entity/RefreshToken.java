@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -26,6 +27,6 @@ public class RefreshToken{
     private boolean revoked;
 
     @OneToMany(mappedBy = "refreshToken", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<AccessToken> accessTokens;
+    private List<AccessToken> accessTokens;
 
 }

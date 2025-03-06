@@ -27,13 +27,27 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     @Async
-    public void sendMimeMessageWithHtml(String name, String email, String password, String to, String template, String subject) throws MessagingException {
+    public void sendAccountInformation(String name, String email, String password, String to, String template, String subject) throws MessagingException {
         try {
             String senderNickName = "Customer Service Team at Dasrs";
             Context context = new Context();
             context.setVariable("username", name);
             context.setVariable("email", email);
             context.setVariable("password", password);
+            extractTemplate(to, template, subject, senderNickName, context);
+        } catch (Exception exception) {
+            System.out.println("Error: " + exception.getMessage());
+            throw new RuntimeException("Error: " + exception.getMessage());
+        }
+    }
+
+    @Override
+    public void sendMimeMessageWithHtml(String name, String to, String content, String template, String subject) throws MessagingException {
+        try {
+            String senderNickName = "Customer Service Team at Souvi";
+            Context context = new Context();
+            context.setVariable("username", name);
+            context.setVariable("content", content);
             extractTemplate(to, template, subject, senderNickName, context);
         } catch (Exception exception) {
             System.out.println("Error: " + exception.getMessage());

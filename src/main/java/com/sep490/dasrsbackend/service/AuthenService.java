@@ -20,7 +20,7 @@ public interface AuthenService {
 
     void forgotPassword(String email) throws NoSuchAlgorithmException, MessagingException;
 
-    void resetPassword(String email, String token);
+    void resetPassword(String password, String token);
 
     void newAccountByAdmin(NewAccountByAdmin account) throws MessagingException;
 
