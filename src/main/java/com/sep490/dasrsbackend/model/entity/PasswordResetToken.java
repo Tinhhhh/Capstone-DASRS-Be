@@ -22,10 +22,10 @@ public class PasswordResetToken {
     private String token;
 
     @Column(name = "expired_at")
-    private LocalDateTime expiryDate;
+    private LocalDateTime expired;
 
     @Column(name = "is_revoked")
-    private boolean isRevoked;
+    private boolean revoked;
 
     @ManyToOne
     @JoinColumn(name = "account_id")

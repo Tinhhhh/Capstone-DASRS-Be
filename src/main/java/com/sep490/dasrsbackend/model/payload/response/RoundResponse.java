@@ -1,6 +1,8 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sep490.dasrsbackend.model.enums.FinishType;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -41,4 +43,10 @@ public class RoundResponse {
 
     @JsonProperty("match_type_id")
     private Long matchTypeId;
+
+    @JsonProperty("match_type_name")
+    private String matchTypeName;
+
+    @JsonProperty("finish_type")
+    private FinishType finishType;
 }

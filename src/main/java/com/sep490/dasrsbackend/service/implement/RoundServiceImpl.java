@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
+import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
 import com.sep490.dasrsbackend.model.payload.response.ListRound;
 import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
@@ -51,6 +52,24 @@ public class RoundServiceImpl implements RoundService {
         Environment environment = environmentRepository.findById(newRound.getEnvironmentId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
 
+        roundValidation(newRound, tournament, true);
+
+        Round round = Round.builder()
+                .roundName(newRound.getRoundName())
+                .description(newRound.getDescription())
+                .status(RoundStatus.ACTIVE)
+                .startDate(newRound.getStartDate())
+                .endDate(newRound.getEndDate())
+                .tournament(tournament)
+                .matchType(matchType)
+                .scoredMethod(scoredMethod)
+                .environment(environment)
+                .build();
+        roundRepository.save(round);
+
+    }
+
+    private void roundValidation(NewRound newRound, Tournament tournament, boolean isNew) {
         List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE);
 
         LocalDateTime roundStartTime = DateUtil.convertToLocalDateTime(newRound.getStartDate());
@@ -66,10 +85,12 @@ public class RoundServiceImpl implements RoundService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round duration is too long, round duration is no more than 5 days");
         }
 
-        //validate số lượng vòng đã tạo
-        if (!isAbleToCreateRound(tournament, rounds)) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST,
-                    "Round creation is not allowed, the tournament has reached the maximum number of rounds. Tournament team is: " + tournament.getTeamNumber() + " and round is: " + rounds.size());
+        if (isNew) {
+            //validate số lượng vòng đã tạo
+            if (!isAbleToCreateRound(tournament, rounds)) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST,
+                        "Round creation is not allowed, the tournament has reached the maximum number of rounds. Tournament team is: " + tournament.getTeamNumber() + " and round is: " + rounds.size());
+            }
         }
 
         //Trường hợp vòng đầu tiên
@@ -98,20 +119,6 @@ public class RoundServiceImpl implements RoundService {
         newRound.setEndDate(DateUtil.convertToDate((rEnd.withHour(23).withMinute(23).withSecond(23).withNano(23))));
 
         addNewRound(tStart, tEnd, tournament, rounds, newRound);
-
-        Round round = Round.builder()
-                .roundName(newRound.getRoundName())
-                .description(newRound.getDescription())
-                .status(RoundStatus.ACTIVE)
-                .startDate(newRound.getStartDate())
-                .endDate(newRound.getEndDate())
-                .tournament(tournament)
-                .matchType(matchType)
-                .scoredMethod(scoredMethod)
-                .environment(environment)
-                .build();
-        roundRepository.save(round);
-
     }
 
     private boolean addNewRound(LocalDateTime tStart, LocalDateTime tEnd, Tournament tournament, List<Round> rounds, NewRound newRound) {
@@ -195,17 +202,6 @@ public class RoundServiceImpl implements RoundService {
 
     private boolean isLunchBreak(LocalDateTime dateTime) {
         return dateTime.getHour() >= Schedule.LUNCH_BREAK_START && dateTime.getHour() < Schedule.LUNCH_BREAK_END;
-    }
-
-
-    @Override
-    public RoundResponse findRoundByRoundId(Long id) {
-        return null;
-    }
-
-    @Override
-    public ListRound findRoundByTournamentId(Long id) {
-        return null;
     }
 
     private boolean isAbleToCreateRound(Tournament tournament, List<Round> rounds) {
@@ -336,6 +332,53 @@ public class RoundServiceImpl implements RoundService {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public RoundResponse findRoundByRoundId(Long id) {
+        return null;
+    }
+
+    @Override
+    public ListRound findRoundByTournamentId(Long id) {
+        return null;
+    }
+
+    @Override
+    public void editRound(EditRound request) {
+        Round round = roundRepository.findById(request.getId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
+
+        Tournament tournament = tournamentRepository.findById(round.getTournament().getId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+
+        MatchType matchType = matchTypeRepository.findById(request.getMatchTypeId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match Type not found"));
+
+        ScoredMethod scoredMethod = scoredMethodRepository.findById(request.getScoredMethodId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Scored Method not found"));
+
+        Environment environment = environmentRepository.findById(request.getEnvironmentId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
+
+        NewRound newRound = modelMapper.map(request, NewRound.class);
+
+        roundValidation(newRound, tournament, false);
+
+        round = Round.builder()
+                .roundName(newRound.getRoundName())
+                .description(newRound.getDescription())
+                .status(request.getStatus())
+                .startDate(newRound.getStartDate())
+                .endDate(newRound.getEndDate())
+                .tournament(tournament)
+                .matchType(matchType)
+                .scoredMethod(scoredMethod)
+                .environment(environment)
+                .build();
+
+        roundRepository.save(round);
+
     }
 
 }

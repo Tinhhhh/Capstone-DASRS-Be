@@ -4,7 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum EmailTemplateName {
-    ADMIN_CREATE_ACCOUNT("ADMIN_CREATE_ACCOUNT");
+    ADMIN_CREATE_ACCOUNT("ADMIN_CREATE_ACCOUNT"),
+    FORGOT_PASSWORD("FORGOT_PASSWORD");
 
     private final String name;
 

@@ -1,11 +1,15 @@
 package com.sep490.dasrsbackend.security;
 
 import com.sep490.dasrsbackend.model.exception.DasrsException;
+import com.sep490.dasrsbackend.repository.AccessTokenRepository;
+import com.sep490.dasrsbackend.repository.PasswordResetTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
@@ -13,8 +17,10 @@ import java.security.Key;
 import java.util.Date;
 
 @Component
+@RequiredArgsConstructor
 public class JwtTokenProvider {
 
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     @Value("${app.jwt.secret-key}")
     private String jwtSecret;
 
@@ -23,6 +29,9 @@ public class JwtTokenProvider {
 
     @Value("${app.jwt-refresh-expiration-milliseconds}")
     private long jwtRefreshExpiration;
+
+    private final AccessTokenRepository accessTokenRepository;
+    private final PasswordResetTokenRepository resetPasswordTokenRepository;
 
     private Key key() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
@@ -103,4 +112,14 @@ public class JwtTokenProvider {
         Date expiration = claims.getExpiration();
         return expiration.before(new Date());
     }
+
+    @Scheduled(cron = "0 0 2 * * *")
+    public void scheduledDeleteExpiredToken() {
+        passwordResetTokenRepository.deleteByRevokedIsTrue();
+    }
+
+//    @Scheduled(cron = "0 0 2 * * *")
+//    public void scheduledDeleteExpiredResetPasswordToken() {
+//        resetPasswordTokenRepository.deleteTokensByRevokedTrue();
+//    }
 }
