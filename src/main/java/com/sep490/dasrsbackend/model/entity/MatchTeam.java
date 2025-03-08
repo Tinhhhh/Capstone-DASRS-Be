@@ -13,11 +13,11 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Builder
-@Table(name = "match_account")
-public class MatchAccount {
+@Table(name = "match_team")
+public class MatchTeam {
 
     @EmbeddedId
-    private MatchAccountId id;
+    private MatchTeamId id;
 
     @Column(name = "team_tag")
     private String teamTag;
@@ -34,12 +34,16 @@ public class MatchAccount {
     Match match;
 
     @ManyToOne
-    @MapsId("accountId")
-    @JoinColumn(name = "account_Id")
+    @JoinColumn(name = "account_id")
     Account account;
 
     @ManyToOne
-    @JoinColumn(name = "score_attribute_id", nullable = false)
+    @JoinColumn(name = "score_attribute_id")
     private ScoreAttribute scoreAttribute;
+
+    @ManyToOne
+    @MapsId("teamId")
+    @JoinColumn(name = "team_Id")
+    Team team;
 
 }

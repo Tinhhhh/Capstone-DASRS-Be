@@ -77,7 +77,7 @@ public class Account {
     private List<CarConfiguration> carConfigurations;
 
     @OneToMany(mappedBy = "account")
-    private List<MatchAccount> matchAccounts;
+    private List<MatchTeam> matchTeams;
 
     @OneToMany(mappedBy = "account")
     private List<AccessToken> accessTokens;

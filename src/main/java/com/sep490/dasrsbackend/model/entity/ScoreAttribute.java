@@ -65,5 +65,5 @@ public class ScoreAttribute {
     private ScoreAttributeStatus status;
 
     @OneToMany(mappedBy = "scoreAttribute")
-    private List<MatchAccount> matchAccounts;
+    private List<MatchTeam> matchAccounts;
 }

@@ -50,4 +50,7 @@ public class Team {
     @OneToMany(mappedBy = "team")
     private List<Leaderboard> leaderboardList;
 
+    @OneToMany(mappedBy = "team")
+    private List<MatchTeam> matchTeams;
+
 }

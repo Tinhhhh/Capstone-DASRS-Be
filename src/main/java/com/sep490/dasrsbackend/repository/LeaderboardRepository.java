@@ -11,6 +11,6 @@ import java.util.List;
 
 @Repository
 public interface LeaderboardRepository extends JpaRepository<Leaderboard, Long> {
-    @Query("SELECT l FROM Leaderboard l ORDER BY l.ranking ASC")
-    List<Leaderboard> findTopNLeaderboard(Pageable pageable);
+    @Query("SELECT l FROM Leaderboard l WHERE l.round.id = :id ORDER BY l.ranking ASC")
+    List<Leaderboard> findTopNLeaderboard(Pageable pageable,@Param("id") Long id);
 }

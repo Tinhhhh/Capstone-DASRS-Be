@@ -5,6 +5,7 @@ import com.sep490.dasrsbackend.Util.Schedule;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
+import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
@@ -15,18 +16,17 @@ import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.RoundService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -39,7 +39,12 @@ public class RoundServiceImpl implements RoundService {
     private final ScoredMethodRepository scoredMethodRepository;
     private final ModelMapper modelMapper;
     private final MatchRepository matchRepository;
+    private final TeamRepository teamRepository;
+    private final LeaderboardRepository leaderboardRepository;
+    private final ScoreAttributeRepository scoreAttributeRepository;
+    private final MatchTeamRepository matchTeamRepository;
 
+    @Transactional
     @Override
     public void newRound(NewRound newRound) {
 
@@ -184,7 +189,7 @@ public class RoundServiceImpl implements RoundService {
             nextRoundDayNeeded = 0;
         }
 
-            LocalDateTime earliestStartTime = tStart.withHour(Schedule.WORKING_HOURS_START);
+        LocalDateTime earliestStartTime = tStart.withHour(Schedule.WORKING_HOURS_START);
         LocalDateTime earliestEndTime = plusAtleastMatchHours(earliestStartTime, currentMatchesNeeded);
 
         //Thời gian kết thúc trễ nhất của vòng này sẽ bằng thời gian kết thúc của tournament trừ đi thời gian cần để tạo các vòng tiếp theo
@@ -423,22 +428,43 @@ public class RoundServiceImpl implements RoundService {
 
     }
 
+
     private void generateMatch(Round round, Tournament tournament) {
 
         MatchType matchType = round.getMatchType();
 
-        double matchDuration = matchType.getMatchDuration();
+        //Đưa team vào randomTeam
+        double matchDuration = matchType.getMatchDuration() * 60;
         Map<Integer, Team> randomTeam = new HashMap<>();
-        int teamNumber = tournament.getTeamNumber();
 
-        List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.COMPLETED);
+        //Tạo biến đại diện cho số đội sẽ tham gia round
+        //Truường hợp round đang tạo là round đầu tiên
+        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.getId(), TeamStatus.ACTIVE);
+        int teamRemains = teams.size();
 
-        if (rounds.size() > 1) {
-            teamNumber = rounds.get(rounds.size() - 1).getTeamLimit();
+        List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE);
+
+        //Trường hợp round đang tạo không phải là round đầu tiên
+        Round previousRound = rounds.get(rounds.size() - 1);
+
+        //Trường hợp round đang tạo là round đầu tiên
+        if (rounds.size() == 1) {
+            int flag = teamRemains;
+            for (Team team : teams) {
+                randomTeam.put(flag--, team);
+            }
+        } else { //Trường hợp round đang tạo không phải là round đầu tiên
+            teamRemains = previousRound.getTeamLimit();
+
+            List<Leaderboard> leaderboards = leaderboardRepository
+                    .findTopNLeaderboard(PageRequest.of(0, teamRemains), previousRound.getId());
+            for (Leaderboard leaderboard : leaderboards) {
+                randomTeam.put(teamRemains--, leaderboard.getTeam());
+            }
         }
 
-        for (Team team : tournament.getTeamList()) {
-            randomTeam.put(teamNumber--, team);
+        if (randomTeam.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "No team found to create match");
         }
 
         LocalDateTime startTime = DateUtil.convertToLocalDateTime(round.getStartDate()).withHour(Schedule.WORKING_HOURS_START);
@@ -457,16 +483,18 @@ public class RoundServiceImpl implements RoundService {
             if (!currentTime.isBefore(workStart) && currentTime.isBefore(workEnd) && currentTime.getHour() != Schedule.LUNCH_BREAK_START) {
 
                 //Bóc tách match type code để lấy số đội mỗi trận đấu và số ng tham gia mỗi đội
-                String[] parts = matchTypePrefix.split("-");
+
+                //Ví dụ match type code: PVP-21T
+                String[] parts = matchTypePrefix.split("-"); //PVP, 21T
                 int teamCount = 0;
                 int playersPerTeam = 0;
                 if (parts.length > 1) {
                     String numberPart = parts[1].substring(0, 2);
-                    teamCount = Character.getNumericValue(numberPart.charAt(0)); // Số đội
-                    playersPerTeam = Character.getNumericValue(numberPart.charAt(1)); // Số người mỗi đội
+                    teamCount = Character.getNumericValue(numberPart.charAt(0)); // Số đội - 2
+                    playersPerTeam = Character.getNumericValue(numberPart.charAt(1)); // Số người mỗi đội - 1
 
-                    if (teamCount == 0 || playersPerTeam == 0) {
-                        throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Match type code is invalid, please contact the administrator");
+                    if (randomTeam.size() % teamCount != 0) {
+                        throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "The number of teams is not suitable for this match type, please change the match type");
                     }
 
                 } else {
@@ -474,19 +502,24 @@ public class RoundServiceImpl implements RoundService {
                 }
 
                 //Tạo match name
+                stringBuilder.setLength(0);
                 String name = stringBuilder
                         .append(matchType.getMatchTypeName())
                         .append(" - ")
                         .toString();
 
+                //tạo biến lưu lại team tham gia trận đấu
+                List<Team> currentTeams = new ArrayList<>();
+
                 //Chọn đội tham gia trận đấu ngẫu nhiên
                 for (int i = 0; i < teamCount; i++) {
-                    Team team = randomTeam.get(teamNumber);
-                    randomTeam.remove(teamNumber++);
+                    Team team = randomTeam.get(teamRemains);
+                    randomTeam.remove(teamRemains--);
                     if (i >= 1) {
                         name = stringBuilder.append(", ").toString();
                     }
                     name = stringBuilder.append(team.getTeamName()).toString();
+                    currentTeams.add(team);
                 }
 
                 //Tạo code random cho trận đấu
@@ -498,6 +531,7 @@ public class RoundServiceImpl implements RoundService {
                 }
 
                 //Ghép lại thành match code
+                stringBuilder.setLength(0);
                 String matchCode = stringBuilder
                         .append(seasonPrefix)
                         .append("_")
@@ -518,6 +552,9 @@ public class RoundServiceImpl implements RoundService {
 
                 matchRepository.save(match);
 
+
+                generateMatchTeam(match, currentTeams);
+
                 startTime = startTime.plusHours(Schedule.SLOT_DURATION);
             } else {
                 if (currentTime.getHour() == Schedule.WORKING_HOURS_END) {
@@ -528,6 +565,20 @@ public class RoundServiceImpl implements RoundService {
             }
         }
 
+
+    }
+
+
+    private void generateMatchTeam(Match match, List<Team> currentTeams) {
+
+        for (Team team : currentTeams) {
+            MatchTeam matchTeam = new MatchTeam();
+            matchTeam.setId(new MatchTeamId(match.getId(), team.getId()));
+            matchTeam.setMatch(match);
+            matchTeam.setTeam(team);
+            matchTeam.setTeamTag(team.getTeamTag());
+            matchTeamRepository.save(matchTeam);
+        }
 
     }
 

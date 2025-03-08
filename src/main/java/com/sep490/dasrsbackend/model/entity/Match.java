@@ -57,7 +57,7 @@ public class Match {
     private Date createdDate;
 
     @OneToMany(mappedBy = "match")
-    private List<MatchAccount> matchAccountList;
+    private List<MatchTeam> matchTeamList;
 
     @OneToMany(mappedBy = "match")
     private List<Record> recordList;

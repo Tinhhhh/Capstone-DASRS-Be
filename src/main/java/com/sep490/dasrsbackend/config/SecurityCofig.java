@@ -42,6 +42,7 @@ public class SecurityCofig {
                                 .requestMatchers("/api/v1/environment/**", "/api/v1/match-type/**","/api/v1/scored-method/**").permitAll()
                                 .requestMatchers("/api/v1/tournament/**").permitAll()
                                 .requestMatchers("/api/v1/round/**").permitAll()
+                                .requestMatchers("/api/v1/team/**").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
