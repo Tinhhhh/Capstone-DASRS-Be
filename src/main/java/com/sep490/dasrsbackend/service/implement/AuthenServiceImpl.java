@@ -48,6 +48,7 @@ public class AuthenServiceImpl implements AuthenService {
     private final EmailService emailService;
     private final UserDetailsService userDetailsService;
     private final PasswordResetTokenRepository resetPasswordTokenRepository;
+    private final TeamRepository teamRepository;
 
     @Value("${application.email.url}")
     private String forgotPasswordUrl;
@@ -257,6 +258,18 @@ public class AuthenServiceImpl implements AuthenService {
         Role role = roleRepository.findById(request.getRoleId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Registration fails, role not found !"));
 
+        if (request.getRoleId() == 1) {
+            if (request.getTeamId() == null) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST,"Account need to be assigned to a team");
+            }
+        }
+
+        Team team = teamRepository.findById(request.getTeamId()).orElse(null);
+
+        if (request.getRoleId() >= 4) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Registration fails, invalid role");
+        }
+
         if (accountRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RegisterAccountExistedException("Account already exists");
         }
@@ -275,6 +288,11 @@ public class AuthenServiceImpl implements AuthenService {
                 .role(role)
                 .team(null)
                 .build();
+
+        if (team != null && request.getRoleId() == 1) {
+            account.setTeam(team);
+        }
+
         accountRepository.save(account);
         sendRegistrationEmail(account);
     }
@@ -299,4 +317,5 @@ public class AuthenServiceImpl implements AuthenService {
         byte[] hash = digest.digest(codeBuilder.toString().getBytes());
         return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
     }
+
 }

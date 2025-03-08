@@ -32,6 +32,12 @@ public class Round {
     @Column(name = "round_name")
     private String roundName;
 
+    @Column(name = "team_limit")
+    private int teamLimit;
+
+    @Column(name = "is_last")
+    private boolean isLast;
+
     @Column(name = "description")
     private String description;
 

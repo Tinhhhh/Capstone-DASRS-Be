@@ -57,17 +57,13 @@ public class Match {
     private Date createdDate;
 
     @OneToMany(mappedBy = "match")
-    private List<MatchAccount> matchAccountList;
+    private List<MatchTeam> matchTeamList;
 
     @OneToMany(mappedBy = "match")
     private List<Record> recordList;
 
     @OneToMany(mappedBy = "match")
     private List<Review> reviewList;
-
-    @ManyToOne
-    @JoinColumn(name = "score_attribute_id", nullable = false)
-    private ScoreAttribute scoreAttribute;
 
     @ManyToOne
     @JoinColumn(name = "round_id", nullable = false)

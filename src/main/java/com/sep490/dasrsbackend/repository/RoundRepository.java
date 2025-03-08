@@ -11,4 +11,5 @@ import java.util.List;
 @Repository
 public interface RoundRepository extends JpaRepository<Round, Long> {
     List<Round> findByTournamentIdAndStatus(Long tournamentId, RoundStatus roundStatus);
+    List<Round> findByTournamentId(Long tournamentId);
 }

@@ -51,4 +51,8 @@ public class NewAccountByAdmin {
     @Schema(description = "Register's role", example = "2")
     @JsonProperty("role_id")
     private Long roleId;
+
+    @Schema(description = "Register's team, dont need if create account for staff and organizer", example = "1")
+    @JsonProperty("team_id")
+    private Long teamId;
 }

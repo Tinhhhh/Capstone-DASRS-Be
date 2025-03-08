@@ -13,10 +13,10 @@ import java.util.UUID;
 @EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
-public class MatchAccountId implements Serializable {
+public class MatchTeamId implements Serializable {
 //    @Column(name = "match_id")
     private Long matchId;
 
 //    @Column(name="account_id")
-    private UUID accountId;
+    private Long teamId;
 }
