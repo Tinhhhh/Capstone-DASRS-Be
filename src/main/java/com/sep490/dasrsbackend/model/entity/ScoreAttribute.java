@@ -12,6 +12,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalTime;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -64,5 +65,5 @@ public class ScoreAttribute {
     private ScoreAttributeStatus status;
 
     @OneToMany(mappedBy = "scoreAttribute")
-    private Set<Match> match;
+    private List<MatchTeam> matchAccounts;
 }

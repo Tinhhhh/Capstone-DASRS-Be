@@ -28,7 +28,7 @@ public class MatchTypeServiceImpl implements MatchTypeService {
     @Override
     public void newMatchType(NewMatchType newMatchType) {
         MatchType matchType = MatchType.builder()
-                .matchTypeName(newMatchType.getMatchTypeName())
+                .matchTypeName(newMatchType.getMatchTypeName().trim())
                 .matchTypeCode(newMatchType.getMatchTypeCode().toUpperCase())
                 .matchDuration(newMatchType.getMatchDuration())
                 .finishType(newMatchType.getFinishType())

@@ -54,4 +54,7 @@ public class Tournament {
     @OneToMany(mappedBy = "tournament")
     private List<Round> roundList;
 
+    @OneToMany(mappedBy = "tournament")
+    private List<Team> teamList;
+
 }

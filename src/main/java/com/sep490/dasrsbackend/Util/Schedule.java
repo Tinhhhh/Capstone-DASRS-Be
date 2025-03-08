@@ -12,4 +12,6 @@ public class Schedule {
     public final int MAX_WORKING_HOURS = 8; // 8h làm việc mỗi ngày
     public final int SLOT_DURATION = 1; // 1h mỗi trận đấu
     public final int TEAM_THRESHOLD = 15;
+    public final int ROUND_LIMIT = 4;
+    public final int TEAM_LIMIT = 20;
 }
