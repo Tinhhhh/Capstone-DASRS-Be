@@ -27,10 +27,10 @@ public class RoundResponse {
     private String description;
 
     @JsonProperty("start_date")
-    private Date startDate;
+    private String startDate;
 
     @JsonProperty("end_date")
-    private Date endDate;
+    private String endDate;
 
     @JsonProperty("tournament_id")
     private Long tournamentId;

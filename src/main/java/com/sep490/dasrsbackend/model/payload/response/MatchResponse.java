@@ -23,10 +23,10 @@ public class MatchResponse {
     private String matchCode;
 
     @JsonProperty("time_start")
-    private Date timeStart;
+    private String timeStart;
 
     @JsonProperty("time_end")
-    private Date timeEnd;
+    private String timeEnd;
 
     @JsonProperty("status")
     private MatchStatus status;

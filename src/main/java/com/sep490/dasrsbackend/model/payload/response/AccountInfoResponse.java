@@ -32,7 +32,7 @@ public class AccountInfoResponse {
 
     private String gender;
 
-    private LocalDate dob;
+    private String dob;
 
     private String phone;
 

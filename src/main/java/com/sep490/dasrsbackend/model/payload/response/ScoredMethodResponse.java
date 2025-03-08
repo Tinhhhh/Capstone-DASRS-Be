@@ -48,12 +48,7 @@ public class ScoredMethodResponse {
     @JsonProperty("total_distance")
     private double totalDistance;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
     private ScoredMethodStatus status;
 
-    @LastModifiedDate
-    @JsonProperty("last_modified_date")
-    private Date lastModifiedDate;
 
 }

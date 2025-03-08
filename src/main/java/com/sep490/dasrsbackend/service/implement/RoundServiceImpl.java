@@ -105,7 +105,7 @@ public class RoundServiceImpl implements RoundService {
         LocalDateTime roundStartTime = DateUtil.convertToLocalDateTime(newRound.getStartDate());
 
         if (roundStartTime.isBefore(DateUtil.convertToLocalDateTime(tournament.getStartDate()))) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round start date is invalid, round start date must be after tournament start date: " + tournament.getStartDate());
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round start date is invalid, round start date must be after tournament start date: " + DateUtil.formatTimestamp(tournament.getStartDate()));
         }
 
         int totalMatches = tournament.getTeamNumber();
@@ -202,7 +202,9 @@ public class RoundServiceImpl implements RoundService {
             Map<String, String> response = getDataResponse(earliestStartTime, latestEndTime, localNewRoundStartTime.isBefore(earliestStartTime), localNewRoundStartTime);
 
             throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
-                    "The round start date is invalid, round start date is between " + earliestStartTime + " and " + latestStartTime,
+                    "The round start date is invalid, round start date is between " +
+                            DateUtil.formatTimestamp(DateUtil.convertToDate(earliestStartTime)) + " and " +
+                            DateUtil.formatTimestamp(DateUtil.convertToDate(latestStartTime)),
                     response);
         }
 
@@ -210,7 +212,9 @@ public class RoundServiceImpl implements RoundService {
             Map<String, String> response = getDataResponse(earliestEndTime, latestEndTime, localNewRoundStartTime.isBefore(earliestEndTime), localNewRoundEndTime);
 
             throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
-                    "The round end date is invalid, round end date is between " + earliestEndTime + " and " + latestEndTime,
+                    "The round end date is invalid, round end date is between " +
+                            DateUtil.formatTimestamp(DateUtil.convertToDate(earliestEndTime)) + " and " +
+                            DateUtil.formatTimestamp(DateUtil.convertToDate(latestEndTime)),
                     response);
         }
 
@@ -225,8 +229,8 @@ public class RoundServiceImpl implements RoundService {
 
     private Map<String, String> getDataResponse(LocalDateTime earliestStartTime, LocalDateTime latestEndTime, boolean before, LocalDateTime localNewRoundStartTime) {
         Map<String, String> response = new LinkedHashMap<>();
-        response.put("startDate", DateUtil.formatTimestamp(DateUtil.convertToDate(earliestStartTime), DateUtil.DATE_FORMAT));
-        response.put("endDate", DateUtil.formatTimestamp(DateUtil.convertToDate(latestEndTime), DateUtil.DATE_FORMAT));
+        response.put("startDate", DateUtil.formatTimestamp(DateUtil.convertToDate(earliestStartTime)));
+        response.put("endDate", DateUtil.formatTimestamp(DateUtil.convertToDate(latestEndTime)));
         if (!before) {
             response.put("type", "over");
         } else {
