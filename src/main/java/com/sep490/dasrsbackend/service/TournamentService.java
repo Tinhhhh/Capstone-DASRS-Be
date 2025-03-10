@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.service;
 
+import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 
 public interface TournamentService {
@@ -9,4 +10,8 @@ public interface TournamentService {
     Object getAllTournaments(int pageNo, int pageSize, String sortBy, String sortDirection);
 
     Object getTournament(Long id);
+
+    void startTournament(Long id);
+
+    void changeStatus(Long id, TournamentStatus status);
 }
