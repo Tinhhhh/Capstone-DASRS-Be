@@ -43,8 +43,6 @@ public class TeamController {
         return ResponseEntity.ok().build();
     }
 
-    private final TeamService teamService;
-
     @GetMapping("/get-matches")
     public ResponseEntity<Object> getMatches(@RequestParam Long teamId) {
         return ResponseBuilder.responseBuilderWithData(
