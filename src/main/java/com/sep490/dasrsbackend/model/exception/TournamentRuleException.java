@@ -10,8 +10,9 @@ public class TournamentRuleException extends RuntimeException {
     private HttpStatus httpStatus;
     private Map<String, String> data;
 
-    public TournamentRuleException(String message) {
+    public TournamentRuleException(HttpStatus httpStatus, String message) {
         super(message);
+        this.httpStatus = httpStatus;
     }
 
     public TournamentRuleException(HttpStatus httpStatus, String message, Map<String, String> data) {

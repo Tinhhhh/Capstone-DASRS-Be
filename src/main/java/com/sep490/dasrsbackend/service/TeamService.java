@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface TeamService {
 
