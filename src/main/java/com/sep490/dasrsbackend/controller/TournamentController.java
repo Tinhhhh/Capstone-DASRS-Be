@@ -13,20 +13,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/tournament")
+@RequestMapping("/api/v1/tournaments")
 @RequiredArgsConstructor
 @Tag(name = "Tournament", description = "method for tournament management.")
-public class TournamentControlller {
+public class TournamentController {
 
     private final TournamentService tournamentService;
 
-    @PostMapping("/new")
+    @PostMapping
     public ResponseEntity<Object> newTournament(@RequestBody @Valid NewTournament request) {
         tournamentService.createTournament(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Tournament created successfully");
     }
 
-    @GetMapping("/get/all")
+    @GetMapping
     public ResponseEntity<Object> getAllTournaments(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
@@ -37,19 +37,19 @@ public class TournamentControlller {
                 tournamentService.getAllTournaments(pageNo, pageSize, sortBy, sortDirection));
     }
 
-    @GetMapping("/get")
-    public ResponseEntity<Object> getTournament(@RequestParam Long id) {
+    @GetMapping("/{id}")
+    public ResponseEntity<Object> getTournament(@PathVariable Long id) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Tournament retrieved successfully", tournamentService.getTournament(id));
     }
 
-    @PutMapping("/active")
-    public ResponseEntity<Object> startATournament(@RequestParam Long id) {
+    @PutMapping("/active/{id}")
+    public ResponseEntity<Object> startATournament(@PathVariable Long id) {
         tournamentService.startTournament(id);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament started successfully");
     }
 
-    @PutMapping("/change-status")
-    public ResponseEntity<Object> changeTournamentStatus(@RequestParam Long id, @RequestParam TournamentStatus status) {
+    @PutMapping("/status/{id}")
+    public ResponseEntity<Object> changeTournamentStatus(@PathVariable Long id, @RequestParam TournamentStatus status) {
         tournamentService.changeStatus(id, status);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament status updated successfully");
     }

@@ -43,12 +43,10 @@ public class AuthenServiceImpl implements AuthenService {
     private final JwtTokenProvider jwtTokenProvider;
     private final AccessTokenRepository accessTokenRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final UserDetailsService userDetailsService;
     private final PasswordResetTokenRepository resetPasswordTokenRepository;
-    private final TeamRepository teamRepository;
 
     @Value("${application.email.url}")
     private String forgotPasswordUrl;
@@ -251,56 +249,6 @@ public class AuthenServiceImpl implements AuthenService {
         accountRepository.save(account);
         resetPasswordToken.setRevoked(true);
         resetPasswordTokenRepository.save(resetPasswordToken);
-    }
-
-    @Override
-    public void newAccountByAdmin(NewAccountByAdmin request) throws MessagingException {
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Registration fails, role not found !"));
-
-        if (request.getRoleId() == 1) {
-            if (request.getTeamId() == null) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST,"Account need to be assigned to a team");
-            }
-        }
-
-        Team team = teamRepository.findById(request.getTeamId()).orElse(null);
-
-        if (request.getRoleId() >= 4) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Registration fails, invalid role");
-        }
-
-        if (accountRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RegisterAccountExistedException("Account already exists");
-        }
-
-        Account account = Account.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .address(request.getAddress())
-                .phone(request.getPhone())
-                .gender("")
-                .dob(null)
-                .password(passwordEncoder.encode(request.getPassword()))
-                .isLocked(false)
-                .isLeader(false)
-                .role(role)
-                .team(null)
-                .build();
-
-        if (team != null && request.getRoleId() == 1) {
-            account.setTeam(team);
-        }
-
-        accountRepository.save(account);
-        sendRegistrationEmail(account);
-    }
-
-    private void sendRegistrationEmail(Account account) throws MessagingException {
-        emailService.sendAccountInformation(
-                account.fullName(), account.getEmail(), account.getPassword(), account.getEmail(),
-                EmailTemplateName.ADMIN_CREATE_ACCOUNT.getName(), "[Dasrs] Thông tin tài khoản của bạn");
     }
 
     private String generateResetPasswordToken(int codelength) throws NoSuchAlgorithmException {

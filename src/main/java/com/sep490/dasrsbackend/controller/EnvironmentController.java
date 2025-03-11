@@ -12,25 +12,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/environment")
+@RequestMapping("/api/v1/environments")
 @RequiredArgsConstructor
 @Tag(name = "Environment", description = "Environment required to use for round.")
 public class EnvironmentController {
 
     private final EnvironmentService environmentService;
 
-    @PostMapping("/new")
+    @PostMapping
     public ResponseEntity<Object> newEnvironment(@RequestBody @Valid NewEnvironment request) {
         environmentService.newEnvironment(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "New environment created successfully");
     }
 
-    @GetMapping("/get")
-    public ResponseEntity<Object> getEnvironment(@RequestParam Long environmentId) {
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", environmentService.getEnvironment(environmentId));
+    @GetMapping("/{id}")
+    public ResponseEntity<Object> getEnvironment(@PathVariable Long id) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", environmentService.getEnvironment(id));
     }
 
-    @GetMapping("/get/all")
+    @GetMapping
     public ResponseEntity<Object> getAllEnvironment(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,

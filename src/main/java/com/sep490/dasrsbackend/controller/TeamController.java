@@ -20,8 +20,8 @@ public class TeamController {
 
     private final TeamService teamService;
 
-    @PostMapping("/complain")
-    public ResponseEntity<Void> complainAboutMatch(@RequestParam Long teamId, @RequestParam String complaint) {
+    @PostMapping("/complain/{teamId}")
+    public ResponseEntity<Void> complainAboutMatch(@PathVariable Long teamId, @RequestParam String complaint) {
         teamService.complainAboutMatch(teamId, complaint);
         return ResponseEntity.ok().build();
     }
@@ -37,19 +37,6 @@ public class TeamController {
 //        teamService.selectMatchParticipants(teamId, memberIds);
 //        return ResponseEntity.ok().build();
 //    }
-
-    @GetMapping("/get-matches")
-    public ResponseEntity<Object> getMatches(@RequestParam Long teamId) {
-        return ResponseBuilder.responseBuilderWithData(
-                HttpStatus.OK, "Successfully retrieved matches",
-                teamService.getMatches(teamId));
-    }
-
-    @PutMapping("/assign-member")
-    public ResponseEntity<Object> assignMemberToMatch(@RequestParam Long teamId, @RequestParam Long matchId, @RequestParam UUID assigner, @RequestParam UUID assignee) {
-        teamService.assignMemberToMatch(teamId, matchId, assigner, assignee);
-        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully assigned member to match");
-    }
 
     @GetMapping("/{teamId}/members")
     public ResponseEntity<List<TeamResponse>> getTeamMembers(@PathVariable Long teamId) {

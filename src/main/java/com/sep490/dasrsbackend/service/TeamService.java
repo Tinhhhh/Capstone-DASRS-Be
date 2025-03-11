@@ -8,12 +8,10 @@ import java.util.UUID;
 
 public interface TeamService {
 
-    List<MatchResponse> getMatches(Long teamId);
     void complainAboutMatch(Long teamId, String complaint);
     void removeMember(Long teamId, Long memberId);
 //    void selectMatchParticipants(Long teamId, List<Long> memberIds);
     List<TeamResponse> getTeamMembers(Long teamId);
     void transferLeadership(Long teamId, Long newLeaderId);
-    void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee);
 
 }
