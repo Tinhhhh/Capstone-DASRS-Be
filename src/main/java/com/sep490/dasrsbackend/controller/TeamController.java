@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/team")
+@RequestMapping("/api/v1/teams")
 @RequiredArgsConstructor
 @Tag(name = "Team", description = "Team method for player.")
 public class TeamController {
@@ -43,7 +43,7 @@ public class TeamController {
         return ResponseEntity.ok(teamService.getTeamMembers(teamId));
     }
 
-    @PutMapping("/{teamId}/transfer-leadership/{newLeaderId}")
+    @PutMapping("/leadership/{teamId}/{newLeaderId}")
     public ResponseEntity<Void> transferLeadership(@PathVariable Long teamId, @PathVariable Long newLeaderId) {
         teamService.transferLeadership(teamId, newLeaderId);
         return ResponseEntity.ok().build();

@@ -3,6 +3,7 @@ package com.sep490.dasrsbackend.service.implement;
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.Match;
 import com.sep490.dasrsbackend.model.entity.Round;
+import com.sep490.dasrsbackend.model.entity.Team;
 import com.sep490.dasrsbackend.model.entity.Tournament;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
@@ -10,9 +11,12 @@ import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.ListTournament;
+import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
+import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
 import com.sep490.dasrsbackend.repository.MatchRepository;
 import com.sep490.dasrsbackend.repository.RoundRepository;
+import com.sep490.dasrsbackend.repository.TeamRepository;
 import com.sep490.dasrsbackend.repository.TournamentRepository;
 import com.sep490.dasrsbackend.service.TournamentService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -33,6 +38,7 @@ public class TournamentServiceImpl implements TournamentService {
     private final RoundRepository roundRepository;
     private final MatchRepository matchRepository;
     private final ModelMapper modelMapper;
+    private final TeamRepository teamRepository;
 
 
     @Override
@@ -103,7 +109,51 @@ public class TournamentServiceImpl implements TournamentService {
 
     @Override
     public TournamentResponse getTournament(Long id) {
-        return null;
+
+        Tournament tournament = tournamentRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Tournament not found."));
+
+        List<Round> roundList = roundRepository.findByTournamentId(id);
+        List<Team> teamList = teamRepository.getTeamByTournamentId(id);
+
+        List<RoundResponse> roundResponses = getRoundResponses(roundList); 
+        List<TeamResponse> teamResponses = getTeamResponses(teamList);
+
+        return TournamentResponse.builder()
+                .id(tournament.getId())
+                .tournamentName(tournament.getTournamentName())
+                .context(tournament.getContext())
+                .teamNumber(tournament.getTeamNumber())
+                .status(tournament.getStatus())
+                .startDate(tournament.getStartDate())
+                .endDate(tournament.getEndDate())
+                .createdDate(tournament.getCreatedDate())
+                .roundList(roundResponses)
+                .teamList(teamResponses)
+                .build();
+
+    }
+
+    private List<TeamResponse> getTeamResponses(List<Team> teamList) {
+        List<TeamResponse> teamResponses = new ArrayList<>();
+        for (Team team : teamList) {
+            TeamResponse teamResponse = modelMapper.map(team, TeamResponse.class);
+            teamResponses.add(teamResponse);
+        }
+
+        return teamResponses;
+    }
+
+    private List<RoundResponse> getRoundResponses(List<Round> roundList) {
+        List<RoundResponse> roundResponses = new ArrayList<>();
+
+        roundList.forEach(round -> {
+            RoundResponse roundResponse = modelMapper.map(round, RoundResponse.class);
+            roundResponse.setMatchTypeName(round.getMatchType().getMatchTypeName());
+            roundResponses.add(roundResponse);
+        });
+
+        return roundResponses;
     }
 
     @Override

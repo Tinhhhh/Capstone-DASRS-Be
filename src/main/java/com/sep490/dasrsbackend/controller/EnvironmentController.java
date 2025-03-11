@@ -25,9 +25,9 @@ public class EnvironmentController {
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "New environment created successfully");
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Object> getEnvironment(@PathVariable Long id) {
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", environmentService.getEnvironment(id));
+    @GetMapping("/{environmentId}")
+    public ResponseEntity<Object> getEnvironment(@PathVariable Long environmentId) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", environmentService.getEnvironment(environmentId));
     }
 
     @GetMapping

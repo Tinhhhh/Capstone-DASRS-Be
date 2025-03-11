@@ -1,7 +1,9 @@
 package com.sep490.dasrsbackend.security;
 
+import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.repository.AccessTokenRepository;
+import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.PasswordResetTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -15,12 +17,15 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final AccountRepository accountRepository;
     @Value("${app.jwt.secret-key}")
     private String jwtSecret;
 
@@ -55,15 +60,6 @@ public class JwtTokenProvider {
         }
     }
 
-//    public String getUsernameFromJwt(String jwt) {
-//        Claims claims = Jwts.parserBuilder()
-//                .setSigningKey(key())
-//                .build()
-//                .parseClaimsJws(jwt)
-//                .getBody();
-//        return claims.getSubject();
-//    }
-
     public String generateAccessToken(Authentication authentication) {
         String token = generateToken(authentication, jwtAccessExpiration);
         return token;
@@ -78,12 +74,21 @@ public class JwtTokenProvider {
         String username = authentication.getName();
         Date currentDate = new Date();
         Date expirationDate = new Date(currentDate.getTime() + expiration);
+        Account account = accountRepository.findByEmail(username)
+                .orElseThrow(() -> new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Account not found"));
+
+        Map<String, Object> header = new HashMap<>();
+        header.put("alg", "HS256");
+        header.put("typ", "JWT");
+
         String token = Jwts.builder()
+                .setHeader(header)
                 .setSubject(username)
                 .setIssuedAt(currentDate)
                 .setExpiration(expirationDate)
-                .claim("role", authentication.getAuthorities())
-                .signWith(key())
+                .claim("id", account.getAccountId().toString())
+                .claim("role", authentication.getAuthorities().toArray()[0].toString())
+                .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
         return token;
     }

@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/round")
+@RequestMapping("/api/v1/rounds")
 @RequiredArgsConstructor
 @Tag(name = "Round", description = "Round required to use to create tournament.")
 public class RoundController {

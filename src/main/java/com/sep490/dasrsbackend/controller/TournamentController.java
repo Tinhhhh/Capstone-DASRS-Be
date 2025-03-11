@@ -37,22 +37,21 @@ public class TournamentController {
                 tournamentService.getAllTournaments(pageNo, pageSize, sortBy, sortDirection));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Object> getTournament(@PathVariable Long id) {
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Tournament retrieved successfully", tournamentService.getTournament(id));
+    @GetMapping("/{tournamentId}")
+    public ResponseEntity<Object> getTournament(@PathVariable Long tournamentId) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Tournament retrieved successfully", tournamentService.getTournament(tournamentId));
     }
 
-    @PutMapping("/active/{id}")
-    public ResponseEntity<Object> startATournament(@PathVariable Long id) {
-        tournamentService.startTournament(id);
+    @PutMapping("/active/{tournamentId}")
+    public ResponseEntity<Object> startATournament(@PathVariable Long tournamentId) {
+        tournamentService.startTournament(tournamentId);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament started successfully");
     }
 
-    @PutMapping("/status/{id}")
-    public ResponseEntity<Object> changeTournamentStatus(@PathVariable Long id, @RequestParam TournamentStatus status) {
-        tournamentService.changeStatus(id, status);
+    @PutMapping("/status/{tournamentId}")
+    public ResponseEntity<Object> changeTournamentStatus(@PathVariable Long tournamentId, @RequestParam TournamentStatus status) {
+        tournamentService.changeStatus(tournamentId, status);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament status updated successfully");
     }
-
 
 }

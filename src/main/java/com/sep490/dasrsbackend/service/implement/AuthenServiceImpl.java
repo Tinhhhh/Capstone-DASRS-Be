@@ -1,13 +1,17 @@
 package com.sep490.dasrsbackend.service.implement;
 
-import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.entity.AccessToken;
+import com.sep490.dasrsbackend.model.entity.Account;
+import com.sep490.dasrsbackend.model.entity.PasswordResetToken;
+import com.sep490.dasrsbackend.model.entity.RefreshToken;
 import com.sep490.dasrsbackend.model.enums.EmailTemplateName;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
-import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
 import com.sep490.dasrsbackend.model.payload.request.AuthenticationRequest;
-import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.response.AuthenticationResponse;
-import com.sep490.dasrsbackend.repository.*;
+import com.sep490.dasrsbackend.repository.AccessTokenRepository;
+import com.sep490.dasrsbackend.repository.AccountRepository;
+import com.sep490.dasrsbackend.repository.PasswordResetTokenRepository;
+import com.sep490.dasrsbackend.repository.RefreshTokenRepository;
 import com.sep490.dasrsbackend.security.JwtTokenProvider;
 import com.sep490.dasrsbackend.service.AuthenService;
 import com.sep490.dasrsbackend.service.EmailService;
@@ -154,7 +158,7 @@ public class AuthenServiceImpl implements AuthenService {
         final String refreshToken;
         final String userEmail;
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return null;
+            throw new DasrsException(HttpStatus.UNAUTHORIZED, "No jwt Token found in the request header");
         }
 
         refreshToken = authHeader.substring(7);
@@ -197,7 +201,6 @@ public class AuthenServiceImpl implements AuthenService {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "Token is invalid or not exist");
             }
         }
-
 
         return null;
     }
