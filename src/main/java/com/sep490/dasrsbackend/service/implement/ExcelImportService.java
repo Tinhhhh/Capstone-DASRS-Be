@@ -5,6 +5,7 @@ import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.Role;
 import com.sep490.dasrsbackend.model.entity.Team;
+import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.TeamRepository;
 import org.apache.poi.ss.usermodel.*;
@@ -110,6 +111,7 @@ public class ExcelImportService {
                     Team team = new Team();
                     team.setTeamName(validateNonEmpty(teamName, "Team Name"));
                     team.setTeamTag(validateNonEmpty(teamTag, "Team Tag"));
+                    team.setStatus(TeamStatus.ACTIVE);
                     return teamRepository.save(team);
                 });
     }

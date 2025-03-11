@@ -3,7 +3,10 @@ package com.sep490.dasrsbackend.controller;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
+import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
+import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
+import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.service.AccountService;
 import com.sep490.dasrsbackend.service.implement.ExcelImportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,4 +59,38 @@ public class AccountController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.ACCEPTED, "Successfully Register", "An email had been sent to email owner.");
     }
 
+    @Operation(summary = "Change account password", description = "Allows users to change their account password.")
+    @PostMapping("/change-password")
+    public ResponseEntity<Object> changePassword(@RequestBody @Valid ChangePasswordRequest changePasswordRequest) {
+        accountService.changePassword(changePasswordRequest, null);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Password changed successfully.");
+    }
+
+    @Operation(summary = "Update account profile picture", description = "Update the profile picture of an account.")
+    @PutMapping("/update-profile-picture")
+    public ResponseEntity<Object> updateAccountProfilePicture(@RequestParam UUID id, @RequestParam String imageURL) {
+        accountService.updateAccountProfilePicture(id, imageURL);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Profile picture updated successfully.");
+    }
+
+    @Operation(summary = "Update account information", description = "Update information for the account.")
+    @PutMapping("/update-info")
+    public ResponseEntity<Object> updateAccountInfo(@RequestParam UUID id, @RequestBody @Valid AccountProfile accountProfile) {
+        accountService.updateAccountInfo(id, accountProfile);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account information updated successfully.");
+    }
+
+    @Operation(summary = "Get account information by admin", description = "Fetch account details as an admin.")
+    @GetMapping
+    public ResponseEntity<Object> getAccountByAdmin(@RequestParam UUID id) {
+        Object accountInfo = accountService.getAccountByAdmin(id);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Account information retrieved successfully.", accountInfo);
+    }
+
+    @Operation(summary = "Edit account by admin", description = "Allows admin to edit account details.")
+    @PutMapping("/edit")
+    public ResponseEntity<Object> editAccountByAdmin(@RequestParam UUID id, @RequestBody @Valid UpdateAccountResponse updateAccountResponse) {
+        accountService.editAccountByAdmin(id, updateAccountResponse);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account updated successfully.");
+    }
 }
