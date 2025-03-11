@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
+import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
@@ -60,13 +61,19 @@ public class RoundServiceImpl implements RoundService {
         Environment environment = environmentRepository.findById(newRound.getEnvironmentId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
 
+        if (tournament.getStatus() == TournamentStatus.COMPLETED ||
+                tournament.getStatus() == TournamentStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament is not available, can't create round");
+        }
+
         roundValidation(newRound, tournament, true);
 
         Round round = Round.builder()
                 .roundName(newRound.getRoundName())
                 .teamLimit(newRound.getTeamLimit())
                 .description(newRound.getDescription())
-                .status(RoundStatus.ACTIVE)
+                .status(RoundStatus.PENDING)
+                .isLast(newRound.isLast())
                 .startDate(newRound.getStartDate())
                 .endDate(newRound.getEndDate())
                 .tournament(tournament)
@@ -80,7 +87,7 @@ public class RoundServiceImpl implements RoundService {
     }
 
     private void roundValidation(NewRound newRound, Tournament tournament, boolean isNew) {
-        List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE);
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
 
         for (Round round : rounds) {
             if (round.isLast()) {
@@ -174,11 +181,18 @@ public class RoundServiceImpl implements RoundService {
             if (newRound.getTeamLimit() >= currMatches) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be less than or the previous round team limit: " + currMatches);
             }
+
+            if (newRound.getTeamLimit() <= 1) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be greater than 1 for the final round");
+            }
         }
 
         //Thời gian cần để tạo vòng này
         double currentMatchesNeeded = currMatches * Schedule.SLOT_DURATION;
 
+        if (currentMatchesNeeded <= 1) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round schedule is invalid, the round must have at least 2 teams ");
+        }
 
         //Tg cần để tạo vòng tiếp theo
         double nextRoundHrsNeeded = newRound.getTeamLimit() * Schedule.SLOT_DURATION;
@@ -446,10 +460,9 @@ public class RoundServiceImpl implements RoundService {
         List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.getId(), TeamStatus.ACTIVE);
         int teamRemains = teams.size();
 
-        List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE);
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
 
         //Trường hợp round đang tạo không phải là round đầu tiên
-        Round previousRound = rounds.get(rounds.size() - 1);
 
         //Trường hợp round đang tạo là round đầu tiên
         if (rounds.size() == 1) {
@@ -458,17 +471,25 @@ public class RoundServiceImpl implements RoundService {
                 randomTeam.put(flag--, team);
             }
         } else { //Trường hợp round đang tạo không phải là round đầu tiên
+            Round previousRound = rounds.get(rounds.size() - 2);
+
             teamRemains = previousRound.getTeamLimit();
 
             List<Leaderboard> leaderboards = leaderboardRepository
                     .findTopNLeaderboard(PageRequest.of(0, teamRemains), previousRound.getId());
+
+            //leaderboards empty nghĩa là round 1 chưa hoàn thành, chưa có dữ liệu leaderboard
+            if (leaderboards.isEmpty()) {
+                return;
+            }
+
             for (Leaderboard leaderboard : leaderboards) {
                 randomTeam.put(teamRemains--, leaderboard.getTeam());
             }
         }
 
         if (randomTeam.isEmpty()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "No team found to create match");
+            throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error. Please check the team list");
         }
 
         LocalDateTime startTime = DateUtil.convertToLocalDateTime(round.getStartDate()).withHour(Schedule.WORKING_HOURS_START);
@@ -568,7 +589,6 @@ public class RoundServiceImpl implements RoundService {
                 }
             }
         }
-
 
     }
 

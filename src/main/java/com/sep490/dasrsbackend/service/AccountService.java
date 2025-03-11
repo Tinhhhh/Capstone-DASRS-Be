@@ -3,8 +3,10 @@ package com.sep490.dasrsbackend.service;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
 import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
+import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.InputStream;
@@ -30,5 +32,6 @@ public interface AccountService {
 
     void editAccountByAdmin(UUID accountId, UpdateAccountResponse updateAccountResponse);
 
+    void newAccountByAdmin(NewAccountByAdmin account) throws MessagingException;
 
 }

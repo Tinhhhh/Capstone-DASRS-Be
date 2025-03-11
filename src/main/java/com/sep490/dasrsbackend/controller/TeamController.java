@@ -16,32 +16,33 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/team")
 @RequiredArgsConstructor
 @Tag(name = "Team", description = "Team method for player.")
 public class TeamController {
-    @Autowired
-    private TeamService teamService;
 
-    @PostMapping("/{teamId}/complain")
+    private final TeamService teamService;
+
+    @PostMapping("/complain/{teamId}")
     public ResponseEntity<Void> complainAboutMatch(@PathVariable Long teamId, @RequestParam String complaint) {
         teamService.complainAboutMatch(teamId, complaint);
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/{teamId}/members/{memberId}")
-    public ResponseEntity<Void> removeMember(@PathVariable Long teamId, @PathVariable Long memberId) {
+    @DeleteMapping("/remove-members")
+    public ResponseEntity<Void> removeMember(@RequestParam Long teamId, @RequestParam Long memberId) {
         teamService.removeMember(teamId, memberId);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{teamId}/match-participants")
-    public ResponseEntity<Void> selectMatchParticipants(@PathVariable Long teamId, @RequestBody List<Long> memberIds) {
-        teamService.selectMatchParticipants(teamId, memberIds);
-        return ResponseEntity.ok().build();
-    }
+//    @PostMapping("/{teamId}/match-participants")
+//    public ResponseEntity<Void> selectMatchParticipants(@PathVariable Long teamId, @RequestBody List<Long> memberIds) {
+//        teamService.selectMatchParticipants(teamId, memberIds);
+//        return ResponseEntity.ok().build();
+//    }
 
     @GetMapping("/get-matches")
     public ResponseEntity<Object> getMatches(@RequestParam Long teamId) {

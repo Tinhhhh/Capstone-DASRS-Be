@@ -22,6 +22,5 @@ public interface AuthenService {
 
     void resetPassword(String password, String token);
 
-    void newAccountByAdmin(NewAccountByAdmin account) throws MessagingException;
 
 }
