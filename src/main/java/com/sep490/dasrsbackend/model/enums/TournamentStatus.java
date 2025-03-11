@@ -7,7 +7,6 @@ public enum TournamentStatus {
     PENDING("PENDING"),
     ACTIVE("ACTIVE"),
     TERMINATED("TERMINATED"),
-    SUSPENDED("SUSPENDED"),
     COMPLETED("COMPLETED");
 
     private final String status;

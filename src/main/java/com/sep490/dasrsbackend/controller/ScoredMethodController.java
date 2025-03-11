@@ -12,31 +12,31 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/scored-method")
+@RequestMapping("/api/v1/scored-methods")
 @RequiredArgsConstructor
-@Tag(name = "ScoredMethod", description = "Scored method required to use for round.")
+@Tag(name = "Scored method", description = "Scored method required to use for round.")
 public class ScoredMethodController {
 
     private final ScoredMethodService scoredMethodService;
 
-    @PostMapping("/new")
+    @PostMapping
     public ResponseEntity<Object> newScoredMethod(@RequestBody @Valid NewScoreMethod request) {
         scoredMethodService.createNewScoredMethod(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Scored method created successfully");
     }
 
-    @PutMapping("/edit")
+    @PutMapping
     public ResponseEntity<Object> updateScoredMethod(@RequestParam Long scoredMethodId, @RequestBody @Valid NewScoreMethod request) {
         scoredMethodService.updateScoredMethod(scoredMethodId, request);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Scored method updated successfully");
     }
 
-    @GetMapping("/get")
-    public ResponseEntity<Object> getScoredMethod(@RequestParam Long scoredMethodId) {
+    @GetMapping("/{scoredMethodId}")
+    public ResponseEntity<Object> getScoredMethod(@PathVariable Long scoredMethodId) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved scored method", scoredMethodService.getScoredMethod(scoredMethodId));
     }
 
-    @GetMapping("/get/all")
+    @GetMapping
     public ResponseEntity<Object> getAllScoredMethods(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,

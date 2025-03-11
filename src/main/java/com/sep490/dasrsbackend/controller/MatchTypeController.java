@@ -12,25 +12,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/match-type")
+@RequestMapping("/api/v1/match-types")
 @RequiredArgsConstructor
-@Tag(name = "MatchType", description = "Match type required to use for round.")
+@Tag(name = "Match type", description = "Match type required to use for round.")
 public class MatchTypeController {
 
     private final MatchTypeService matchTypeService;
 
-    @PostMapping("/new")
+    @PostMapping
     public ResponseEntity<Object> newMatchType(@RequestBody @Valid NewMatchType request) {
         matchTypeService.newMatchType(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "New match type created successfully");
     }
 
-    @GetMapping("/get")
-    public ResponseEntity<Object> getMatchType(@RequestParam Long matchTypeId) {
+    @GetMapping("/{matchTypeId}")
+    public ResponseEntity<Object> getMatchType(@PathVariable Long matchTypeId) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", matchTypeService.getMatchType(matchTypeId));
     }
 
-    @GetMapping("/get/all")
+    @GetMapping
     public ResponseEntity<Object> getAllMatchType(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,

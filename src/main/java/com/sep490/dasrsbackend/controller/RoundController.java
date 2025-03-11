@@ -19,20 +19,20 @@ public class RoundController {
 
     private final RoundService roundService;
 
-    @PostMapping("/new")
+    @PostMapping
     public ResponseEntity<Object> newRound(@RequestBody @Valid NewRound request) {
         roundService.newRound(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "New round created successfully");
     }
 
-    @PutMapping("/edit")
+    @PutMapping
     public ResponseEntity<Object> editRound(@RequestBody @Valid EditRound request) {
         roundService.editRound(request);
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Round edited successfully");
     }
 
-    @GetMapping("/get")
-    public ResponseEntity<Object> getRound(@RequestParam Long roundId) {
+    @GetMapping("/{roundId}")
+    public ResponseEntity<Object> getRound(@PathVariable Long roundId) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", roundService.findRoundByRoundId(roundId));
     }
 

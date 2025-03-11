@@ -50,17 +50,6 @@ import java.util.List;
 public class AuthController {
 
     private final AuthenService authService;
-    private final ExcelImportService excelImportService;
-
-    @PostMapping("/import")
-    public ResponseEntity<List<AccountDTO>> importAccounts(@RequestParam("file") MultipartFile file) {
-        try {
-            List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream());
-            return ResponseEntity.ok(accounts);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
 
     @Operation(summary = "Login in to the system", description = "Login into the system requires all information to be provided, " + "and validations will be performed. The response will include an access token and a refresh token")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Successfully Login", content = @Content(examples = @ExampleObject(value = """
@@ -77,17 +66,6 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<Object> SignIn(@RequestBody @Valid AuthenticationRequest request) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully Sign in", authService.authenticate(request));
-    }
-
-    @Operation(summary = "Register a new account by admin", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
-    @ApiResponses(value = {@ApiResponse(responseCode = "202", description = "Successfully Registered", content = @Content(examples = @ExampleObject(value = """
-
-        """))), @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(schema = @Schema(implementation = ExceptionResponse.class), examples = @ExampleObject(value = """
-        """)))})
-    @PostMapping("/registration-admin")
-    public ResponseEntity<Object> AccountRegistrationByAdmin(@RequestBody @Valid NewAccountByAdmin request) throws MessagingException {
-        authService.newAccountByAdmin(request);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.ACCEPTED, "Successfully Register", "An email had been sent to email owner.");
     }
 
     @Operation(summary = "Refresh token if expired", description = "If the current JWT Refresh Token has expired or been revoked, you can refresh it using this method")
