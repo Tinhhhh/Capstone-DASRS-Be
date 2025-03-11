@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
+import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
@@ -59,6 +60,11 @@ public class RoundServiceImpl implements RoundService {
 
         Environment environment = environmentRepository.findById(newRound.getEnvironmentId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
+
+        if (tournament.getStatus() == TournamentStatus.COMPLETED ||
+                tournament.getStatus() == TournamentStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament is not available, can't create round");
+        }
 
         roundValidation(newRound, tournament, true);
 

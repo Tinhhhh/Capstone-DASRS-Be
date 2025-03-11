@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.service.TournamentService;
@@ -40,5 +41,18 @@ public class TournamentControlller {
     public ResponseEntity<Object> getTournament(@RequestParam Long id) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Tournament retrieved successfully", tournamentService.getTournament(id));
     }
+
+    @PutMapping("/active")
+    public ResponseEntity<Object> startATournament(@RequestParam Long id) {
+        tournamentService.startTournament(id);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament started successfully");
+    }
+
+    @PutMapping("/change-status")
+    public ResponseEntity<Object> changeTournamentStatus(@RequestParam Long id, @RequestParam TournamentStatus status) {
+        tournamentService.changeStatus(id, status);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament status updated successfully");
+    }
+
 
 }

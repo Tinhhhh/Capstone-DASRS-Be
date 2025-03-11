@@ -2,14 +2,16 @@ package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
+import com.sep490.dasrsbackend.model.payload.response.ListTournament;
+import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
 
 public interface TournamentService {
     void createTournament(NewTournament newTournament);
     void editTournament(NewTournament newTournament);
 
-    Object getAllTournaments(int pageNo, int pageSize, String sortBy, String sortDirection);
+    ListTournament getAllTournaments(int pageNo, int pageSize, String sortBy, String sortDirection);
 
-    Object getTournament(Long id);
+    TournamentResponse getTournament(Long id);
 
     void startTournament(Long id);
 
