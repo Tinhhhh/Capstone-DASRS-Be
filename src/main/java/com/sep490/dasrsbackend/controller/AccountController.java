@@ -67,29 +67,29 @@ public class AccountController {
     }
 
     @Operation(summary = "Update account profile picture", description = "Update the profile picture of an account.")
-    @PutMapping("/{id}/update-profile-picture")
-    public ResponseEntity<Object> updateAccountProfilePicture(@PathVariable UUID id, @RequestParam String imageURL) {
+    @PutMapping("/update-profile-picture")
+    public ResponseEntity<Object> updateAccountProfilePicture(@RequestParam UUID id, @RequestParam String imageURL) {
         accountService.updateAccountProfilePicture(id, imageURL);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Profile picture updated successfully.");
     }
 
     @Operation(summary = "Update account information", description = "Update information for the account.")
-    @PutMapping("/{id}/update-info")
-    public ResponseEntity<Object> updateAccountInfo(@PathVariable UUID id, @RequestBody @Valid AccountProfile accountProfile) {
+    @PutMapping("/update-info")
+    public ResponseEntity<Object> updateAccountInfo(@RequestParam UUID id, @RequestBody @Valid AccountProfile accountProfile) {
         accountService.updateAccountInfo(id, accountProfile);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account information updated successfully.");
     }
 
     @Operation(summary = "Get account information by admin", description = "Fetch account details as an admin.")
-    @GetMapping("/{id}")
-    public ResponseEntity<Object> getAccountByAdmin(@PathVariable UUID id) {
+    @GetMapping
+    public ResponseEntity<Object> getAccountByAdmin(@RequestParam UUID id) {
         Object accountInfo = accountService.getAccountByAdmin(id);
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Account information retrieved successfully.", accountInfo);
     }
 
     @Operation(summary = "Edit account by admin", description = "Allows admin to edit account details.")
-    @PutMapping("/{id}/edit")
-    public ResponseEntity<Object> editAccountByAdmin(@PathVariable UUID id, @RequestBody @Valid UpdateAccountResponse updateAccountResponse) {
+    @PutMapping("/edit")
+    public ResponseEntity<Object> editAccountByAdmin(@RequestParam UUID id, @RequestBody @Valid UpdateAccountResponse updateAccountResponse) {
         accountService.editAccountByAdmin(id, updateAccountResponse);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account updated successfully.");
     }
