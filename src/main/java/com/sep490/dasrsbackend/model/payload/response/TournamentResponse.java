@@ -33,18 +33,18 @@ public class TournamentResponse {
     private TournamentStatus status;
 
     @JsonProperty("start_date")
-    private Date startDate;
+    private String startDate;
 
     @JsonProperty("end_date")
-    private Date endDate;
+    private String endDate;
 
     @JsonProperty("created_date")
-    private Date createdDate;
+    private String createdDate;
 
     @JsonProperty("round_list")
     private List<RoundResponse> roundList;
 
     @JsonProperty("team_list")
-    private List<TeamResponse> teamList;
+    private List<TeamTournamentResponse> teamList;
 
 }

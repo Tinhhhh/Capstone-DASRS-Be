@@ -74,9 +74,6 @@ public class Account {
     private Date createdDate;
 
     @OneToMany(mappedBy = "account")
-    private List<CarConfiguration> carConfigurations;
-
-    @OneToMany(mappedBy = "account")
     private List<MatchTeam> matchTeams;
 
     @OneToMany(mappedBy = "account")

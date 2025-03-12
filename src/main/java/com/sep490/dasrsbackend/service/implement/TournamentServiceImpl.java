@@ -1,18 +1,21 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
+import com.sep490.dasrsbackend.Util.GenerateCode;
+import com.sep490.dasrsbackend.Util.TournamentSpecification;
 import com.sep490.dasrsbackend.model.entity.Match;
 import com.sep490.dasrsbackend.model.entity.Round;
 import com.sep490.dasrsbackend.model.entity.Team;
 import com.sep490.dasrsbackend.model.entity.Tournament;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
+import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.ListTournament;
 import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
-import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
+import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
 import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
 import com.sep490.dasrsbackend.repository.MatchRepository;
 import com.sep490.dasrsbackend.repository.RoundRepository;
@@ -21,6 +24,13 @@ import com.sep490.dasrsbackend.repository.TournamentRepository;
 import com.sep490.dasrsbackend.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.config.Configuration;
+import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -52,8 +62,10 @@ public class TournamentServiceImpl implements TournamentService {
 
         tournamentValidation(begin, end);
 
+        String tournamentName = "[" + GenerateCode.seasonPrefix(startDate) + "] " +newTournament.getTournamentName().trim();
+
         Tournament tournament = Tournament.builder()
-                .tournamentName(newTournament.getTournamentName())
+                .tournamentName(tournamentName)
                 .context(newTournament.getTournamentContext())
                 .teamNumber(newTournament.getTeamNumber())
                 .startDate(begin)
@@ -103,8 +115,31 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     @Override
-    public ListTournament getAllTournaments(int pageNo, int pageSize, String sortBy, String sortDirection) {
-        return null;
+    public ListTournament getAllTournaments(int pageNo, int pageSize, TournamentSort sortBy, String keyword) {
+
+        Sort sort =Sort.by(sortBy.getDirection(), sortBy.getField());
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<Tournament> spec = Specification.where(TournamentSpecification.hasTournamentName(keyword));
+
+        Page<Tournament> tournamentContents = tournamentRepository.findAll(spec, pageable);
+        List<Tournament> tournaments = tournamentContents.getContent();
+
+        List<TournamentResponse> content = new ArrayList<>();
+
+        tournaments.forEach(tournamentResponse -> {
+            TournamentResponse tournament = getTournament(tournamentResponse.getId());
+            content.add(tournament);
+        });
+
+        return ListTournament.builder()
+                .content(content)
+                .totalPages(tournamentContents.getTotalPages())
+                .totalElements(tournamentContents.getTotalElements())
+                .pageNo(tournamentContents.getNumber())
+                .pageSize(tournamentContents.getSize())
+                .last(tournamentContents.isLast())
+                .build();
     }
 
     @Override
@@ -116,8 +151,14 @@ public class TournamentServiceImpl implements TournamentService {
         List<Round> roundList = roundRepository.findByTournamentId(id);
         List<Team> teamList = teamRepository.getTeamByTournamentId(id);
 
-        List<RoundResponse> roundResponses = getRoundResponses(roundList); 
-        List<TeamResponse> teamResponses = getTeamResponses(teamList);
+        modelMapper.getConfiguration().setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
+                .setAmbiguityIgnored(true)
+                .setSkipNullEnabled(false)
+                .setMatchingStrategy(MatchingStrategies.STRICT);
+
+        List<RoundResponse> roundResponses = getRoundResponses(roundList);
+        List<TeamTournamentResponse> teamResponses = getTeamResponses(teamList);
 
         return TournamentResponse.builder()
                 .id(tournament.getId())
@@ -125,21 +166,21 @@ public class TournamentServiceImpl implements TournamentService {
                 .context(tournament.getContext())
                 .teamNumber(tournament.getTeamNumber())
                 .status(tournament.getStatus())
-                .startDate(tournament.getStartDate())
-                .endDate(tournament.getEndDate())
-                .createdDate(tournament.getCreatedDate())
+                .startDate(DateUtil.formatTimestamp(tournament.getStartDate()))
+                .endDate(DateUtil.formatTimestamp(tournament.getEndDate()))
+                .createdDate(DateUtil.formatTimestamp(tournament.getCreatedDate()))
                 .roundList(roundResponses)
                 .teamList(teamResponses)
                 .build();
 
     }
 
-    private List<TeamResponse> getTeamResponses(List<Team> teamList) {
-        List<TeamResponse> teamResponses = new ArrayList<>();
-        for (Team team : teamList) {
-            TeamResponse teamResponse = modelMapper.map(team, TeamResponse.class);
+    private List<TeamTournamentResponse> getTeamResponses(List<Team> teamList) {
+        List<TeamTournamentResponse> teamResponses = new ArrayList<>();
+        teamList.forEach(team -> {
+            TeamTournamentResponse teamResponse = modelMapper.map(team, TeamTournamentResponse.class);
             teamResponses.add(teamResponse);
-        }
+        });
 
         return teamResponses;
     }
@@ -149,7 +190,15 @@ public class TournamentServiceImpl implements TournamentService {
 
         roundList.forEach(round -> {
             RoundResponse roundResponse = modelMapper.map(round, RoundResponse.class);
+            roundResponse.setStartDate(DateUtil.formatTimestamp(round.getStartDate()));
+            roundResponse.setEndDate(DateUtil.formatTimestamp(round.getEndDate()));
+            roundResponse.setCreateDate(DateUtil.formatTimestamp(round.getCreatedDate()));
+            roundResponse.setFinishType(round.getMatchType().getFinishType());
             roundResponse.setMatchTypeName(round.getMatchType().getMatchTypeName());
+            roundResponse.setTournamentId(round.getTournament().getId());
+            roundResponse.setScoredMethodId(round.getScoredMethod().getId());
+            roundResponse.setEnvironmentId(round.getEnvironment().getId());
+            roundResponse.setMatchTypeId(round.getMatchType().getId());
             roundResponses.add(roundResponse);
         });
 
