@@ -5,6 +5,7 @@ import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import lombok.*;
 
 import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -30,5 +31,7 @@ public class MatchResponse {
 
     @JsonProperty("status")
     private MatchStatus status;
+
+    List<TeamTournamentResponse> teams;
 
 }

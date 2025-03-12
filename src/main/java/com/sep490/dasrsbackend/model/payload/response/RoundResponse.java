@@ -24,6 +24,12 @@ public class RoundResponse {
     @JsonProperty("round_name")
     private String roundName;
 
+    @JsonProperty("team_limit")
+    private int teamLimit;
+
+    @JsonProperty("is_last")
+    private boolean isLast;
+
     private String description;
 
     @JsonProperty("start_date")
@@ -31,6 +37,9 @@ public class RoundResponse {
 
     @JsonProperty("end_date")
     private String endDate;
+
+    @JsonProperty("created_date")
+    private String createDate;
 
     @JsonProperty("tournament_id")
     private Long tournamentId;

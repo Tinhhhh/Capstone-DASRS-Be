@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
@@ -30,29 +31,28 @@ public class TournamentController {
     public ResponseEntity<Object> getAllTournaments(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
-            @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
-            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection
+            @RequestParam(name = "sortBy") TournamentSort sortBy,
+            @RequestParam(name = "keyword", required = false) String keyword
     ) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "All tournaments retrieved successfully",
-                tournamentService.getAllTournaments(pageNo, pageSize, sortBy, sortDirection));
+                tournamentService.getAllTournaments(pageNo, pageSize, sortBy, keyword));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Object> getTournament(@PathVariable Long id) {
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Tournament retrieved successfully", tournamentService.getTournament(id));
+    @GetMapping("/{tournamentId}")
+    public ResponseEntity<Object> getTournament(@PathVariable Long tournamentId) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Tournament retrieved successfully", tournamentService.getTournament(tournamentId));
     }
 
-    @PutMapping("/active/{id}")
-    public ResponseEntity<Object> startATournament(@PathVariable Long id) {
-        tournamentService.startTournament(id);
+    @PutMapping("/active/{tournamentId}")
+    public ResponseEntity<Object> startATournament(@PathVariable Long tournamentId) {
+        tournamentService.startTournament(tournamentId);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament started successfully");
     }
 
-    @PutMapping("/status/{id}")
-    public ResponseEntity<Object> changeTournamentStatus(@PathVariable Long id, @RequestParam TournamentStatus status) {
-        tournamentService.changeStatus(id, status);
+    @PutMapping("/status/{tournamentId}")
+    public ResponseEntity<Object> changeTournamentStatus(@PathVariable Long tournamentId, @RequestParam TournamentStatus status) {
+        tournamentService.changeStatus(tournamentId, status);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament status updated successfully");
     }
-
 
 }
