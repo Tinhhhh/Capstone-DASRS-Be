@@ -10,4 +10,6 @@ public interface MatchService {
 
     void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee);
 
+    List<MatchResponse> getMatchByRoundId(Long roundId);
+
 }

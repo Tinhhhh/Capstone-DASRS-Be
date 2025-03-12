@@ -28,6 +28,9 @@ public class MatchTeam {
     @Column(name = "car_acceleration")
     private double carAcceleration;
 
+    @Column(name = "car_max_RPM")
+    private double carMaxRPM;
+
     @ManyToOne
     @MapsId("matchId")
     @JoinColumn(name = "match_Id")
