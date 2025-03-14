@@ -54,11 +54,12 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                 .toList();
 
         ListEnvironment listEnvironment = new ListEnvironment();
+
         listEnvironment.setContent(environmentResponses);
         listEnvironment.setTotalPages(environments.getTotalPages());
         listEnvironment.setTotalElements(environments.getTotalElements());
-        listEnvironment.setPageSize(environments.getNumber());
-        listEnvironment.setPageNo(environments.getSize());
+        listEnvironment.setPageSize(environments.getSize());
+        listEnvironment.setPageNo(environments.getNumber());
         listEnvironment.setLast(environments.isLast());
 
         return listEnvironment;

@@ -1,23 +1,24 @@
 package com.sep490.dasrsbackend.service.implement;
 
-import com.sep490.dasrsbackend.Util.DateUtil;
-import com.sep490.dasrsbackend.Util.Schedule;
+import com.sep490.dasrsbackend.Util.*;
 import com.sep490.dasrsbackend.model.entity.*;
-import com.sep490.dasrsbackend.model.enums.MatchStatus;
-import com.sep490.dasrsbackend.model.enums.RoundStatus;
-import com.sep490.dasrsbackend.model.enums.TeamStatus;
-import com.sep490.dasrsbackend.model.enums.TournamentStatus;
+import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
-import com.sep490.dasrsbackend.model.payload.response.ListRound;
 import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.RoundService;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.config.Configuration;
+import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +26,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.Month;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -400,16 +400,6 @@ public class RoundServiceImpl implements RoundService {
     }
 
     @Override
-    public RoundResponse findRoundByRoundId(Long id) {
-        return null;
-    }
-
-    @Override
-    public ListRound findRoundByTournamentId(Long id) {
-        return null;
-    }
-
-    @Override
     public void editRound(EditRound request) {
         Round round = roundRepository.findById(request.getId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
@@ -499,7 +489,7 @@ public class RoundServiceImpl implements RoundService {
         LocalTime workEnd = LocalTime.of(Schedule.WORKING_HOURS_END, 0);
 
         StringBuilder stringBuilder = new StringBuilder();
-        String seasonPrefix = generateMatchCode(DateUtil.convertToLocalDateTime(tournament.getStartDate()));
+        String seasonPrefix = GenerateCode.seasonPrefix(DateUtil.convertToLocalDateTime(tournament.getStartDate()));
         String matchTypePrefix = matchType.getMatchTypeCode();
 
         while (startTime.isBefore(endTime) && !randomTeam.isEmpty()) {
@@ -606,24 +596,67 @@ public class RoundServiceImpl implements RoundService {
 
     }
 
-    private String generateMatchCode(LocalDateTime time) {
-        StringBuilder StringBuilder = new StringBuilder();
-        int year = time.getYear();
-        Month month = time.getMonth();
+    @Override
+    public RoundResponse findRoundByRoundId(Long id) {
 
-        String season;
-        if (month.getValue() >= 3 && month.getValue() <= 5) {
-            season = "SP"; //Spring
-        } else if (month.getValue() >= 6 && month.getValue() <= 8) {
-            season = "SM"; //Summer
-        } else if (month.getValue() >= 9 && month.getValue() <= 11) {
-            season = "FA"; //Fall
-        } else {
-            season = "WT"; //Winter
-        }
+        Round round = roundRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
 
-        return StringBuilder.append(year).append(season).toString();
+        modelMapper.getConfiguration().setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
+                .setAmbiguityIgnored(true)
+                .setSkipNullEnabled(false)
+                .setMatchingStrategy(MatchingStrategies.STRICT);
 
+        RoundResponse roundResponse = modelMapper.map(round, RoundResponse.class);
+
+        roundResponse.setStartDate(DateUtil.formatTimestamp(round.getStartDate()));
+        roundResponse.setEndDate(DateUtil.formatTimestamp(round.getEndDate()));
+        roundResponse.setCreateDate(DateUtil.formatTimestamp(round.getCreatedDate()));
+        roundResponse.setFinishType(round.getMatchType().getFinishType());
+        roundResponse.setMatchTypeName(round.getMatchType().getMatchTypeName());
+        roundResponse.setTournamentId(round.getTournament().getId());
+        roundResponse.setScoredMethodId(round.getScoredMethod().getId());
+        roundResponse.setEnvironmentId(round.getEnvironment().getId());
+        roundResponse.setMatchTypeId(round.getMatchType().getId());
+
+
+        return roundResponse;
+
+    }
+
+    @Override
+    public List<RoundResponse> findRoundByTournamentId(Long id) {
+        Tournament tournament = tournamentRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+        List<RoundResponse> roundResponses = new ArrayList<>();
+        rounds.forEach(round -> {
+            RoundResponse roundResponse = findRoundByRoundId(round.getId());
+            roundResponses.add(roundResponse);
+        });
+
+        return roundResponses;
+    }
+
+    @Override
+    public List<RoundResponse> findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword) {
+
+        Sort sort = Sort.by(sortBy.getField()).descending();
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<Round> spec = Specification.where(RoundSpecification.hasRoundName(keyword));
+
+        Page<Round> roundPage = roundRepository.findAll(spec, pageable);
+
+        List<RoundResponse> roundResponses = new ArrayList<>();
+        roundPage.getContent().forEach(round -> {
+            RoundResponse roundResponse = findRoundByRoundId(round.getId());
+            roundResponses.add(roundResponse);
+        });
+
+        return roundResponses;
     }
 
 }

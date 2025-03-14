@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
@@ -30,11 +31,11 @@ public class TournamentController {
     public ResponseEntity<Object> getAllTournaments(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
-            @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
-            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection
+            @RequestParam(name = "sortBy") TournamentSort sortBy,
+            @RequestParam(name = "keyword", required = false) String keyword
     ) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "All tournaments retrieved successfully",
-                tournamentService.getAllTournaments(pageNo, pageSize, sortBy, sortDirection));
+                tournamentService.getAllTournaments(pageNo, pageSize, sortBy, keyword));
     }
 
     @GetMapping("/{tournamentId}")

@@ -1,5 +1,8 @@
 package com.sep490.dasrsbackend.controller;
 
+import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.model.enums.RoundSort;
+import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
@@ -36,13 +39,21 @@ public class RoundController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", roundService.findRoundByRoundId(roundId));
     }
 
-//    @GetMapping("/get/all")
-//    public ResponseEntity<Object> getAllTournamentRound(
-//           @RequestParam long tournamentId
-//    ) {
-//        return ResponseBuilder.responseBuilderWithData(
-//                HttpStatus.OK, "Successfully retrieved scored methods",
-//                environmentService.getAllEnvironment(pageNo, pageSize, sortBy, sortDirection));
-//    }
+    @GetMapping("/tournament/{tournamentId}")
+    public ResponseEntity<Object> getRoundByTournament(@PathVariable Long tournamentId) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", roundService.findRoundByTournamentId(tournamentId));
+    }
+
+    @GetMapping
+    public ResponseEntity<Object> getAllRounds(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy") RoundSort sortBy,
+            @RequestParam(name = "keyword", required = false) String keyword
+    ) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK, "Successfully retrieved data",
+                roundService.findAllRounds(pageNo, pageSize, sortBy, keyword));
+    }
 
 }

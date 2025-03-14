@@ -30,4 +30,11 @@ public class MatchController {
         matchService.assignMemberToMatch(teamId, matchId, assigner, assignee);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully assigned member to match");
     }
+
+    @GetMapping("/round/{roundId}")
+    public ResponseEntity<Object> getMatchByRoundId(@PathVariable Long roundId) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK, "Successfully retrieved matches",
+                matchService.getMatchByRoundId(roundId));
+    }
 }
