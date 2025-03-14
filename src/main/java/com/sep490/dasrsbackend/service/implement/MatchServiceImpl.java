@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
+import com.sep490.dasrsbackend.model.payload.request.MatchDataRequest;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
@@ -15,6 +16,7 @@ import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +34,8 @@ public class MatchServiceImpl implements MatchService {
     private final MatchRepository matchRepository;
     private final AccountRepository accountRepository;
     private final RoundRepository roundRepository;
+    private final ScoreAttributeRepository scoreAttributeRepository;
+    private final ScoredMethodRepository scoredMethodRepository;
 
     @Override
     public List<MatchResponse> getMatches(Long teamId) {
@@ -166,5 +170,43 @@ public class MatchServiceImpl implements MatchService {
         });
 
         return matchResponses;
+    }
+
+    @Transactional
+    @Override
+    public void retrieveMatchData(MatchDataRequest matchDataRequest) {
+
+        Match match = matchRepository.findById(matchDataRequest.getMatchId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found, please contact administrator for more information"));
+
+        ScoreAttribute scoreAttribute = ScoreAttribute.builder()
+                .lap(matchDataRequest.getLap())
+                .fastestLapTime(matchDataRequest.getFastestLapTime())
+                .collision(matchDataRequest.getCollision())
+                .totalRaceTime(matchDataRequest.getTotalRaceTime())
+                .offTrack(matchDataRequest.getOffTrack())
+                .assistUsageCount(matchDataRequest.getAssistUsageCount())
+                .topSpeed(matchDataRequest.getTopSpeed())
+                .averageSpeed(matchDataRequest.getAverageSpeed())
+                .totalDistance(matchDataRequest.getTotalDistance())
+                .status(matchDataRequest.getStatus())
+                .build();
+
+        scoreAttributeRepository.save(scoreAttribute);
+
+        //Cập nhật vào match team => tạo instance, set score attr, set car config
+        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchId(matchDataRequest.getTeamId(), matchDataRequest.getMatchId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information"));
+
+        Round round = match.getRound();
+        ScoredMethod scoredMethod = round.getScoredMethod();
+
+        //Cập nhật điểm match => match score, status
+
+        //Kiểm tra xem toàn bộ trận đấu đã kết thúc chưa => đổi status của round
+
+        //cập nhật bảng xếp hạng leaderboard
+
+        matchRepository.save(match);
     }
 }
