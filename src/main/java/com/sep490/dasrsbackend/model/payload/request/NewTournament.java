@@ -25,7 +25,7 @@ public class NewTournament {
     @Pattern(regexp = "^[a-zA-ZÀ-ỹ0-9\\s-_!,.:\"']+$", message = "Tournament context contains invalid characters")
     private String tournamentContext;
 
-    @Min(value = 10, message = "Team number must be at least 10")
+    @Min(value = 2, message = "Team number must be at least 2")
     @Max(value = 20, message = "Team number must be at most 20")
     @JsonProperty("team_number")
     private int teamNumber;

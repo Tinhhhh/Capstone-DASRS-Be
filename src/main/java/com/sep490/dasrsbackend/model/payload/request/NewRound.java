@@ -52,4 +52,7 @@ public class NewRound {
 
     @JsonProperty("match_type_id")
     private Long matchTypeId;
+
+    @JsonProperty("map_id")
+    private Long mapId;
 }

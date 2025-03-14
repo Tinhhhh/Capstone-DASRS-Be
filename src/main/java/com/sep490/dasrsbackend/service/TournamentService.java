@@ -8,6 +8,7 @@ import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
 
 public interface TournamentService {
     void createTournament(NewTournament newTournament);
+
     void editTournament(NewTournament newTournament);
 
     ListTournament getAllTournaments(int pageNo, int pageSize, TournamentSort sortBy, String keyword);

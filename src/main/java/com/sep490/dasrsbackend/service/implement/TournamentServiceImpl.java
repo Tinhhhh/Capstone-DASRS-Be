@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.Util.GenerateCode;
+import com.sep490.dasrsbackend.Util.Schedule;
 import com.sep490.dasrsbackend.Util.TournamentSpecification;
 import com.sep490.dasrsbackend.model.entity.Match;
 import com.sep490.dasrsbackend.model.entity.Round;
@@ -54,15 +55,31 @@ public class TournamentServiceImpl implements TournamentService {
     @Override
     public void createTournament(NewTournament newTournament) {
 
+        if (!tournamentRepository.findByDate(newTournament.getStartDate())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "There is another tournament on this date.");
+        }
+
+        if (newTournament.getTeamNumber() <= 1) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team number must be at least 2");
+        }
+
+        // Kiểm tra begin phải trước end
+
+
+
         LocalDateTime startDate = DateUtil.convertToLocalDateTime(newTournament.getStartDate()).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime endDate = DateUtil.convertToLocalDateTime(newTournament.getEndDate()).withHour(23).withMinute(59).withSecond(59);
 
         Date begin = DateUtil.convertToDate(startDate);
         Date end = DateUtil.convertToDate(endDate);
 
-        tournamentValidation(begin, end);
+        if (begin.after(end)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start date must be before end date.");
+        }
 
-        String tournamentName = "[" + GenerateCode.seasonPrefix(startDate) + "] " +newTournament.getTournamentName().trim();
+//        tournamentValidation(begin, end, newTournament.getTeamNumber());
+
+        String tournamentName = "[" + GenerateCode.seasonPrefix(startDate) + "] " + newTournament.getTournamentName().trim();
 
         Tournament tournament = Tournament.builder()
                 .tournamentName(tournamentName)
@@ -76,48 +93,47 @@ public class TournamentServiceImpl implements TournamentService {
         tournamentRepository.save(tournament);
     }
 
-    private static void tournamentValidation(Date begin, Date end) {
+    private static void tournamentValidation(Date begin, Date end, int teamNumber) {
         Calendar calendar = Calendar.getInstance();
 
-        // Kiểm tra begin phải cách hiện tại ít nhất 1 tuần và không quá 1 tháng
+        // Kiểm tra begin phải cách hiện tại ít nhất 1 tuần và không quá 3 tháng
         calendar.add(Calendar.WEEK_OF_YEAR, 1);
         Date minBegin = calendar.getTime();
-        calendar.add(Calendar.WEEK_OF_YEAR, 2);
+        calendar.add(Calendar.WEEK_OF_YEAR, 3);
         Date maxBegin = calendar.getTime();
 
         if (begin.before(minBegin) || begin.after(maxBegin)) {
             throw new DasrsException(HttpStatus.BAD_REQUEST,
-                    "Start date must be at least 1 weeks and no more than 1 month from today.");
+                    "Start date must be at least 1 weeks and no more than 4 weeks from today.");
         }
 
-        // Kiểm tra begin phải trước end
-        if (begin.after(end)) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start date must be before end date.");
-        }
+        double atLeastDay = Math.ceil((double) teamNumber / Schedule.MAX_WORKING_HOURS);
 
         calendar.setTime(begin);
-        calendar.add(Calendar.WEEK_OF_YEAR, 2);
+        calendar.add(Calendar.DAY_OF_WEEK, (int) atLeastDay);
         Date minEnd = calendar.getTime();
 
         calendar.setTime(begin);
-        calendar.add(Calendar.MONTH, 1);
+        calendar.add(Calendar.WEEK_OF_YEAR, 4);
         Date maxEnd = calendar.getTime();
 
         if (end.before(minEnd) || end.after(maxEnd)) {
             throw new DasrsException(HttpStatus.BAD_REQUEST,
-                    "End date must be at least 2 weeks and no more than 1 months after the start date.");
+                    "The tournament duration is at least " + atLeastDay + " days and no more than 4 weeks after the start date.");
         }
     }
 
     @Override
     public void editTournament(NewTournament newTournament) {
 
+
+
     }
 
     @Override
     public ListTournament getAllTournaments(int pageNo, int pageSize, TournamentSort sortBy, String keyword) {
 
-        Sort sort =Sort.by(sortBy.getDirection(), sortBy.getField());
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
         Specification<Tournament> spec = Specification.where(TournamentSpecification.hasTournamentName(keyword));
@@ -213,7 +229,7 @@ public class TournamentServiceImpl implements TournamentService {
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Tournament not found."));
 
         //Kiểm tra có đáp ứng số ngày ko
-        tournamentValidation(tournament.getStartDate(), tournament.getEndDate());
+        tournamentValidation(tournament.getStartDate(), tournament.getEndDate(), tournament.getTeamNumber());
         List<Round> roundList = roundRepository.findByTournamentId(id);
 
         if (roundList.isEmpty()) {

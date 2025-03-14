@@ -1,6 +1,9 @@
 package com.sep490.dasrsbackend.service.implement;
 
-import com.sep490.dasrsbackend.Util.*;
+import com.sep490.dasrsbackend.Util.DateUtil;
+import com.sep490.dasrsbackend.Util.GenerateCode;
+import com.sep490.dasrsbackend.Util.RoundSpecification;
+import com.sep490.dasrsbackend.Util.Schedule;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
@@ -20,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +31,8 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
 import java.util.Map;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -658,6 +662,26 @@ public class RoundServiceImpl implements RoundService {
         });
 
         return roundResponses;
+    }
+
+    //second, minute, hour, day, month, year
+    //* = every
+    @Scheduled(cron = "1 0 0 * * *")
+    public void isRoundStart() {
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        Date date = calendar.getTime();
+
+        Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.PENDING, date);
+        if (round.isPresent()) {
+            round.get().setStatus(RoundStatus.ACTIVE);
+            roundRepository.save(round.get());
+        }
     }
 
 }
