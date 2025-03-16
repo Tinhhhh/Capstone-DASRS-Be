@@ -1,6 +1,9 @@
 package com.sep490.dasrsbackend.service.implement;
 
-import com.sep490.dasrsbackend.Util.*;
+import com.sep490.dasrsbackend.Util.DateUtil;
+import com.sep490.dasrsbackend.Util.GenerateCode;
+import com.sep490.dasrsbackend.Util.RoundSpecification;
+import com.sep490.dasrsbackend.Util.Schedule;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
@@ -20,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +32,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.Map;
 
 @Service
 @AllArgsConstructor
@@ -45,6 +48,7 @@ public class RoundServiceImpl implements RoundService {
     private final LeaderboardRepository leaderboardRepository;
     private final ScoreAttributeRepository scoreAttributeRepository;
     private final MatchTeamRepository matchTeamRepository;
+    private final RaceMapRepository raceMapRepository;
 
     @Transactional
     @Override
@@ -53,22 +57,24 @@ public class RoundServiceImpl implements RoundService {
         Tournament tournament = tournamentRepository.findById(newRound.getTournamentId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
 
-        MatchType matchType = matchTypeRepository.findById(newRound.getMatchTypeId())
+        MatchType matchType = matchTypeRepository.findByIdAndStatus(newRound.getMatchTypeId(), MatchTypeStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match Type not found"));
 
-        ScoredMethod scoredMethod = scoredMethodRepository.findById(newRound.getScoredMethodId())
+        ScoredMethod scoredMethod = scoredMethodRepository.findByIdAndStatus(newRound.getScoredMethodId(), ScoredMethodStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Scored Method not found"));
 
-        Environment environment = environmentRepository.findById(newRound.getEnvironmentId())
+        Environment environment = environmentRepository.findByIdAndStatus(newRound.getEnvironmentId(), EnvironmentStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
+
+        RaceMap map = raceMapRepository.findByIdAndStatus(newRound.getMapId(), MapStatus.ACTIVE)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Map not found"));
 
         if (tournament.getStatus() == TournamentStatus.COMPLETED ||
                 tournament.getStatus() == TournamentStatus.TERMINATED) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament is not available, can't create round");
         }
 
-        roundValidation(newRound, tournament, true);
-
+        newRoundValidation(newRound, tournament);
         Round round = Round.builder()
                 .roundName(newRound.getRoundName())
                 .teamLimit(newRound.getTeamLimit())
@@ -81,34 +87,65 @@ public class RoundServiceImpl implements RoundService {
                 .matchType(matchType)
                 .scoredMethod(scoredMethod)
                 .environment(environment)
+                .map(map)
                 .build();
         roundRepository.save(round);
 
+        updateLatestRound(tournament);
         generateMatch(round, tournament);
     }
 
-    private void roundValidation(NewRound newRound, Tournament tournament, boolean isNew) {
+    private void updateLatestRound(Tournament tournament) {
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+        if (!rounds.isEmpty()) {
+            for (Round round : rounds) {
+                round.setLatest(false);
+                roundRepository.save(round);
+            }
+
+            Round round = rounds.get(rounds.size() - 1);
+            round.setLatest(true);
+            roundRepository.save(round);
+        }
+    }
+
+    private void newRoundValidation(NewRound newRound, Tournament tournament) {
+
         List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
 
+        //Kiểm tra xem đã tạo round cuối cùng chưa
         for (Round round : rounds) {
             if (round.isLast()) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "The last round has been created, can't create more round");
             }
         }
 
-        if (rounds.size() == 3) {
-            if (newRound.getTeamLimit() != 0) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be 0 for the last round");
-            }
-        }
-
+        //Nếu round đang tạo là round cuối cùng thì team limit phải bằng 0
         if (newRound.isLast() && newRound.getTeamLimit() != 0) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be 0 for the last round");
         }
 
-        if (newRound.getTeamLimit() > tournament.getTeamNumber()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be less than or equal to the tournament team number: " + tournament.getTeamNumber());
+        //Đảm bảo team limit (số team còn lại vòng tiếp theo) luôn bé hơn số lượng team vòng trước
+        //Có 2 trường hợp: trường hợp tạo round đầu tiên và trường hợp tạo round tiếp theo
+
+        //Trường hợp tạo round đầu tiên
+        if (rounds.isEmpty()) {
+            if (newRound.getTeamLimit() >= tournament.getTeamNumber()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be less than the tournament team number: " + tournament.getTeamNumber());
+            }
+        } else {
+            //Trường hợp tạo round tiếp theo
+            if (newRound.getTeamLimit() >= rounds.get(rounds.size() - 1).getTeamLimit()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be less than or equal to the previous round team number: " + rounds.get(rounds.size() - 1).getTeamLimit());
+            }
         }
+
+        if (!newRound.isLast()) {
+            if (newRound.getTeamLimit() <= 1) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be greater than 1");
+            }
+        }
+
 
         LocalDateTime roundStartTime = DateUtil.convertToLocalDateTime(newRound.getStartDate());
 
@@ -116,19 +153,13 @@ public class RoundServiceImpl implements RoundService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "The round start date is invalid, round start date must be after tournament start date: " + DateUtil.formatTimestamp(tournament.getStartDate()));
         }
 
-        int totalMatches = tournament.getTeamNumber();
-        double totalHours = totalMatches * Schedule.SLOT_DURATION;
+        //Để tạo vòng này cần ít nhất bao nhiêu trận đấu
+        //Trường hợp tạo round đầu tiên
+        double currMatches = tournament.getTeamNumber() * Schedule.SLOT_DURATION;
 
-        if (Math.ceil(totalHours / Schedule.MAX_WORKING_HOURS) > Schedule.MAX_WORKING_DAYS) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. The round duration is too long, round duration is no more than 5 days");
-        }
-
-        if (isNew) {
-            //validate số lượng vòng đã tạo
-            if (!isAbleToCreateRound(tournament, rounds)) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST,
-                        "Round creation is not allowed, the tournament has reached the maximum number of rounds. Tournament team is: " + tournament.getTeamNumber() + " and round is: " + rounds.size());
-            }
+        //Trường hợp tạo các round tiếp theo
+        if (!rounds.isEmpty()) {
+            currMatches = rounds.get(rounds.size() - 1).getTeamLimit() * Schedule.SLOT_DURATION;
         }
 
         //Trường hợp vòng đầu tiên
@@ -138,8 +169,6 @@ public class RoundServiceImpl implements RoundService {
         //Trường hợp đã có ít nhất 1 vòng
         if (!rounds.isEmpty()) {
             tStart = DateUtil.convertToLocalDateTime(rounds.get(rounds.size() - 1).getEndDate()).plusDays(1).withHour(Schedule.WORKING_HOURS_START).withMinute(0).withSecond(0).withNano(0);
-            tEnd = DateUtil.convertToLocalDateTime(tournament.getEndDate());
-
         }
 
         if (tStart.getMinute() > 0 || tStart.getSecond() > 0 || tStart.getNano() > 0) {
@@ -156,62 +185,27 @@ public class RoundServiceImpl implements RoundService {
         newRound.setStartDate(DateUtil.convertToDate((rStart.withHour(0).withMinute(0).withSecond(0).withNano(0))));
         newRound.setEndDate(DateUtil.convertToDate((rEnd.withHour(23).withMinute(23).withSecond(23).withNano(23))));
 
-        addNewRound(tStart, tEnd, tournament, rounds, newRound);
+        validateTime(newRound.getStartDate(), newRound.getEndDate(), tStart, currMatches, tEnd);
     }
 
-    private boolean addNewRound(LocalDateTime tStart, LocalDateTime tEnd, Tournament tournament, List<Round> rounds, NewRound newRound) {
-
-        //Maặc định khi round dđang đc tạo là round đầu tiên
-        //Trong trường hợp tệ nhất thì sau mỗi round chỉ loại 1 đội =>
-        int roundRemains = 9;
-        if (rounds.size() == 1) {
-            roundRemains = 6;
-        }
-        if (rounds.size() == 2) {
-            roundRemains = 3;
-        }
-
-        if (rounds.size() == 3) {
-            roundRemains = 0;
-        }
-
-        double currMatches = tournament.getTeamNumber();
-        if (!rounds.isEmpty() && !newRound.isLast()) {
-            currMatches = rounds.get(rounds.size() - 1).getTeamLimit();
-
-            if (newRound.getTeamLimit() >= currMatches) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be less than or the previous round team limit: " + currMatches);
-            }
-
-            if (newRound.getTeamLimit() <= 1) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be greater than 1 for the final round");
-            }
-        }
-
-        //Thời gian cần để tạo vòng này
-        double currentMatchesNeeded = currMatches * Schedule.SLOT_DURATION;
-
-        if (currentMatchesNeeded <= 1) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round schedule is invalid, the round must have at least 2 teams ");
-        }
-
-        //Tg cần để tạo vòng tiếp theo
-        double nextRoundHrsNeeded = newRound.getTeamLimit() * Schedule.SLOT_DURATION;
-        //Tổng số ngày cần dể tạo ngày tiếp theo
-        double nextRoundDayNeeded = Math.ceil(nextRoundHrsNeeded / Schedule.MAX_WORKING_HOURS) + roundRemains;
-
-        if (newRound.isLast()) {
-            nextRoundDayNeeded = 0;
-        }
-
+    private void validateTime(Date rStart, Date rEnd, LocalDateTime tStart, double currMatches, LocalDateTime tEnd) {
+        //Thời gian bắt đầu sớm nhất của vòng này sẽ bằng
+        //thời gian kết thúc của vòng trước đó
+        //hoặc thời gian bắt đầu của tournament
         LocalDateTime earliestStartTime = tStart.withHour(Schedule.WORKING_HOURS_START);
-        LocalDateTime earliestEndTime = plusAtleastMatchHours(earliestStartTime, currentMatchesNeeded);
 
-        //Thời gian kết thúc trễ nhất của vòng này sẽ bằng thời gian kết thúc của tournament trừ đi thời gian cần để tạo các vòng tiếp theo
-        LocalDateTime latestEndTime = tEnd.minusDays((long) nextRoundDayNeeded).withHour(23).withMinute(59).withSecond(59);
-        LocalDateTime latestStartTime = minusAtLeastMatchHours(latestEndTime.withHour(Schedule.WORKING_HOURS_END), currentMatchesNeeded);
-        LocalDateTime localNewRoundStartTime = DateUtil.convertToLocalDateTime(newRound.getStartDate()).withHour(Schedule.WORKING_HOURS_START);
-        LocalDateTime localNewRoundEndTime = DateUtil.convertToLocalDateTime(newRound.getEndDate()).withHour(23).withMinute(59).withSecond(59);
+        //Thời gian kết thúc sớm nhất của vòng này =
+        //thời gian bắt đầu sớm nhất vòng này + số thời gian cần thiết để tạo trận đấu cho vòng này
+        LocalDateTime earliestEndTime = plusAtleastMatchHours(earliestStartTime, currMatches);
+
+        //Thời gian kết thúc trễ nhất của vòng này sẽ bằng thời gian kết thúc của tournament
+        LocalDateTime latestEndTime = tEnd.withHour(23).withMinute(59).withSecond(59);
+        //Thời gian bắt đầu trễ nhất của vòng này =
+        //thời gian kết thúc trễ nhất của vòng này - số thời gian cần thiết để tạo trận đấu cho vòng này
+        LocalDateTime latestStartTime = minusAtLeastMatchHours(latestEndTime.withHour(Schedule.WORKING_HOURS_END), currMatches);
+
+        LocalDateTime localNewRoundStartTime = DateUtil.convertToLocalDateTime(rStart).withHour(Schedule.WORKING_HOURS_START);
+        LocalDateTime localNewRoundEndTime = DateUtil.convertToLocalDateTime(rEnd).withHour(23).withMinute(59).withSecond(59);
 
         if (localNewRoundStartTime.isBefore(earliestStartTime) || localNewRoundStartTime.isAfter(latestStartTime)) {
             Map<String, String> response = getDataResponse(earliestStartTime, latestEndTime, localNewRoundStartTime.isBefore(earliestStartTime), localNewRoundStartTime);
@@ -233,13 +227,11 @@ public class RoundServiceImpl implements RoundService {
                     response);
         }
 
-        if (!validateWorkingHours(localNewRoundStartTime, localNewRoundEndTime, (int) currentMatchesNeeded)) {
+        if (!validateWorkingHours(localNewRoundStartTime, localNewRoundEndTime, (int) currMatches)) {
             throw new DasrsException(HttpStatus.BAD_REQUEST,
-                    "The round schedule is invalid, the round must have at least " + currentMatchesNeeded +
-                            " working hours, at least " + Math.ceil(currentMatchesNeeded / Schedule.MAX_WORKING_HOURS) + " days  to create matches");
+                    "The round schedule is invalid, the round must have at least " + currMatches +
+                            " working hours, at least " + Math.ceil(currMatches / Schedule.MAX_WORKING_HOURS) + " days  to create matches");
         }
-
-        return true;
     }
 
     private Map<String, String> getDataResponse(LocalDateTime earliestStartTime, LocalDateTime latestEndTime, boolean before, LocalDateTime localNewRoundStartTime) {
@@ -282,16 +274,6 @@ public class RoundServiceImpl implements RoundService {
 
     private boolean isLunchBreak(LocalDateTime dateTime) {
         return dateTime.getHour() >= Schedule.LUNCH_BREAK_START && dateTime.getHour() < Schedule.LUNCH_BREAK_END;
-    }
-
-    private boolean isAbleToCreateRound(Tournament tournament, List<Round> rounds) {
-
-        if (!rounds.isEmpty()) {
-            if (rounds.size() >= Schedule.ROUND_LIMIT) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private static Map<String, Double> getRoundPrereq(Tournament tournament, List<Round> rounds, NewRound newRound) {
@@ -400,6 +382,7 @@ public class RoundServiceImpl implements RoundService {
         return true;
     }
 
+    @Transactional
     @Override
     public void editRound(EditRound request) {
         Round round = roundRepository.findById(request.getId())
@@ -408,33 +391,154 @@ public class RoundServiceImpl implements RoundService {
         Tournament tournament = tournamentRepository.findById(round.getTournament().getId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
 
-        MatchType matchType = matchTypeRepository.findById(request.getMatchTypeId())
+        MatchType matchType = matchTypeRepository.findByIdAndStatus(request.getMatchTypeId(), MatchTypeStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match Type not found"));
 
-        ScoredMethod scoredMethod = scoredMethodRepository.findById(request.getScoredMethodId())
+        ScoredMethod scoredMethod = scoredMethodRepository.findByIdAndStatus(request.getScoredMethodId(), ScoredMethodStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Scored Method not found"));
 
-        Environment environment = environmentRepository.findById(request.getEnvironmentId())
+        Environment environment = environmentRepository.findByIdAndStatus(request.getEnvironmentId(), EnvironmentStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
 
-        NewRound newRound = modelMapper.map(request, NewRound.class);
+        RaceMap map = raceMapRepository.findByIdAndStatus(request.getMapId(), MapStatus.ACTIVE)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Map not found"));
 
-        roundValidation(newRound, tournament, false);
+        if (tournament.getStatus() == TournamentStatus.COMPLETED ||
+                tournament.getStatus() == TournamentStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament is not available, can't create round");
+        }
 
-        round = Round.builder()
-                .roundName(newRound.getRoundName())
-                .description(newRound.getDescription())
-                .status(request.getStatus())
-                .startDate(newRound.getStartDate())
-                .endDate(newRound.getEndDate())
-                .tournament(tournament)
-                .matchType(matchType)
-                .scoredMethod(scoredMethod)
-                .environment(environment)
-                .build();
+        if (round.getStatus() != RoundStatus.PENDING) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, can only update a pending round");
+        }
+
+        if (!round.isLatest()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, can only update the latest round");
+        }
+
+        editRoundValidation(request, tournament);
+
+        modelMapper.getConfiguration()
+                .setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
+                .setAmbiguityIgnored(true)
+                .setSkipNullEnabled(true)
+                .setMatchingStrategy(MatchingStrategies.STRICT);
+
+        modelMapper.map(request, round);
+
+        boolean flag = false;
+        if (round.getMatchType().getId() != request.getMatchTypeId()) {
+            terminatedAllMatch(request.getId());
+            flag = true;
+        }
+
+        round.setMatchType(matchType);
+        round.setScoredMethod(scoredMethod);
+        round.setEnvironment(environment);
+        round.setMap(map);
 
         roundRepository.save(round);
 
+        if (flag) {
+            generateMatch(round, tournament);
+        }
+    }
+
+    private void terminatedAllMatch(Long id) {
+        List<Match> matches = matchRepository.findByRoundId(id);
+        for (Match match : matches) {
+            if (match.getStatus() == MatchStatus.PENDING) {
+                match.setStatus(MatchStatus.CANCELLED);
+                matchRepository.save(match);
+            }
+        }
+    }
+
+    private void editRoundValidation(EditRound editRound, Tournament tournament) {
+
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+
+        //Nếu round đang tạo là round cuối cùng thì team limit phải bằng 0
+        if (editRound.isLast() && editRound.getTeamLimit() != 0) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be 0 for the last round");
+        }
+
+        //Đảm bảo team limit (số team còn lại vòng tiếp theo) luôn bé hơn số lượng team vòng trước
+        //Có 2 trường hợp: trường hợp tạo round đầu tiên và trường hợp tạo round tiếp theo
+
+        //Trường hợp tạo round đầu tiên
+        if (rounds.size() == 1) {
+            if (editRound.getTeamLimit() >= tournament.getTeamNumber()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be less than the tournament team number: " + tournament.getTeamNumber());
+            }
+        } else {
+            //Trường hợp tạo round tiếp theo
+            if (editRound.getTeamLimit() >= rounds.get(rounds.size() - 2).getTeamLimit()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be less than or equal to the previous round team number: " + rounds.get(rounds.size() - 1).getTeamLimit());
+            }
+        }
+
+        if (!editRound.isLast()) {
+            if (editRound.getTeamLimit() <= 1) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round team limit is invalid, the team limit must be greater than 1");
+            }
+        }
+
+        LocalDateTime roundStartTime = DateUtil.convertToLocalDateTime(editRound.getStartDate());
+
+        if (roundStartTime.isBefore(DateUtil.convertToLocalDateTime(tournament.getStartDate()))) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round start date is invalid, round start date must be after tournament start date: " + DateUtil.formatTimestamp(tournament.getStartDate()));
+        }
+
+        //Để tạo vòng này cần ít nhất bao nhiêu trận đấu
+        //Trường hợp tạo round đầu tiên
+        double currMatches = tournament.getTeamNumber() * Schedule.SLOT_DURATION;
+
+        //Trường hợp tạo các round tiếp theo
+        if (rounds.size() > 1) {
+            currMatches = rounds.get(rounds.size() - 2).getTeamLimit() * Schedule.SLOT_DURATION;
+        }
+
+        //Trường hợp vòng đầu tiên
+        LocalDateTime tStart = DateUtil.convertToLocalDateTime(tournament.getStartDate());
+        LocalDateTime tEnd = DateUtil.convertToLocalDateTime(tournament.getEndDate());
+
+        //Trường hợp đã có ít nhất 1 vòng
+        if (rounds.size() > 1) {
+            tStart = DateUtil.convertToLocalDateTime(rounds.get(rounds.size() - 2).getEndDate()).plusDays(1).withHour(Schedule.WORKING_HOURS_START).withMinute(0).withSecond(0).withNano(0);
+        }
+
+        if (tStart.getMinute() > 0 || tStart.getSecond() > 0 || tStart.getNano() > 0) {
+            tStart = tStart.plusHours(1).truncatedTo(ChronoUnit.HOURS);
+        }
+
+        if (tEnd.getMinute() > 0 || tEnd.getSecond() > 0 || tEnd.getNano() > 0) {
+            tEnd = tEnd.truncatedTo(ChronoUnit.HOURS);
+        }
+
+        LocalDateTime rStart = DateUtil.convertToLocalDateTime(editRound.getStartDate());
+        LocalDateTime rEnd = DateUtil.convertToLocalDateTime(editRound.getEndDate());
+
+        editRound.setStartDate(DateUtil.convertToDate((rStart.withHour(0).withMinute(0).withSecond(0).withNano(0))));
+        editRound.setEndDate(DateUtil.convertToDate((rEnd.withHour(23).withMinute(23).withSecond(23).withNano(23))));
+
+        validateTime(editRound.getStartDate(), editRound.getEndDate(), tStart, currMatches, tEnd);
+    }
+
+    @Override
+    public void changeRoundStatus(Long id, RoundStatus status) {
+
+        Round round = roundRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
+
+        if (status != RoundStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, this method can only terminate a round");
+        } else {
+            terminatedAllMatch(id);
+        }
+        round.setStatus(status);
+        roundRepository.save(round);
     }
 
 
@@ -583,7 +687,6 @@ public class RoundServiceImpl implements RoundService {
 
     }
 
-
     private void generateMatchTeam(Match match, List<Team> currentTeams) {
 
         for (Team team : currentTeams) {
@@ -620,7 +723,7 @@ public class RoundServiceImpl implements RoundService {
         roundResponse.setScoredMethodId(round.getScoredMethod().getId());
         roundResponse.setEnvironmentId(round.getEnvironment().getId());
         roundResponse.setMatchTypeId(round.getMatchType().getId());
-
+        roundResponse.setMapId(round.getMap().getId());
 
         return roundResponse;
 
@@ -658,6 +761,31 @@ public class RoundServiceImpl implements RoundService {
         });
 
         return roundResponses;
+    }
+
+    //second, minute, hour, day, month, year
+    //* = every
+//    @Scheduled(cron = "5 * * * * *")
+    @Scheduled(cron = "1 0 0 * * *")
+    public void isRoundStart() {
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        Date date = calendar.getTime();
+
+        Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.PENDING, date);
+        if (round.isPresent()) {
+
+            Tournament tournament = round.get().getTournament();
+            if (tournament.getStatus() == TournamentStatus.ACTIVE) {
+                round.get().setStatus(RoundStatus.ACTIVE);
+                roundRepository.save(round.get());
+            }
+        }
     }
 
 }

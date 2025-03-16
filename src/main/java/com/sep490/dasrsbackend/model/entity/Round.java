@@ -1,9 +1,6 @@
 package com.sep490.dasrsbackend.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
-import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -12,7 +9,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -37,6 +33,9 @@ public class Round {
 
     @Column(name = "is_last")
     private boolean isLast;
+
+    @Column(name = "is_latest")
+    private boolean isLatest;
 
     @Column(name = "description")
     private String description;
@@ -80,5 +79,9 @@ public class Round {
     @ManyToOne
     @JoinColumn(name = "match_type_id", nullable = false)
     private MatchType matchType;
+
+    @ManyToOne
+    @JoinColumn(name = "map_id", nullable = false)
+    private RaceMap map;
 
 }

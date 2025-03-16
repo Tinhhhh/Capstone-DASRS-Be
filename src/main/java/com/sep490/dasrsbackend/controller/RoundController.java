@@ -2,7 +2,7 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.enums.RoundSort;
-import com.sep490.dasrsbackend.model.enums.TournamentSort;
+import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
@@ -54,6 +54,12 @@ public class RoundController {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved data",
                 roundService.findAllRounds(pageNo, pageSize, sortBy, keyword));
+    }
+
+    @PutMapping("/status/{roundId}")
+    public ResponseEntity<Object> changeRoundStatus(@PathVariable Long roundId, @RequestParam(name = "status") RoundStatus status) {
+        roundService.changeRoundStatus(roundId, status);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Round status changed successfully");
     }
 
 }

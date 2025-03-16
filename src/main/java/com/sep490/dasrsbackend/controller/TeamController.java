@@ -33,9 +33,20 @@ public class TeamController {
     }
 
     @DeleteMapping("/remove-members")
-    public ResponseEntity<Void> removeMember(@RequestParam Long teamId, @RequestParam Long memberId) {
+    public ResponseEntity<Object> removeMember(@RequestParam Long teamId, @RequestParam Long memberId) {
         teamService.removeMember(teamId, memberId);
-        return ResponseEntity.noContent().build();
+        return ResponseBuilder.responseBuilder(
+                HttpStatus.OK,
+                "Member successfully removed (locked)"
+        );
+    }
+    @PutMapping("/unlock-members")
+    public ResponseEntity<Object> unlockMember(@RequestParam Long teamId, @RequestParam Long memberId) {
+        teamService.unlockMember(teamId, memberId);
+        return ResponseBuilder.responseBuilder(
+                HttpStatus.OK,
+                "Member successfully unlocked"
+        );
     }
 
 //    @PostMapping("/{teamId}/match-participants")

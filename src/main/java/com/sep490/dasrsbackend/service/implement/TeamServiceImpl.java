@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.Match;
 import com.sep490.dasrsbackend.model.entity.MatchTeam;
 import com.sep490.dasrsbackend.model.entity.Team;
+import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
@@ -75,16 +76,34 @@ public class TeamServiceImpl implements TeamService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("Team not found"));
 
-        Optional<Account> member = team.getAccountList().stream()
+        Account member = team.getAccountList().stream()
                 .filter(account -> account.getAccountId().equals(memberId))
-                .findFirst();
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Member not found in the team"));
 
-        if (member.isEmpty()) {
-            throw new IllegalArgumentException("Member not found in the team");
+        if (member.isLocked()) {
+            throw new IllegalArgumentException("Member is already locked");
         }
 
-        team.getAccountList().remove(member.get());
-        member.get().setTeam(null); // Detach the member from the team
+        member.setLocked(true); // Lock the account
+        teamRepository.save(team);
+    }
+
+    @Override
+    public void unlockMember(Long teamId, Long memberId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("Team not found"));
+
+        Account member = team.getAccountList().stream()
+                .filter(account -> account.getAccountId().equals(memberId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Member not found in the team"));
+
+        if (!member.isLocked()) {
+            throw new IllegalArgumentException("Member is already unlocked");
+        }
+
+        member.setLocked(false); // Unlock the account
         teamRepository.save(team);
     }
 

@@ -56,6 +56,9 @@ public class RoundResponse {
     @JsonProperty("match_type_name")
     private String matchTypeName;
 
+    @JsonProperty("map_id")
+    private Long mapId;
+
     @JsonProperty("finish_type")
     private FinishType finishType;
 }

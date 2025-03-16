@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
+import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.service.TournamentService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,6 +54,18 @@ public class TournamentController {
     public ResponseEntity<Object> changeTournamentStatus(@PathVariable Long tournamentId, @RequestParam TournamentStatus status) {
         tournamentService.changeStatus(tournamentId, status);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament status updated successfully");
+    }
+
+    @PutMapping("/context/{tournamentId}")
+    public ResponseEntity<Object> updateTournamentContext(@PathVariable Long tournamentId, @RequestBody @Valid EditTournament request) {
+        tournamentService.editTournament(tournamentId, request);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament updated successfully");
+    }
+
+    @PutMapping("/extend/{tournamentId}")
+    public ResponseEntity<Object> updateTournamentSchedule(@PathVariable Long tournamentId, @RequestParam("day") int day) {
+        tournamentService.editTournamentSchedule(tournamentId, day);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament schedule updated successfully");
     }
 
 }
