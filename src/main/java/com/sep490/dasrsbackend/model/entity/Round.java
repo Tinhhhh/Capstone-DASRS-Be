@@ -34,6 +34,9 @@ public class Round {
     @Column(name = "is_last")
     private boolean isLast;
 
+    @Column(name = "is_latest")
+    private boolean isLatest;
+
     @Column(name = "description")
     private String description;
 

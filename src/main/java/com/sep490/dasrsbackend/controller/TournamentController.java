@@ -62,8 +62,8 @@ public class TournamentController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament updated successfully");
     }
 
-    @PutMapping("/extend/{tournamentId}/{day}")
-    public ResponseEntity<Object> updateTournamentSchedule(@PathVariable Long tournamentId, @PathVariable int day) {
+    @PutMapping("/extend/{tournamentId}")
+    public ResponseEntity<Object> updateTournamentSchedule(@PathVariable Long tournamentId, @RequestParam("day") int day) {
         tournamentService.editTournamentSchedule(tournamentId, day);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament schedule updated successfully");
     }
