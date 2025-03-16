@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
 import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
+import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.service.AccountService;
 import com.sep490.dasrsbackend.service.implement.ExcelImportService;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -78,6 +80,13 @@ public class AccountController {
     public ResponseEntity<Object> updateAccountInfo(@RequestParam UUID id, @RequestBody @Valid AccountProfile accountProfile) {
         accountService.updateAccountInfo(id, accountProfile);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account information updated successfully.");
+    }
+
+    @Operation(summary = "Get current account information", description = "Fetch the current logged-in account details.")
+    @GetMapping("/current-account")
+    public ResponseEntity<Object> getCurrentAccountInfo(HttpServletRequest request) {
+        AccountInfoResponse accountInfo = accountService.getCurrentAccountInfo(request);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Current account information retrieved successfully.", accountInfo);
     }
 
     @Operation(summary = "Get account information by admin", description = "Fetch account details as an admin.")
