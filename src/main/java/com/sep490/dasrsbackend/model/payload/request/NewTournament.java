@@ -38,6 +38,4 @@ public class NewTournament {
     @JsonProperty("end_date")
     private Date endDate;
 
-
-
 }

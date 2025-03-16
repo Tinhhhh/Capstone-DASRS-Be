@@ -13,6 +13,7 @@ import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
+import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.ListTournament;
 import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
@@ -66,7 +67,6 @@ public class TournamentServiceImpl implements TournamentService {
         // Kiểm tra begin phải trước end
 
 
-
         LocalDateTime startDate = DateUtil.convertToLocalDateTime(newTournament.getStartDate()).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime endDate = DateUtil.convertToLocalDateTime(newTournament.getEndDate()).withHour(23).withMinute(59).withSecond(59);
 
@@ -96,15 +96,24 @@ public class TournamentServiceImpl implements TournamentService {
     private static void tournamentValidation(Date begin, Date end, int teamNumber) {
         Calendar calendar = Calendar.getInstance();
 
+        if (begin.before(calendar.getTime())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start date must be after today.");
+        }
+
         // Kiểm tra begin phải cách hiện tại ít nhất 1 tuần và không quá 3 tháng
         calendar.add(Calendar.WEEK_OF_YEAR, 1);
         Date minBegin = calendar.getTime();
         calendar.add(Calendar.WEEK_OF_YEAR, 3);
         Date maxBegin = calendar.getTime();
 
-        if (begin.before(minBegin) || begin.after(maxBegin)) {
+//        if (begin.before(minBegin) || begin.after(maxBegin)) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST,
+//                    "Start date must be at least 1 weeks and no more than 4 weeks from today.");
+//        }
+
+        if (begin.after(maxBegin)) {
             throw new DasrsException(HttpStatus.BAD_REQUEST,
-                    "Start date must be at least 1 weeks and no more than 4 weeks from today.");
+                    "Start date no more than 4 weeks from today.");
         }
 
         double atLeastDay = Math.ceil((double) teamNumber / Schedule.MAX_WORKING_HOURS);
@@ -124,10 +133,46 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     @Override
-    public void editTournament(NewTournament newTournament) {
+    public void editTournament(Long tournamentId, EditTournament editTournament) {
 
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, tournament not found."));
 
+        if (tournament.getStatus() == TournamentStatus.ACTIVE || tournament.getStatus() == TournamentStatus.COMPLETED || tournament.getStatus() == TournamentStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot edit tournament while it is not pending.");
+        }
 
+        if (tournament.getStartDate().after(editTournament.getEndDate())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "End date must be after start date.");
+        }
+
+        isRoundValid(tournament);
+        LocalDateTime startDate = DateUtil.convertToLocalDateTime(tournament.getStartDate());
+
+        String tournamentName = "[" + GenerateCode.seasonPrefix(startDate) + "] " + editTournament.getTournamentName().trim();
+
+        tournament.setTournamentName(tournamentName);
+        tournament.setContext(editTournament.getTournamentContext());
+        tournament.setTeamNumber(editTournament.getTeamNumber());
+        tournament.setStartDate(editTournament.getStartDate());
+        tournament.setEndDate(editTournament.getEndDate());
+
+        tournamentRepository.save(tournament);
+    }
+
+    private void isRoundValid(Tournament tournament) {
+        List<Round> roundList = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.PENDING);
+        if (!roundList.isEmpty()) {
+            Date start = roundList.get(0).getStartDate();
+            Date end = roundList.get(roundList.size() - 1).getEndDate();
+
+            if (tournament.getStartDate().after(start)) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, cannot change tournament start date to after first round start date.");
+            }
+            if (tournament.getEndDate().before(end)) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, cannot change tournament end date to before last round end date.");
+            }
+        }
     }
 
     @Override
@@ -228,17 +273,22 @@ public class TournamentServiceImpl implements TournamentService {
         Tournament tournament = tournamentRepository.findByIdAndStatus(id, TournamentStatus.PENDING)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Tournament not found."));
 
-        //Kiểm tra có đáp ứng số ngày ko
-        tournamentValidation(tournament.getStartDate(), tournament.getEndDate(), tournament.getTeamNumber());
-        List<Round> roundList = roundRepository.findByTournamentId(id);
-
-        if (roundList.isEmpty()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot start tournament without rounds.");
+        if (tournamentRepository.findByStatus(TournamentStatus.ACTIVE).isPresent()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "There is another tournament is active.");
         }
 
-        for (Round round : roundList) {
-            round.setStatus(RoundStatus.ACTIVE);
-            roundRepository.save(round);
+        //Kiểm tra có đáp ứng số ngày ko
+        tournamentValidation(tournament.getStartDate(), tournament.getEndDate(), tournament.getTeamNumber());
+
+        List<Round> roundList = roundRepository.findByTournamentIdAndStatus(id, RoundStatus.PENDING);
+
+        if (roundList.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start fails, cannot start tournament without rounds.");
+        }
+
+        List<Team> teamList = teamRepository.getTeamByTournamentId(id);
+        if (teamList.size() != tournament.getTeamNumber()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start fails, cannot start tournament without enough teams.");
         }
 
         tournament.setStatus(TournamentStatus.ACTIVE);
@@ -264,42 +314,6 @@ public class TournamentServiceImpl implements TournamentService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Tournament can not start by this way, please use startTournament method");
         }
 
-        //Nếu là active thì chỉ có thể thành pending, hoặc finish
-        if (tournament.getStatus() == TournamentStatus.ACTIVE) {
-            if (status == TournamentStatus.PENDING) {
-                List<Round> roundList = roundRepository.findByTournamentIdAndStatus(id, RoundStatus.ACTIVE);
-
-                for (Round round : roundList) {
-                    List<Match> mathList = matchRepository.findByRoundId(round.getId()).stream()
-                            .filter(match -> match.getTimeStart().before(new Date())).toList();
-                    if (!mathList.isEmpty()) {
-                        throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot change status to PENDING while there are active matches.");
-                    }
-                }
-
-                //Đổi status của round thành Pending bởi vì tournament đổi thành chưa active
-                roundList = roundRepository.findByTournamentId(id);
-                for (Round round : roundList) {
-                    round.setStatus(RoundStatus.PENDING);
-                    roundRepository.save(round);
-                }
-
-                tournament.setStatus(TournamentStatus.PENDING);
-            }
-
-            if (status == TournamentStatus.TERMINATED) {
-                //Kiểm tra xem có match nào đã khởi động không
-                changeToTerminated(id);
-                tournament.setStatus(TournamentStatus.TERMINATED);
-
-            }
-
-            //Nếu là pending thì chỉ có thể thành active, hoặc terminate
-
-
-            tournamentRepository.save(tournament);
-        }
-
         if (tournament.getStatus() == TournamentStatus.PENDING) {
 
             if (status == TournamentStatus.PENDING) {
@@ -316,6 +330,65 @@ public class TournamentServiceImpl implements TournamentService {
             tournamentRepository.save(tournament);
         }
 
+        //Nếu là active thì chỉ có thể thành pending, hoặc finish
+        if (tournament.getStatus() == TournamentStatus.ACTIVE) {
+            if (status == TournamentStatus.PENDING) {
+                List<Round> roundList = roundRepository.findByTournamentIdAndStatus(id, RoundStatus.ACTIVE);
+
+                for (Round round : roundList) {
+                    List<Match> mathList = matchRepository.findByRoundId(round.getId()).stream()
+                            .filter(match -> match.getTimeStart().before(new Date())).toList();
+                    if (!mathList.isEmpty()) {
+                        throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot change status to PENDING while there are active matches.");
+                    }
+                }
+                tournament.setStatus(TournamentStatus.PENDING);
+            }
+
+            if (status == TournamentStatus.TERMINATED) {
+                //Kiểm tra xem có match nào đã khởi động không
+                changeToTerminated(id);
+                tournament.setStatus(TournamentStatus.TERMINATED);
+
+            }
+            tournamentRepository.save(tournament);
+        }
+
+    }
+
+    @Override
+    public void editTournamentSchedule(Long id, int day) {
+
+        Tournament tournament = tournamentRepository.findByIdAndStatus(id, TournamentStatus.ACTIVE)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found."));
+
+        if (day > 7 || day < -7) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Tournament endDate cannot change > 7 days at once.");
+        }
+
+        List<Round> roundList = roundRepository.findByTournamentId(id);
+
+        for (Round round : roundList) {
+            if (round.getStatus() == RoundStatus.COMPLETED || round.getStatus() == RoundStatus.TERMINATED) {
+                roundList.remove(round);
+            }
+        }
+
+        //Để giảm thời gian end date của tournament có 2 trường hợp
+        //1. khi tournament có last round
+        //2. khi tournament không có last round
+
+        Date endDate = roundList.get(roundList.size() - 1).getEndDate();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(tournament.getEndDate());
+        calendar.add(Calendar.DAY_OF_WEEK, day);
+        tournament.setEndDate(calendar.getTime());
+
+        if (tournament.getEndDate().before(endDate)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Edit fails, cannot change tournament end date to before last round end date.");
+        }
+
+        tournamentRepository.save(tournament);
     }
 
     private void changeToTerminated(Long id) {

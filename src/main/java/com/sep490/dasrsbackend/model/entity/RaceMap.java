@@ -13,7 +13,7 @@ import java.util.List;
 @Entity
 @Builder
 @Table(name = "map")
-public class Map {
+public class RaceMap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

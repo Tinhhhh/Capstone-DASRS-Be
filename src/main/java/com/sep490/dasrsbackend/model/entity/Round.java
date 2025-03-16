@@ -79,6 +79,6 @@ public class Round {
 
     @ManyToOne
     @JoinColumn(name = "map_id", nullable = false)
-    private Map map;
+    private RaceMap map;
 
 }
