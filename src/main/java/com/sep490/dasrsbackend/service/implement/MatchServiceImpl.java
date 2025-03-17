@@ -2,11 +2,13 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.enums.MatchStatus;
+import com.sep490.dasrsbackend.model.enums.RoleEnum;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
+import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchDataRequest;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
-import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.MatchService;
@@ -18,10 +20,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +36,7 @@ public class MatchServiceImpl implements MatchService {
     private final RoundRepository roundRepository;
     private final ScoreAttributeRepository scoreAttributeRepository;
     private final ScoredMethodRepository scoredMethodRepository;
+    private final MatchTypeRepository matchTypeRepository;
 
     @Override
     public List<MatchResponse> getMatches(Long teamId) {
@@ -102,7 +103,6 @@ public class MatchServiceImpl implements MatchService {
         }
 
 
-
         // Đảm bảo tất cả thành viên đều tham gia trận đấu
         List<Account> availableMembers = accountRepository.findByTeamId(member.getTeam().getId());
         List<Account> existedMembers = new ArrayList<>();
@@ -148,7 +148,7 @@ public class MatchServiceImpl implements MatchService {
 
             List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
 
-            if (matchTeams.isEmpty()){
+            if (matchTeams.isEmpty()) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information");
             }
 
@@ -208,5 +208,104 @@ public class MatchServiceImpl implements MatchService {
         //cập nhật bảng xếp hạng leaderboard
 
         matchRepository.save(match);
+    }
+
+    @Override
+    public void changeMatchSlot(Long matchId, ChangeMatchSlot changeMatchSlot) {
+
+        Account account = accountRepository.findById(changeMatchSlot.getAccountId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Account not found, please contact administrator for more information"));
+
+        if (!account.getRole().getRoleName().equals(RoleEnum.STAFF.name())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Change match slot fails. Only staff can change match slot");
+        }
+
+        //match cần đổi
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found, please contact administrator for more information"));
+
+        Round round = match.getRound();
+
+        MatchType matchType = matchTypeRepository.findById(round.getMatchType().getId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "MatchType not found, please contact administrator for more information"));
+
+        isValidTimeRange(changeMatchSlot.getStartDate(), match);
+
+        //Kiểm tra  xem có trùng với match nào không
+        //Case 1: Ko Trùng thì đổi giờ của match hiện tại
+        Match match2 = matchRepository.findByTimeStartAndStatus(changeMatchSlot.getStartDate(), MatchStatus.PENDING);
+
+        if (match2 == null) {
+            match.setTimeStart(changeMatchSlot.getStartDate());
+            match.setTimeEnd(DateUtil.convertToDate(DateUtil.convertToLocalDateTime(changeMatchSlot.getStartDate()).plusMinutes((long) matchType.getMatchDuration())));
+            matchRepository.save(match);
+        }
+//        Case 2: Trùng thì swap giờ với match đó
+        if (match2 != null) {
+            Date tempStart = match.getTimeStart();
+            Date tempEnd = match.getTimeEnd();
+
+            match.setTimeStart(match2.getTimeStart());
+            match.setTimeEnd(match2.getTimeEnd());
+
+            match2.setTimeStart(tempStart);
+            match2.setTimeEnd(tempEnd);
+
+            matchRepository.save(match);
+            matchRepository.save(match2);
+        }
+
+    }
+
+    public void isValidTimeRange(Date start, Match match) {
+
+//        if (start.after(end)) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST, "Change match slot fails. The start date must be before the end date");
+//        }
+
+        LocalDateTime startDateTime = DateUtil.convertToLocalDateTime(start);
+//        LocalDateTime endDateTime = DateUtil.convertToLocalDateTime(end);
+
+        int startHour = startDateTime.getHour();
+        int startMinute = startDateTime.getMinute();
+//        int endHour = endDateTime.getHour();
+
+        // Kiểm tra cả hai phải là giờ chẵn và nằm trong khoảng hợp lệ
+        boolean isValidStart = (startMinute == 0) && ((startHour >= 8 && startHour <= 11) || (startHour >= 13 && startHour <= 16));
+
+        if (!isValidStart) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST,
+                    "Change match slot fails. The time slot start must be between 8:00 - 11:00 and 13:00 - 16:00 " +
+                            "and the start time minute must be 0");
+        }
+
+//        boolean isValidEnd = ((endHour >= 8 && endHour <= 12) || (endHour >= 13 && endHour <= 17));
+
+//        if (!isValidEnd) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST,
+//                    "Change match slot fails. The time slot end must be between 8:xx - 12:00 and 13:xx - 17:00 ");
+//        }
+
+        // Kiểm tra khoảng cách giữa start và end không quá 60 phút
+//        long durationMinutes = Duration.between(startDateTime, endDateTime).toMinutes();
+//        boolean isWithinOneHour = durationMinutes > 0 && durationMinutes <= 60;
+
+//        if (!isWithinOneHour) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST,
+//                    "Change match slot fails. The time slot must be less than 60 minutes");
+//        }
+
+        Round round = match.getRound();
+
+        if (start.before(round.getStartDate())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST,
+                    "Change match slot fails. The start date must be after the round start date");
+        }
+
+//        if (end.after(round.getEndDate())) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST,
+//                    "Change match slot fails. The end date must be before the round end date");
+//        }
+
     }
 }
