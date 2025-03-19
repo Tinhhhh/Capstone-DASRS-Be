@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -46,6 +47,43 @@ public class RecordServiceImpl implements RecordService {
     private String generateTemporaryRecordLink() {
         // Placeholder for actual link generation logic
         return UUID.randomUUID().toString();
+    }
+    @Override
+    public List<Record> getAllRecords() {
+        List<Record> records = recordRepository.findAll();
+        if (records.isEmpty()) {
+            throw new DasrsException(HttpStatus.NOT_FOUND, "No records found");
+        }
+        return records;
+    }
+
+    @Override
+    public Record getRecordById(Long recordId) {
+        return recordRepository.findById(recordId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Record not found"));
+    }
+
+    @Override
+    public List<Record> getRecordsByMatchId(Long matchId) {
+        List<Record> records = recordRepository.findByMatchId(matchId);
+        if (records.isEmpty()) {
+            throw new DasrsException(HttpStatus.NOT_FOUND, "No records found for the given match ID");
+        }
+        return records;
+    }
+    @Override
+    public Record updateRecordStatus(Long recordId, RecordStatus status) {
+        Record record = getRecordById(recordId);
+
+        // Update the status
+        record.setStatus(status);
+        return recordRepository.save(record);
+    }
+
+    @Override
+    public void deleteRecord(Long recordId) {
+        Record record = getRecordById(recordId);
+        recordRepository.delete(record);
     }
 }
 
