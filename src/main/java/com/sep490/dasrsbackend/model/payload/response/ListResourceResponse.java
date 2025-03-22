@@ -12,10 +12,10 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ListMapResponse {
+public class ListResourceResponse {
 
     @JsonProperty(value = "content", index = 1)
-    private List<MapResponse> content;
+    private List<ResourceResponse> content;
 
     @JsonProperty(value = "page_no", index = 2)
     private int pageNo;

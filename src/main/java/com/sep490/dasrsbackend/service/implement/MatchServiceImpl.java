@@ -189,7 +189,6 @@ public class MatchServiceImpl implements MatchService {
                 .topSpeed(matchDataRequest.getTopSpeed())
                 .averageSpeed(matchDataRequest.getAverageSpeed())
                 .totalDistance(matchDataRequest.getTotalDistance())
-                .status(matchDataRequest.getStatus())
                 .build();
 
         scoreAttributeRepository.save(scoreAttribute);
@@ -259,16 +258,10 @@ public class MatchServiceImpl implements MatchService {
 
     public void isValidTimeRange(Date start, Match match) {
 
-//        if (start.after(end)) {
-//            throw new DasrsException(HttpStatus.BAD_REQUEST, "Change match slot fails. The start date must be before the end date");
-//        }
-
         LocalDateTime startDateTime = DateUtil.convertToLocalDateTime(start);
-//        LocalDateTime endDateTime = DateUtil.convertToLocalDateTime(end);
 
         int startHour = startDateTime.getHour();
         int startMinute = startDateTime.getMinute();
-//        int endHour = endDateTime.getHour();
 
         // Kiểm tra cả hai phải là giờ chẵn và nằm trong khoảng hợp lệ
         boolean isValidStart = (startMinute == 0) && ((startHour >= 8 && startHour <= 11) || (startHour >= 13 && startHour <= 16));
@@ -279,22 +272,6 @@ public class MatchServiceImpl implements MatchService {
                             "and the start time minute must be 0");
         }
 
-//        boolean isValidEnd = ((endHour >= 8 && endHour <= 12) || (endHour >= 13 && endHour <= 17));
-
-//        if (!isValidEnd) {
-//            throw new DasrsException(HttpStatus.BAD_REQUEST,
-//                    "Change match slot fails. The time slot end must be between 8:xx - 12:00 and 13:xx - 17:00 ");
-//        }
-
-        // Kiểm tra khoảng cách giữa start và end không quá 60 phút
-//        long durationMinutes = Duration.between(startDateTime, endDateTime).toMinutes();
-//        boolean isWithinOneHour = durationMinutes > 0 && durationMinutes <= 60;
-
-//        if (!isWithinOneHour) {
-//            throw new DasrsException(HttpStatus.BAD_REQUEST,
-//                    "Change match slot fails. The time slot must be less than 60 minutes");
-//        }
-
         Round round = match.getRound();
 
         if (start.before(round.getStartDate())) {
@@ -302,10 +279,13 @@ public class MatchServiceImpl implements MatchService {
                     "Change match slot fails. The start date must be after the round start date");
         }
 
-//        if (end.after(round.getEndDate())) {
-//            throw new DasrsException(HttpStatus.BAD_REQUEST,
-//                    "Change match slot fails. The end date must be before the round end date");
-//        }
+
 
     }
+
+
+
+
+
+
 }

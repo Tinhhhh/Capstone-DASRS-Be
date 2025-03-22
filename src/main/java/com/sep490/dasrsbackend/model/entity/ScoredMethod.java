@@ -1,9 +1,6 @@
 package com.sep490.dasrsbackend.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.ScoreAttributeStatus;
 import com.sep490.dasrsbackend.model.enums.ScoredMethodStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,7 +8,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalTime;
 import java.util.Date;
 import java.util.List;
 

@@ -57,4 +57,7 @@ public class DateUtil {
         }
     }
 
+    public static Date getCurrentTimestamp() {
+        return Date.from(ZonedDateTime.now().toInstant());
+    }
 }

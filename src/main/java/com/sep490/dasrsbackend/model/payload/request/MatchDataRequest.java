@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.model.payload.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.ScoreAttributeStatus;
 import lombok.*;
 
 import java.time.LocalTime;
@@ -49,8 +48,5 @@ public class MatchDataRequest {
 
     @JsonProperty("total_distance")
     private double totalDistance;
-
-    @JsonProperty("status")
-    private ScoreAttributeStatus status;
 
 }

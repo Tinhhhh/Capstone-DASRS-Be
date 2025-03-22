@@ -1,12 +1,10 @@
 package com.sep490.dasrsbackend.service.implement;
 
-import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.Match;
 import com.sep490.dasrsbackend.model.entity.MatchTeam;
 import com.sep490.dasrsbackend.model.entity.Team;
-import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
@@ -21,12 +19,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -170,6 +163,10 @@ public class TeamServiceImpl implements TeamService {
         Account member = accountRepository.findById(assignee)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Account not found, please contact administrator for more information"));
 
+        if (match.getTimeStart().before(DateUtil.getCurrentTimestamp())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Match has already started");
+        }
+
         if (!leader.isLeader()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assigner is not a leader");
         }
@@ -178,8 +175,11 @@ public class TeamServiceImpl implements TeamService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assignee is not in the same team");
         }
 
+        if (matchTeam.getAccount().getAccountId().equals(member.getAccountId())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assignee is already assigned to the match");
+        }
+
         // Đảm bảo tất cả thành viên đều tham gia trận đấu
-        List<Account> availableMembers = accountRepository.findByTeamId(member.getTeam().getId());
         List<Account> existedMembers = new ArrayList<>();
 
         List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(team.getId());
@@ -188,22 +188,60 @@ public class TeamServiceImpl implements TeamService {
             existedMembers.add(eachMatchTeam.getAccount());
         }
 
-        for (Account existed : existedMembers) {
-            availableMembers.remove(existed);
+        validateMemberParticipation(member, existedMembers);
+
+//        for (Account existed : existedMembers) {
+//            availableMembers.remove(existed);
+//        }
+//
+//        String message = availableMembers.stream()
+//                .map(Account::fullName)
+//                .collect(Collectors.joining(", "));
+//
+//        Map<String, String> response = Map.of("available_members", message);
+//
+//        if (!availableMembers.contains(member)) {
+//            throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
+//                    "Assign fails. The number of times each member participates in the competition must be the same",
+//                    response);
+//        }
+        matchTeam.setAccount(member);
+        matchTeamRepository.save(matchTeam);
+    }
+
+    public static void validateMemberParticipation(Account assignee, List<Account> teamMatches) {
+
+        // Đếm số lần tham gia của từng member
+        Map<Account, Integer> participationCount = new HashMap<>();
+        for (Account acc : teamMatches) {
+            participationCount.put(acc, participationCount.getOrDefault(acc, 0) + 1);
         }
 
-        String message = availableMembers.stream()
-                .map(Account::fullName)
-                .collect(Collectors.joining(", "));
+        // Tìm min & max số lần tham gia
+        int min = Collections.min(participationCount.values());
+        int max = Collections.max(participationCount.values());
 
-        Map<String, String> response = Map.of("available_members", message);
+        // Nếu max - min > 1 => lỗi
+        if (max - min > 1) {
+            List<String> availableMembers = participationCount.entrySet().stream()
+                    .filter(entry -> entry.getValue() <= min)  // Những người không bị dư số trận
+                    .map(entry -> "User : " + entry.getKey().fullName())
+                    .collect(Collectors.toList());
 
-        if (!availableMembers.contains(member)) {
+            Map<String, String> response = Map.of(
+                    "available_members", String.join(", ", availableMembers)
+            );
+
             throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
                     "Assign fails. The number of times each member participates in the competition must be the same",
                     response);
         }
-        matchTeam.setAccount(member);
-        matchTeamRepository.save(matchTeam);
+
+        // Nếu memberId không thuộc danh sách hợp lệ => lỗi
+        if (!participationCount.containsKey(assignee) || participationCount.get(assignee) > min) {
+            throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
+                    "Assign fails. The number of times each member participates in the competition must be the same",
+                    Map.of("available_members", "User: " + assignee.fullName() + " is not eligible"));
+        }
     }
 }

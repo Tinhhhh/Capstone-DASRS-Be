@@ -53,8 +53,8 @@ public class EditRound {
     @JsonProperty("match_type_id")
     private Long matchTypeId;
 
-    @JsonProperty("map_id")
-    private Long mapId;
+    @JsonProperty("resource_id")
+    private Long resourceId;
 
 }
 
