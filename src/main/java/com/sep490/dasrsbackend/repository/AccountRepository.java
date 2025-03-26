@@ -13,6 +13,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     Optional<Account> findByEmail(String email);
 
     List<Account> findByTeamId(Long id);
+
+    List<Account> findByTeamIdAndIsLocked(Long id, boolean isLocked);
 }
 
 

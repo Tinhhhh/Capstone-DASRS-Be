@@ -186,12 +186,12 @@ public class AccountServiceImpl implements AccountService {
         }
 
         accountRepository.save(account);
-        sendRegistrationEmail(account);
+        sendRegistrationEmail(account, request.getPassword());
     }
 
-    private void sendRegistrationEmail(Account account) throws MessagingException {
+    private void sendRegistrationEmail(Account account, String password) throws MessagingException {
         emailService.sendAccountInformation(
-                account.fullName(), account.getEmail(), account.getPassword(), account.getEmail(),
+                account.fullName(), account.getEmail(), password, account.getEmail(),
                 EmailTemplateName.ADMIN_CREATE_ACCOUNT.getName(), "[Dasrs] Thông tin tài khoản của bạn");
     }
 

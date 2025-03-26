@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -34,6 +33,9 @@ public class Team {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private TeamStatus status;
+
+    @Column(name = "is_disqualified")
+    private boolean isDisqualified;
 
     @JsonIgnore
     @CreatedDate

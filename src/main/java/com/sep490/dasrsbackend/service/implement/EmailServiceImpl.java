@@ -44,7 +44,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendMimeMessageWithHtml(String name, String to, String content, String template, String subject) throws MessagingException {
         try {
-            String senderNickName = "Customer Service Team at Souvi";
+            String senderNickName = "Customer Service Team at Dasrs";
             Context context = new Context();
             context.setVariable("username", name);
             context.setVariable("content", content);

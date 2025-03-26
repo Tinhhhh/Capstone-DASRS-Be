@@ -1,19 +1,13 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.ScoreAttributeStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalTime;
-import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -59,10 +53,6 @@ public class ScoreAttribute {
 
     @Column(name = "total_distance")
     private double totalDistance;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status")
-    private ScoreAttributeStatus status;
 
     @OneToMany(mappedBy = "scoreAttribute")
     private List<MatchTeam> matchAccounts;
