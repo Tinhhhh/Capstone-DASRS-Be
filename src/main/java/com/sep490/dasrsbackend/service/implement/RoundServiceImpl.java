@@ -32,6 +32,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -579,7 +580,10 @@ public class RoundServiceImpl implements RoundService {
             teamRemains = previousRound.getTeamLimit();
 
             List<Leaderboard> leaderboards = leaderboardRepository
-                    .findTopNLeaderboard(PageRequest.of(0, teamRemains), previousRound.getId());
+                    .findTopNLeaderboard(previousRound.getId()).stream()
+                    .filter(leaderboard -> leaderboard.getTeam().getStatus() == TeamStatus.ACTIVE && !leaderboard.getTeam().isDisqualified())
+                    .limit(teamRemains)
+                    .toList();
 
             //leaderboards empty nghĩa là round 1 chưa hoàn thành, chưa có dữ liệu leaderboard
             if (leaderboards.isEmpty()) {

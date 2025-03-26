@@ -25,6 +25,7 @@ public class TournamentResponse {
     @JsonProperty("tournament_name")
     private String tournamentName;
 
+    @JsonProperty("tournament_context")
     private String context;
 
     @JsonProperty("team_number")
