@@ -36,14 +36,24 @@ public class ResourceController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", resourceService.getResource(resourceId));
     }
 
-    @GetMapping
+    @GetMapping("")
     public ResponseEntity<Object> getAllResource(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
             @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection
     ) {
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved all resources", resourceService.getAllResource(pageNo, pageSize, sortBy, sortDirection));
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved all resources", resourceService.getAllResourceForAll(pageNo, pageSize, sortBy, sortDirection));
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<Object> getAllResourceForAdmin(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection
+    ) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved all resources", resourceService.getAllResourceForAdmin(pageNo, pageSize, sortBy, sortDirection));
     }
 
     @PutMapping("/change-status/{resourceId}")
