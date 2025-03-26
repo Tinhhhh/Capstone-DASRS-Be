@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
 import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
+import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.service.AccountService;
@@ -101,5 +102,18 @@ public class AccountController {
     public ResponseEntity<Object> editAccountByAdmin(@RequestParam UUID id, @RequestBody @Valid UpdateAccountResponse updateAccountResponse) {
         accountService.editAccountByAdmin(id, updateAccountResponse);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account updated successfully.");
+    }
+
+    @Operation(summary = "Add a new player by staff", description = "Allows staff to add a new player and assign them to a team")
+    @PostMapping("/staff-create")
+    public ResponseEntity<Object> addPlayerByStaff(@Valid @RequestBody NewAccountByStaff request) {
+        try {
+            accountService.newAccountByStaff(request);
+            return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Player account created successfully.");
+        } catch (MessagingException e) {
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send email notification.");
+        } catch (Exception e) {
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 }

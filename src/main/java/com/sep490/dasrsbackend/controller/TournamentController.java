@@ -1,18 +1,22 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.service.TournamentService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tournaments")
@@ -68,4 +72,14 @@ public class TournamentController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament schedule updated successfully");
     }
 
+    @GetMapping("participants/{tournamentId}")
+    @Operation(summary = "View participants in a tournament", description = "Retrieve the list of users participating in a specific tournament")
+    public ResponseEntity<Object> getTournamentParticipants(@PathVariable Long tournamentId) {
+        List<Account> participants = tournamentService.getUsersByTournament(tournamentId);
+        return ResponseBuilder.responseBuilderWithData(
+                org.springframework.http.HttpStatus.OK,
+                "List of participants retrieved successfully",
+                participants
+        );
+    }
 }

@@ -37,6 +37,7 @@ public class MatchServiceImpl implements MatchService {
     private final ScoreAttributeRepository scoreAttributeRepository;
     private final ScoredMethodRepository scoredMethodRepository;
     private final MatchTypeRepository matchTypeRepository;
+    private final TournamentRepository tournamentRepository;
 
     @Override
     public List<MatchResponse> getMatches(Long teamId) {
@@ -308,4 +309,29 @@ public class MatchServiceImpl implements MatchService {
 //        }
 
     }
+
+    @Override
+    public List<MatchResponse> getMatchesByTournamentId(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+
+        List<Round> rounds = tournament.getRoundList();
+        List<Match> matches = new ArrayList<>();
+
+        for (Round round : rounds) {
+            matches.addAll(round.getMatchList());
+        }
+
+        List<MatchResponse> matchResponses = new ArrayList<>();
+
+        for (Match match : matches) {
+            MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
+            matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
+            matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
+            matchResponses.add(matchResponse);
+        }
+
+        return matchResponses;
+    }
+
 }
