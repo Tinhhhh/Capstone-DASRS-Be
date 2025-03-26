@@ -25,7 +25,7 @@ public class RecordServiceImpl implements RecordService {
 
     private final MatchRepository matchRepository;
     private final RecordRepository recordRepository;
-    private final FirebaseStorageService firebaseStorageService;
+//    private final FirebaseStorageService firebaseStorageService;
 
     @Override
     public Record submitRecord(Long matchId, MultipartFile videoFile) {
@@ -42,11 +42,11 @@ public class RecordServiceImpl implements RecordService {
 
         try {
             // Upload video file to Firebase and get the public URL
-            String videoUrl = firebaseStorageService.uploadFile(videoFile, "records");
+//            String videoUrl = firebaseStorageService.uploadFile(videoFile, "records");
 
             // Set success status and link if upload succeeds
             record.setStatus(RecordStatus.SUCCESS);
-            record.setRecordLink(videoUrl);
+//            record.setRecordLink(videoUrl);
         } catch (Exception e) {
             // Set error status if upload fails
             record.setStatus(RecordStatus.ERROR);
