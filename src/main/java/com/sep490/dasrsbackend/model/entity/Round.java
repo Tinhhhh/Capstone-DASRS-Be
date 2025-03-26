@@ -81,7 +81,7 @@ public class Round {
     private MatchType matchType;
 
     @ManyToOne
-    @JoinColumn(name = "map_id", nullable = false)
-    private RaceMap map;
+    @JoinColumn(name = "resource_id", nullable = true)
+    private Resource resource;
 
 }

@@ -48,7 +48,7 @@ public class RoundServiceImpl implements RoundService {
     private final LeaderboardRepository leaderboardRepository;
     private final ScoreAttributeRepository scoreAttributeRepository;
     private final MatchTeamRepository matchTeamRepository;
-    private final RaceMapRepository raceMapRepository;
+    private final ResourceRepository resourceRepository;
 
     @Transactional
     @Override
@@ -66,8 +66,12 @@ public class RoundServiceImpl implements RoundService {
         Environment environment = environmentRepository.findByIdAndStatus(newRound.getEnvironmentId(), EnvironmentStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
 
-        RaceMap map = raceMapRepository.findByIdAndStatus(newRound.getMapId(), MapStatus.ACTIVE)
+        Resource resource = resourceRepository.findByIdAndIsEnable(newRound.getResourceId(), true)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Map not found"));
+
+        if (resource.getResourceType() != ResourceType.MAP) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The resource is not a map");
+        }
 
         if (tournament.getStatus() == TournamentStatus.COMPLETED ||
                 tournament.getStatus() == TournamentStatus.TERMINATED) {
@@ -87,7 +91,7 @@ public class RoundServiceImpl implements RoundService {
                 .matchType(matchType)
                 .scoredMethod(scoredMethod)
                 .environment(environment)
-                .map(map)
+                .resource(resource)
                 .build();
         roundRepository.save(round);
 
@@ -400,8 +404,12 @@ public class RoundServiceImpl implements RoundService {
         Environment environment = environmentRepository.findByIdAndStatus(request.getEnvironmentId(), EnvironmentStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
 
-        RaceMap map = raceMapRepository.findByIdAndStatus(request.getMapId(), MapStatus.ACTIVE)
+        Resource map = resourceRepository.findByIdAndIsEnable(request.getResourceId(), true)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Map not found"));
+
+        if (map.getResourceType() != ResourceType.MAP) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The resource is not a map");
+        }
 
         if (tournament.getStatus() == TournamentStatus.COMPLETED ||
                 tournament.getStatus() == TournamentStatus.TERMINATED) {
@@ -436,7 +444,7 @@ public class RoundServiceImpl implements RoundService {
         round.setMatchType(matchType);
         round.setScoredMethod(scoredMethod);
         round.setEnvironment(environment);
-        round.setMap(map);
+        round.setResource(map);
 
         roundRepository.save(round);
 
@@ -723,7 +731,7 @@ public class RoundServiceImpl implements RoundService {
         roundResponse.setScoredMethodId(round.getScoredMethod().getId());
         roundResponse.setEnvironmentId(round.getEnvironment().getId());
         roundResponse.setMatchTypeId(round.getMatchType().getId());
-        roundResponse.setMapId(round.getMap().getId());
+        roundResponse.setMapId(round.getResource().getId());
 
         return roundResponse;
 
@@ -779,7 +787,6 @@ public class RoundServiceImpl implements RoundService {
 
         Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.PENDING, date);
         if (round.isPresent()) {
-
             Tournament tournament = round.get().getTournament();
             if (tournament.getStatus() == TournamentStatus.ACTIVE) {
                 round.get().setStatus(RoundStatus.ACTIVE);
