@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
 import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
+import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.service.AccountService;
@@ -22,6 +23,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,7 +42,7 @@ public class AccountController {
     private final ExcelImportService excelImportService;
 
     @Operation(summary = "Register a new account by import excel file", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
-    @PostMapping
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<AccountDTO>> importAccounts(@RequestParam("file") MultipartFile file) {
         try {
             List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream());
@@ -101,5 +103,18 @@ public class AccountController {
     public ResponseEntity<Object> editAccountByAdmin(@RequestParam UUID id, @RequestBody @Valid UpdateAccountResponse updateAccountResponse) {
         accountService.editAccountByAdmin(id, updateAccountResponse);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account updated successfully.");
+    }
+
+    @Operation(summary = "Add a new player by staff", description = "Allows staff to add a new player and assign them to a team")
+    @PostMapping("/staff-create")
+    public ResponseEntity<Object> addPlayerByStaff(@Valid @RequestBody NewAccountByStaff request) {
+        try {
+            accountService.newAccountByStaff(request);
+            return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Player account created successfully.");
+        } catch (MessagingException e) {
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send email notification.");
+        } catch (Exception e) {
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 }

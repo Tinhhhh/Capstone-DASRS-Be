@@ -6,11 +6,13 @@ import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.Role;
 import com.sep490.dasrsbackend.model.entity.Team;
 import com.sep490.dasrsbackend.model.enums.EmailTemplateName;
+import com.sep490.dasrsbackend.model.enums.RoleEnum;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
 import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
+import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.repository.AccountRepository;
@@ -206,5 +208,42 @@ public class AccountServiceImpl implements AccountService {
         } catch (IllegalArgumentException e) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Invalid Account ID format");
         }
+    }
+
+    @Override
+    public void newAccountByStaff(NewAccountByStaff request) throws MessagingException {
+        // Ensure the role is set to "PLAYER"
+        Role role = roleRepository.findByRoleName(RoleEnum.PLAYER.getRole())
+                .orElseThrow(() -> new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Registration fails, role not found!"));
+
+        // Check if the team exists
+        Team team = teamRepository.findById(request.getTeamId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found!"));
+
+        // Check for duplicate email
+        if (accountRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RegisterAccountExistedException("Account already exists");
+        }
+
+        // Build the new account
+        Account account = Account.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail())
+                .address(request.getAddress())
+                .phone(request.getPhone())
+                .gender("") // Default or leave null
+                .dob(null)  // Default or leave null
+                .password(passwordEncoder.encode(request.getPassword()))
+                .isLocked(false)
+                .isLeader(false)
+                .role(role) // Always PLAYER role
+                .team(team) // Assign to the provided team
+                .build();
+
+        accountRepository.save(account);
+
+        // Send registration email
+        sendRegistrationEmail(account, request.getPassword());
     }
 }

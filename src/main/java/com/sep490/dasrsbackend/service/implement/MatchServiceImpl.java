@@ -2,21 +2,24 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
-import com.sep490.dasrsbackend.model.enums.MatchStatus;
-import com.sep490.dasrsbackend.model.enums.RoleEnum;
+import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
-import com.sep490.dasrsbackend.model.payload.request.MatchDataRequest;
+import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
+import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
 import com.sep490.dasrsbackend.repository.*;
+import com.sep490.dasrsbackend.service.LeaderboardService;
 import com.sep490.dasrsbackend.service.MatchService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;
+import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +40,12 @@ public class MatchServiceImpl implements MatchService {
     private final ScoreAttributeRepository scoreAttributeRepository;
     private final ScoredMethodRepository scoredMethodRepository;
     private final MatchTypeRepository matchTypeRepository;
+    private final TournamentRepository tournamentRepository;
+    private final LeaderboardRepository leaderboardRepository;
+
+    private final LeaderboardService leaderboardService;
+
+    private final static Logger logger = org.slf4j.LoggerFactory.getLogger(MatchServiceImpl.class);
 
     @Override
     public List<MatchResponse> getMatches(Long teamId) {
@@ -174,39 +183,73 @@ public class MatchServiceImpl implements MatchService {
 
     @Transactional
     @Override
-    public void retrieveMatchData(MatchDataRequest matchDataRequest) {
+    public void updateMatchTeamScore(MatchScoreData matchScoreData) {
 
-        Match match = matchRepository.findById(matchDataRequest.getMatchId())
+        Match match = matchRepository.findById(matchScoreData.getMatchId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found, please contact administrator for more information"));
 
         ScoreAttribute scoreAttribute = ScoreAttribute.builder()
-                .lap(matchDataRequest.getLap())
-                .fastestLapTime(matchDataRequest.getFastestLapTime())
-                .collision(matchDataRequest.getCollision())
-                .totalRaceTime(matchDataRequest.getTotalRaceTime())
-                .offTrack(matchDataRequest.getOffTrack())
-                .assistUsageCount(matchDataRequest.getAssistUsageCount())
-                .topSpeed(matchDataRequest.getTopSpeed())
-                .averageSpeed(matchDataRequest.getAverageSpeed())
-                .totalDistance(matchDataRequest.getTotalDistance())
+                .lap(matchScoreData.getLap())
+                .fastestLapTime(matchScoreData.getFastestLapTime())
+                .collision(matchScoreData.getCollision())
+                .totalRaceTime(matchScoreData.getTotalRaceTime())
+                .offTrack(matchScoreData.getOffTrack())
+                .assistUsageCount(matchScoreData.getAssistUsageCount())
+                .topSpeed(matchScoreData.getTopSpeed())
+                .averageSpeed(matchScoreData.getAverageSpeed())
+                .totalDistance(matchScoreData.getTotalDistance())
                 .build();
 
-        scoreAttributeRepository.save(scoreAttribute);
+        scoreAttribute = scoreAttributeRepository.save(scoreAttribute);
 
         //Cập nhật vào match team => tạo instance, set score attr, set car config
-        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchId(matchDataRequest.getTeamId(), matchDataRequest.getMatchId())
+        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchId(matchScoreData.getTeamId(), matchScoreData.getMatchId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information"));
 
-        Round round = match.getRound();
-        ScoredMethod scoredMethod = round.getScoredMethod();
+        if (!matchTeam.getAccount().getAccountId().equals(matchScoreData.getPlayerId())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error, registered player with participated player not match, please contact administrator for more information");
+        }
+
+        matchTeam.setScoreAttribute(scoreAttribute);
+        matchTeamRepository.save(matchTeam);
 
         //Cập nhật điểm match => match score, status
+        Round round = roundRepository.findById(match.getRound().getId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Round not found"));
 
-        //Kiểm tra xem toàn bộ trận đấu đã kết thúc chưa => đổi status của round
+        ScoredMethod sm = scoredMethodRepository.findById(round.getScoredMethod().getId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Scored Method not found"));
+
+        if (sm.getStatus() == ScoredMethodStatus.INACTIVE) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Scored Method is inactive");
+        }
+
+        // Calculate score
+        double score = 0;
+
+        ScoreAttribute sa = scoreAttributeRepository.findById(matchTeam.getScoreAttribute().getId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Score Attribute not found"));
+
+        score += calculateScore(sm, sa);
+
+        match.setMatchScore(score);
+        match.setStatus(MatchStatus.FINISHED);
+        matchRepository.save(match);
 
         //cập nhật bảng xếp hạng leaderboard
+        Leaderboard lb = Leaderboard.builder()
+                .team(matchTeam.getTeam())
+                .round(round)
+                .teamScore(score)
+                .build();
 
-        matchRepository.save(match);
+        leaderboardRepository.save(lb);
+        leaderboardService.updateLeaderboard(round.getId());
+    }
+
+    @Override
+    public void updateMatchTeamCar(MatchCarData matchCarData) {
+        matchTeamRepository.save(modelMapper.map(matchCarData, MatchTeam.class));
     }
 
     @Override
@@ -280,12 +323,80 @@ public class MatchServiceImpl implements MatchService {
         }
 
 
-
     }
 
 
+    @Override
+    public List<MatchResponse> getMatchesByTournamentId(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
 
+        List<Round> rounds = tournament.getRoundList();
+        List<Match> matches = new ArrayList<>();
 
+        for (Round round : rounds) {
+            matches.addAll(round.getMatchList());
+        }
 
+        List<MatchResponse> matchResponses = new ArrayList<>();
+
+        for (Match match : matches) {
+            MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
+            matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
+            matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
+            matchResponses.add(matchResponse);
+        }
+
+        return matchResponses;
+    }
+
+    private double calculateScore(ScoredMethod sm, ScoreAttribute sa) {
+
+        double score = 0;
+        score += sm.getLap() * sa.getLap();
+        score += sm.getCollision() * sa.getCollision();
+        score += sm.getOffTrack() * sa.getOffTrack();
+        score += sm.getAssistUsageCount() * sa.getAssistUsageCount();
+        score += sm.getAverageSpeed() * sa.getAverageSpeed();
+        score += sm.getTotalDistance() * sa.getTotalDistance();
+
+        return score;
+    }
+
+    @Scheduled(cron = "1 0 * * * *")
+    public void detectUnassignedMaps() {
+        logger.info("Detecting unassigned maps task running at {}", LocalDateTime.now());
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        Date date = calendar.getTime();
+        Optional<Tournament> t = tournamentRepository.findByStatusAndStartDateBefore(TournamentStatus.ACTIVE, date);
+
+        if (t.isPresent()) {
+            Tournament tournament = t.get();
+            List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE);
+
+            if (!rounds.isEmpty()) {
+                List<Match> matches = matchRepository.findByRoundId(rounds.get(0).getId());
+
+                for (Match match : matches) {
+                    if (match.getTimeEnd().before(DateUtil.convertToDate(LocalDateTime.now()))) {
+                        match.setStatus(MatchStatus.UNASSIGNED);
+                        matchRepository.save(match);
+                    }
+                }
+
+            } else {
+                logger.info("No active round found");
+            }
+        } else {
+            logger.info("No active tournament found");
+        }
+        logger.info("Detecting unassigned maps task finished at {}", LocalDateTime.now());
+    }
 
 }

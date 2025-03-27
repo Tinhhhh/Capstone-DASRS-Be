@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
 import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
+import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import jakarta.mail.MessagingException;
@@ -34,4 +35,5 @@ public interface AccountService {
 
     void newAccountByAdmin(NewAccountByAdmin account) throws MessagingException;
 
+    void newAccountByStaff(NewAccountByStaff request) throws MessagingException;
 }

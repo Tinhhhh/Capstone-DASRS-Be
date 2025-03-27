@@ -21,4 +21,6 @@ public interface RoundRepository extends JpaRepository<Round, Long>, JpaSpecific
     List<Round> findAvailableRoundByTournamentId(@Param("id") Long id);
 
     Optional<Round> findByStatusAndStartDateBefore(RoundStatus roundStatus, Date date);
+
+    Optional<Round> findByStatusAndEndDateBefore(RoundStatus roundStatus, Date date);
 }

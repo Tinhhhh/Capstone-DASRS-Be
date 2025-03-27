@@ -27,17 +27,15 @@ public class ScoreAttribute {
     @Column(name = "lap")
     private int lap;
 
-    @JsonFormat(pattern = "mm:ss.SSS")
     @Column(name = "fastest_lap_time")
-    private LocalTime fastestLapTime;
+    private double fastestLapTime;
 
     @JsonProperty("collision")
     @Column(name = "collision")
     private int collision;
 
-    @JsonFormat(pattern = "mm:ss.SSS")
     @Column(name = "total_race_time")
-    private LocalTime totalRaceTime;
+    private double totalRaceTime;
 
     @Column(name = "off_track")
     private int offTrack;
