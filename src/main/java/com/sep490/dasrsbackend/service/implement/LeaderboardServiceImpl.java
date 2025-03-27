@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.Leaderboard;
 import com.sep490.dasrsbackend.model.entity.Round;
 import com.sep490.dasrsbackend.model.entity.Team;
+import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.response.LeaderboardResponse;
 import com.sep490.dasrsbackend.model.payload.response.ListLeaderboardResponse;
 import com.sep490.dasrsbackend.repository.LeaderboardRepository;
@@ -13,6 +14,7 @@ import com.sep490.dasrsbackend.service.LeaderboardService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -45,7 +47,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     public ListLeaderboardResponse getLeaderboardByRoundId(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir) {
 
         Round round = roundRepository.findById(roundId).orElseThrow(
-                () -> new IllegalArgumentException("Request fails, round not found")
+                () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round not found")
         );
 
         Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
@@ -58,7 +60,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     public ListLeaderboardResponse getLeaderboardByTeamId(Long teamId, int pageNo, int pageSize, String sortBy, String sortDir) {
 
         Team team = teamRepository.findById(teamId).orElseThrow(
-                () -> new IllegalArgumentException("Request fails, team not found")
+                () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, team not found")
         );
 
         Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
