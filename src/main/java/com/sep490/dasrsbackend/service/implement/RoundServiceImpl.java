@@ -17,6 +17,7 @@ import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;
+import org.slf4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -50,6 +51,8 @@ public class RoundServiceImpl implements RoundService {
     private final ScoreAttributeRepository scoreAttributeRepository;
     private final MatchTeamRepository matchTeamRepository;
     private final ResourceRepository resourceRepository;
+
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(RoundServiceImpl.class);
 
     @Transactional
     @Override
@@ -779,7 +782,8 @@ public class RoundServiceImpl implements RoundService {
     //* = every
 //    @Scheduled(cron = "5 * * * * *")
     @Scheduled(cron = "1 0 0 * * *")
-    public void isRoundStart() {
+    public void changeRoundStatus() {
+        logger.info("Change round status task is running");
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -789,14 +793,31 @@ public class RoundServiceImpl implements RoundService {
 
         Date date = calendar.getTime();
 
+        //Kiểm tra xem có vòng nào bắt đầu ko
         Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.PENDING, date);
         if (round.isPresent()) {
+            logger.info("Found a round that reach start date");
             Tournament tournament = round.get().getTournament();
             if (tournament.getStatus() == TournamentStatus.ACTIVE) {
                 round.get().setStatus(RoundStatus.ACTIVE);
                 roundRepository.save(round.get());
+                logger.info("Change round status to active. Round id: {}", round.get().getId());
             }
         }
+
+        //Kiểm tra xem có vòng nào kết thúc ko
+        Optional<Round> roundEnd = roundRepository.findByStatusAndEndDateBefore(RoundStatus.ACTIVE, date);
+        if (roundEnd.isPresent()) {
+            logger.info("Found a round that reach end date");
+            Tournament tournament = roundEnd.get().getTournament();
+            if (tournament.getStatus() == TournamentStatus.ACTIVE) {
+                roundEnd.get().setStatus(RoundStatus.COMPLETED);
+                roundRepository.save(roundEnd.get());
+                logger.info("Change round status to completed. Round id: {}", roundEnd.get().getId());
+            }
+        }
+
+        logger.info("Change round status task is completed");
     }
 
 }

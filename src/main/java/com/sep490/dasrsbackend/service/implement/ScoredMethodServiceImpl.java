@@ -88,38 +88,7 @@ public class ScoredMethodServiceImpl implements ScoredMethodService {
         return listScoredMethod;
     }
 
-    @Override
-    public void calculateMatchScore(Long roundId) {
 
-        Round round = roundRepository.findById(roundId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Round not found"));
-
-        List<Match> matches = matchRepository.findByRoundId(roundId);
-
-        ScoredMethod sm = scoredMethodRepository.findById(round.getScoredMethod().getId())
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Scored Method not found"));
-
-        if (sm.getStatus() == ScoredMethodStatus.INACTIVE) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Scored Method is inactive");
-        }
-
-        // Calculate score for each match
-        for (Match match : matches) {
-            double score = 0;
-            // Calculate score
-            List<MatchTeam> matchTeam = matchTeamRepository.findByMatchId(match.getId());
-
-            for (MatchTeam mt : matchTeam) {
-                ScoreAttribute sa = scoreAttributeRepository.findById(mt.getScoreAttribute().getId())
-                        .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Score Attribute not found"));
-                score += calculateScore(sm,sa);;
-            }
-
-            match.setMatchScore(score);
-            matchRepository.save(match);
-        }
-
-    }
 
     @Override
     public void changeStatus(Long scoredMethodId, ScoredMethodStatus status) {
@@ -142,16 +111,5 @@ public class ScoredMethodServiceImpl implements ScoredMethodService {
         scoredMethodRepository.save(scoredMethod);
     }
 
-    private double calculateScore(ScoredMethod sm, ScoreAttribute sa) {
 
-        double score = 0;
-        score += sm.getLap() * sa.getLap();
-        score += sm.getCollision() * sa.getCollision();
-        score += sm.getOffTrack() * sa.getOffTrack();
-        score += sm.getAssistUsageCount() * sa.getAssistUsageCount();
-        score += sm.getAverageSpeed() * sa.getAverageSpeed();
-        score += sm.getTotalDistance() * sa.getTotalDistance();
-
-        return score;
-    }
 }

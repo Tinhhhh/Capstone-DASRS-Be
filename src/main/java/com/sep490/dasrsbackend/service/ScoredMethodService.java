@@ -16,6 +16,5 @@ public interface ScoredMethodService {
 
     ListScoredMethod getAllScoredMethods(int pageNo, int pageSize, String sortBy, String sortDirection);
 
-    void calculateMatchScore(Long roundId);
     void changeStatus(Long scoredMethodId, ScoredMethodStatus status);
 }

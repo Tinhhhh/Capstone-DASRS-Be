@@ -26,4 +26,6 @@ public interface LeaderboardRepository extends JpaRepository<Leaderboard, Long> 
             "JOIN l.round r " +
             "WHERE r.id = :id AND t.isDisqualified = false")
     List<Leaderboard> findByRoundIdNotDisqualified(@Param("id") Long id);
+
+    List<Leaderboard> findByRoundId(Long roundId);
 }

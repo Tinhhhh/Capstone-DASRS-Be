@@ -22,4 +22,5 @@ public interface RoundRepository extends JpaRepository<Round, Long>, JpaSpecific
 
     Optional<Round> findByStatusAndStartDateBefore(RoundStatus roundStatus, Date date);
 
+    Optional<Round> findByStatusAndEndDateBefore(RoundStatus roundStatus, Date date);
 }

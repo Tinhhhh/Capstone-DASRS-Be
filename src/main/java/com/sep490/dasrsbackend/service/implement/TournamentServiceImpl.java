@@ -25,19 +25,18 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;
+import org.slf4j.Logger;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +47,7 @@ public class TournamentServiceImpl implements TournamentService {
     private final MatchRepository matchRepository;
     private final ModelMapper modelMapper;
     private final TeamRepository teamRepository;
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(TournamentServiceImpl.class);
 
 
     @Override
@@ -426,5 +426,43 @@ public class TournamentServiceImpl implements TournamentService {
         tournament.getTeamList().forEach(team -> participants.addAll(team.getAccountList()));
 
         return participants;
+    }
+
+    @Scheduled(cron = "1 0 0 * * *")
+    public void endTournament() {
+        logger.info("End tournament task is running.");
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        Date date = calendar.getTime();
+
+        //Kiểm tra xem có tournament nào kết thúc ko
+        Optional<Tournament> tournament = tournamentRepository.findByStatusAndEndDateBefore(TournamentStatus.ACTIVE, date);
+        if (tournament.isPresent()) {
+            logger.info("Found a tournament that has reached the end date.");
+            List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.get().getId(), RoundStatus.COMPLETED);
+
+            boolean flag = false;
+            for (Round round : rounds) {
+                if (round.isLast()) {
+                    flag = true;
+                    break;
+                }
+            }
+
+            if (flag) {
+                tournament.get().setStatus(TournamentStatus.COMPLETED);
+                tournamentRepository.save(tournament.get());
+                logger.info("Tournament completed successfully. Tournament Id: {}", tournament.get().getId());
+            } else {
+                logger.error("There is no last round completed in tournament but tournament end date is reached. Tournament Id: {}", tournament.get().getId());
+            }
+        }
+
+        logger.info("End tournament task is completed.");
     }
 }

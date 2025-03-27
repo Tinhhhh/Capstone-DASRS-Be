@@ -6,7 +6,7 @@ import com.sep490.dasrsbackend.model.payload.response.ListLeaderboardResponse;
 import java.util.List;
 
 public interface LeaderboardService {
-    void updateLeaderboard(List<Leaderboard> leaderboards);
+    void updateLeaderboard(Long roundId);
 
     ListLeaderboardResponse getLeaderboardByRoundId(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir);
 

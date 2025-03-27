@@ -32,15 +32,22 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     private final TeamRepository teamRepository;
 
     @Override
-    public void updateLeaderboard(List<Leaderboard> leaderboards) {
-        leaderboards.sort(Comparator.comparing(Leaderboard::getTeamScore).reversed());
+    public void updateLeaderboard(Long roundId) {
+
+        Round round = roundRepository.findById(roundId).orElseThrow(
+                () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round not found")
+        );
+
+        List<Leaderboard> lbs = leaderboardRepository.findByRoundId(round.getId());
+
+        lbs.sort(Comparator.comparing(Leaderboard::getTeamScore).reversed());
 
         int rank = 1;
-        for (Leaderboard leaderboard : leaderboards) {
+        for (Leaderboard leaderboard : lbs) {
             leaderboard.setRanking(rank++);
         }
 
-        leaderboardRepository.saveAll(leaderboards);
+        leaderboardRepository.saveAll(lbs);
     }
 
     @Override

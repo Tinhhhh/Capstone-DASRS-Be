@@ -20,6 +20,7 @@ import java.util.List;
 @Table(name = "scored_method")
 @EntityListeners(AuditingEntityListener.class)
 public class ScoredMethod {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "scored_method_id")

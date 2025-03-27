@@ -4,7 +4,6 @@ import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
-import com.sep490.dasrsbackend.model.payload.request.EditTournamentSchedule;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.ListTournament;
 import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
