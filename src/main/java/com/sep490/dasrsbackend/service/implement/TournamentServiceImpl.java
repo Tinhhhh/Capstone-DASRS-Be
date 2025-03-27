@@ -4,10 +4,7 @@ import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.Util.GenerateCode;
 import com.sep490.dasrsbackend.Util.Schedule;
 import com.sep490.dasrsbackend.Util.TournamentSpecification;
-import com.sep490.dasrsbackend.model.entity.Match;
-import com.sep490.dasrsbackend.model.entity.Round;
-import com.sep490.dasrsbackend.model.entity.Team;
-import com.sep490.dasrsbackend.model.entity.Tournament;
+import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
@@ -418,5 +415,16 @@ public class TournamentServiceImpl implements TournamentService {
             }
 
         }
+    }
+
+    @Override
+    public List<Account> getUsersByTournament(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Tournament not found"));
+
+        List<Account> participants = new ArrayList<>();
+        tournament.getTeamList().forEach(team -> participants.addAll(team.getAccountList()));
+
+        return participants;
     }
 }

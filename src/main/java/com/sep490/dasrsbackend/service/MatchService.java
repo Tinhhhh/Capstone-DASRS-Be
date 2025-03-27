@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.service;
 
+import com.sep490.dasrsbackend.model.entity.Match;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchDataRequest;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
@@ -17,4 +18,6 @@ public interface MatchService {
     void retrieveMatchData(MatchDataRequest matchDataRequest);
 
     void changeMatchSlot(Long MatchId, ChangeMatchSlot changeMatchSlot);
+
+    List<MatchResponse> getMatchesByTournamentId(Long tournamentId);
 }
