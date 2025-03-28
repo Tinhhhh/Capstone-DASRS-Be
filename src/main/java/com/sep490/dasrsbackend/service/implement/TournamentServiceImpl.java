@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.Util.GenerateCode;
 import com.sep490.dasrsbackend.Util.Schedule;
 import com.sep490.dasrsbackend.Util.TournamentSpecification;
+import com.sep490.dasrsbackend.dto.ParticipantDTO;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
@@ -418,13 +419,27 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     @Override
-    public List<Account> getUsersByTournament(Long tournamentId) {
+    public List<ParticipantDTO> getUsersByTournament(Long tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Tournament not found"));
 
-        List<Account> participants = new ArrayList<>();
-        tournament.getTeamList().forEach(team -> participants.addAll(team.getAccountList()));
+        List<ParticipantDTO> participants = new ArrayList<>();
+        tournament.getTeamList().forEach(team -> {
+            team.getAccountList().forEach(account -> {
+                ParticipantDTO dto = new ParticipantDTO();
+                dto.setAccountId(account.getAccountId());
+                dto.setFirstName(account.getFirstName());
+                dto.setLastName(account.getLastName());
+                dto.setEmail(account.getEmail());
+                dto.setAvatar(account.getAvatar());
+                dto.setPhone(account.getPhone());
+                dto.setGender(account.getGender());
+                dto.setDob(account.getDob());
+                participants.add(dto);
+            });
+        });
 
         return participants;
     }
+
 }

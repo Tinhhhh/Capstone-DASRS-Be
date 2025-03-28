@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.service;
 
+import com.sep490.dasrsbackend.dto.ParticipantDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
@@ -26,5 +27,5 @@ public interface TournamentService {
 
     void editTournamentSchedule(Long id, int day);
 
-    List<Account> getUsersByTournament(Long tournamentId);
+    List<ParticipantDTO> getUsersByTournament(Long tournamentId);
 }

@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.dto.ParticipantDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
@@ -75,11 +76,12 @@ public class TournamentController {
     @GetMapping("participants/{tournamentId}")
     @Operation(summary = "View participants in a tournament", description = "Retrieve the list of users participating in a specific tournament")
     public ResponseEntity<Object> getTournamentParticipants(@PathVariable Long tournamentId) {
-        List<Account> participants = tournamentService.getUsersByTournament(tournamentId);
+        List<ParticipantDTO> participants = tournamentService.getUsersByTournament(tournamentId);
         return ResponseBuilder.responseBuilderWithData(
-                org.springframework.http.HttpStatus.OK,
+                HttpStatus.OK,
                 "List of participants retrieved successfully",
                 participants
         );
     }
+
 }
