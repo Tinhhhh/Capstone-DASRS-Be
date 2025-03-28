@@ -9,6 +9,7 @@ import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
+import com.sep490.dasrsbackend.security.JwtTokenProvider;
 import com.sep490.dasrsbackend.service.AccountService;
 import com.sep490.dasrsbackend.service.implement.ExcelImportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,6 +41,7 @@ public class AccountController {
 
     private final AccountService accountService;
     private final ExcelImportService excelImportService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Operation(summary = "Register a new account by import excel file", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -63,12 +65,18 @@ public class AccountController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.ACCEPTED, "Successfully Register", "An email had been sent to email owner.");
     }
 
-    @Operation(summary = "Change account password", description = "Allows users to change their account password.")
     @PostMapping("/change-password")
-    public ResponseEntity<Object> changePassword(@RequestBody @Valid ChangePasswordRequest changePasswordRequest) {
-        accountService.changePassword(changePasswordRequest, null);
-        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Password changed successfully.");
+    public ResponseEntity<?> changePassword(
+            @RequestHeader("Authorization") String token,
+            @RequestBody ChangePasswordRequest request) {
+        jwtTokenProvider.validateToken(token.replace("Bearer ", "")); // Validate the JWT
+        String username = jwtTokenProvider.getUsernameFromJwt(token.replace("Bearer ", ""));
+
+        accountService.changePassword(username, request.getOldPassword(), request.getNewPassword());
+
+        return ResponseEntity.ok("Password updated successfully");
     }
+
 
     @Operation(summary = "Update account profile picture", description = "Update the profile picture of an account.")
     @PutMapping("/update-profile-picture")
@@ -86,9 +94,17 @@ public class AccountController {
 
     @Operation(summary = "Get current account information", description = "Fetch the current logged-in account details.")
     @GetMapping("/current-account")
-    public ResponseEntity<Object> getCurrentAccountInfo(HttpServletRequest request) {
-        AccountInfoResponse accountInfo = accountService.getCurrentAccountInfo(request);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Current account information retrieved successfully.", accountInfo);
+    public ResponseEntity<Object> getCurrentAccountInfo(@RequestHeader("Authorization") String token) {
+        jwtTokenProvider.validateToken(token.replace("Bearer ", "")); // Validate the token
+        String email = jwtTokenProvider.getUsernameFromJwt(token.replace("Bearer ", "")); // Extract email
+
+        AccountInfoResponse accountInfo = accountService.getCurrentAccountInfo(email);
+
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Current account information retrieved successfully.",
+                accountInfo
+        );
     }
 
     @Operation(summary = "Get account information by admin", description = "Fetch account details as an admin.")
