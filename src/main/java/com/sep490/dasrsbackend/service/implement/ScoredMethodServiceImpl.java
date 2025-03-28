@@ -1,12 +1,14 @@
 package com.sep490.dasrsbackend.service.implement;
 
-import com.sep490.dasrsbackend.model.entity.ScoredMethod;
+import com.sep490.dasrsbackend.Util.DateUtil;
+import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.enums.ScoredMethodStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.NewScoreMethod;
 import com.sep490.dasrsbackend.model.payload.response.ListScoredMethod;
 import com.sep490.dasrsbackend.model.payload.response.ScoredMethodResponse;
-import com.sep490.dasrsbackend.repository.ScoredMethodRepository;
+import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.ScoredMethodService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -18,12 +20,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class ScoredMethodServiceImpl implements ScoredMethodService {
     private final ScoredMethodRepository scoredMethodRepository;
     private final ModelMapper modelMapper;
+    private final RoundRepository roundRepository;
+    private final MatchRepository matchRepository;
+    private final MatchTeamRepository matchTeamRepository;
+    private final ScoreAttributeRepository scoreAttributeRepository;
 
     @Override
     public void createNewScoredMethod(NewScoreMethod newScoreMethod) {
@@ -80,4 +87,29 @@ public class ScoredMethodServiceImpl implements ScoredMethodService {
 
         return listScoredMethod;
     }
+
+
+
+    @Override
+    public void changeStatus(Long scoredMethodId, ScoredMethodStatus status) {
+        ScoredMethod scoredMethod = scoredMethodRepository.findById(scoredMethodId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Scored Method not found"));
+
+        if (scoredMethod.getStatus() == status) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Scored Method already in the same status");
+        }
+
+        Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.ACTIVE, DateUtil.getCurrentTimestamp());
+
+        if (round.isPresent()) {
+            if (round.get().getScoredMethod().getId().equals(scoredMethodId)) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "ScoredMethod's status can't be change while round is active");
+            }
+        }
+
+        scoredMethod.setStatus(status);
+        scoredMethodRepository.save(scoredMethod);
+    }
+
+
 }

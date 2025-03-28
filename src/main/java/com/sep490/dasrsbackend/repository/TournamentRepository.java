@@ -23,4 +23,8 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long>, J
             "AND :startDate > (t.end_date + INTERVAL '1 day')",
             nativeQuery = true)
     boolean findByDate(@Param("startDate") Date startDate);
+
+    Optional<Tournament> findByStatusAndEndDateBefore(TournamentStatus tournamentStatus, Date date);
+
+    Optional<Tournament> findByStatusAndStartDateBefore(TournamentStatus tournamentStatus, Date date);
 }

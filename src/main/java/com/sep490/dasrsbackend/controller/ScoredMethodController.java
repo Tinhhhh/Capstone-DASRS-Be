@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.model.enums.ScoredMethodStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.NewScoreMethod;
 import com.sep490.dasrsbackend.service.ScoredMethodService;
@@ -48,6 +49,10 @@ public class ScoredMethodController {
                 scoredMethodService.getAllScoredMethods(pageNo, pageSize, sortBy, sortDirection));
     }
 
-
+    @PutMapping("/change-status")
+    public ResponseEntity<Object> changeStatus(@RequestParam Long scoredMethodId, @RequestParam ScoredMethodStatus status) {
+        scoredMethodService.changeStatus(scoredMethodId, status);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Scored method status changed successfully");
+    }
 
 }
