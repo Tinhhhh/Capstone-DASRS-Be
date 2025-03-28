@@ -20,6 +20,7 @@ import java.util.List;
 @Table(name = "scored_method")
 @EntityListeners(AuditingEntityListener.class)
 public class ScoredMethod {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "scored_method_id")
@@ -28,23 +29,14 @@ public class ScoredMethod {
     @Column(name = "lap")
     private double lap;
 
-    @Column(name = "fastest_lap_time")
-    private double fastestLapTime;
-
     @Column(name = "collision")
     private double collision;
-
-    @Column(name = "total_race_time")
-    private double totalRaceTime;
 
     @Column(name = "off_track")
     private double offTrack;
 
     @Column(name = "assist_usage")
     private double assistUsageCount;
-
-    @Column(name = "top_speed")
-    private double topSpeed;
 
     @Column(name = "average_speed")
     private double averageSpeed;

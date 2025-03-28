@@ -3,6 +3,10 @@ package com.sep490.dasrsbackend.model.payload.request;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
 
@@ -13,29 +17,31 @@ import lombok.*;
 @NoArgsConstructor
 public class NewScoreMethod {
 
+    @DecimalMax(value = "500.0", message = "Team number must be at most 500.0")
+    @DecimalMin(value = "0.0", message = "Team number must be at least 0.0")
     private double lap;
 
-    @JsonProperty("fastest_lap_time")
-    private double fastestLapTime;
-
+    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
+    @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
     @JsonProperty("collision")
     private double collision;
 
-    @JsonProperty("total_race_time")
-    private double totalRaceTime;
-
+    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
+    @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
     @JsonProperty("off_track")
     private double offTrack;
 
-    @JsonProperty("assist_usage")
+    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
+    @DecimalMin(value = "-100.0", message = "Team number must be at least -100.0")
     private double assistUsageCount;
 
-    @JsonProperty("top_speed")
-    private double topSpeed;
-
+    @DecimalMax(value = "10.0", message = "Team number must be at most 10.0")
+    @DecimalMin(value = "1.0", message = "Team number must be at least 1.0")
     @JsonProperty("average_speed")
     private double averageSpeed;
 
+    @DecimalMax(value = "100.0", message = "Team number must be at most 100.0")
+    @DecimalMin(value = "1.0", message = "Team number must be at least 1.0")
     @JsonProperty("total_distance")
     private double totalDistance;
 }

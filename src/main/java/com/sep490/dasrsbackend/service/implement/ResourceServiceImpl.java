@@ -55,10 +55,10 @@ public class ResourceServiceImpl implements ResourceService {
         return modelMapper.map(resource, ResourceResponse.class);
     }
 
-    public Page<Resource> getAllResource(int pageNo, int pageSize, String sortBy, String sortDir) {
+    private static Pageable getPageable(int pageNo, int pageSize, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        return resourceRepository.findAll(pageable);
+        return pageable;
     }
 
     @Override
@@ -73,7 +73,7 @@ public class ResourceServiceImpl implements ResourceService {
 
         if (round.isPresent()) {
             if (round.get().getResource().getId().equals(id)) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource can't be changed while round is active");
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource's status can't be change while round is active");
             }
         }
 
@@ -84,8 +84,8 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     public ListResourceResponseForAdmin getAllResourceForAdmin(int pageNo, int pageSize, String sortBy, String sortDirection) {
 
-        Page<Resource> resources = getAllResource(pageNo, pageSize, sortBy, sortDirection);
-
+        Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDirection);
+        Page<Resource> resources = resourceRepository.findAll(pageable);
         List<ResourceResponseForAdmin> resourceResponse = resources.stream()
                 .map(resource -> {
                     ResourceResponseForAdmin rs = modelMapper.map(resource, ResourceResponseForAdmin.class);
@@ -110,10 +110,11 @@ public class ResourceServiceImpl implements ResourceService {
     @Override
     public ListResourceResponse getAllResourceForAll(int pageNo, int pageSize, String sortBy, String sortDirection) {
 
-        Page<Resource> resources = getAllResource(pageNo, pageSize, sortBy, sortDirection);
+        Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDirection);
+
+        Page<Resource> resources = resourceRepository.findByIsEnable(true, pageable);
 
         List<ResourceResponse> resourceResponse = resources.stream()
-                .filter(Resource::isEnable)
                 .map(resource -> modelMapper.map(resource, ResourceResponse.class))
                 .toList();
 

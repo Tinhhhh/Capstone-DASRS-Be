@@ -37,7 +37,7 @@ public class SecurityCofig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(withDefaults())
                 .authorizeHttpRequests(request ->
-                        request.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api/v1/auth/**").permitAll()
+                        request.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api/v1/auth/**","/api/v1/leaderboards/**").permitAll()
 //                                .requestMatchers("/api/v1/environment/**", "/api/v1/match-type/**","/api/v1/scored-method/**").hasAuthority("ADMIN")
                                 .requestMatchers("/api/v1/environments/**", "/api/v1/match-types/**","/api/v1/scored-methods/**", "/api/v1/resources/**").permitAll()
                                 .requestMatchers("/api/v1/tournaments/**","/api/v1/accounts/**").permitAll()

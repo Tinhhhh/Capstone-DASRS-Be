@@ -42,7 +42,6 @@ public class Role {
     private Date lastModifiedDate;
 
     @OneToMany(mappedBy = "role")
-    private Set<Account> accounts;
-
+    private List<Account> accounts;
 
 }
