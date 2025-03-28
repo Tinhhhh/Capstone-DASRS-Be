@@ -9,6 +9,7 @@ import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
+import com.sep490.dasrsbackend.model.payload.response.TeamMemberResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.MatchRepository;
@@ -119,14 +120,18 @@ public class TeamServiceImpl implements TeamService {
 //    }
 
     @Override
-    public List<TeamResponse> getTeamMembers(Long teamId) {
+    public List<TeamMemberResponse> getTeamMembers(Long teamId) {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new IllegalArgumentException("Team not found"));
 
         return team.getAccountList().stream()
-                .map(member -> new TeamResponse(member.getAccountId(), member.fullName()))
+                .map(member -> TeamMemberResponse.builder()
+                        .id(member.getAccountId()) // UUID field
+                        .fullName(member.fullName()) // Combines firstName + lastName
+                        .build())
                 .collect(Collectors.toList());
     }
+
 
     @Override
     public void transferLeadership(Long teamId, Long newLeaderId) {

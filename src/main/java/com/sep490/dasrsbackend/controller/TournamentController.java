@@ -8,6 +8,7 @@ import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
+import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.service.TournamentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -84,4 +85,10 @@ public class TournamentController {
         );
     }
 
+    @Operation(summary = "Get Teams by Tournament ID", description = "Fetch all teams associated with a specific tournament ID.")
+    @GetMapping("/teams/{tournamentId}")
+    public ResponseEntity<?> getTeamsByTournamentId(@PathVariable Long tournamentId) {
+        List<TeamResponse> teams = tournamentService.getTeamsByTournamentId(tournamentId);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Teams retrieved successfully", teams);
+    }
 }

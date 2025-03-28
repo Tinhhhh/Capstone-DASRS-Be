@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
+import com.sep490.dasrsbackend.model.payload.response.TeamMemberResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public interface TeamService {
     void complainAboutMatch(Long teamId, String complaint);
     void removeMember(Long teamId, Long memberId);
 //    void selectMatchParticipants(Long teamId, List<Long> memberIds);
-    List<TeamResponse> getTeamMembers(Long teamId);
+    List<TeamMemberResponse> getTeamMembers(Long teamId);
     void transferLeadership(Long teamId, Long newLeaderId);
     void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee);
     void unlockMember(Long teamId, Long memberId);

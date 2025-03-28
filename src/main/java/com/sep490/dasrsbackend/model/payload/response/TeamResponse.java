@@ -1,15 +1,20 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
+import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import lombok.*;
 
 import java.util.UUID;
 
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TeamResponse {
-    private UUID id;
-    private String fullName;
+    private Long id;
+    private String name;
+    private String tag; // Represents teamTag
+    private boolean disqualified; // Represents isDisqualified
+    private TeamStatus status;
 }
+

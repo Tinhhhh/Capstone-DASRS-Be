@@ -7,6 +7,7 @@ import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.ListTournament;
+import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
 
 import java.util.List;
@@ -27,4 +28,6 @@ public interface TournamentService {
     void editTournamentSchedule(Long id, int day);
 
     List<ParticipantDTO> getUsersByTournament(Long tournamentId);
+
+    List<TeamResponse> getTeamsByTournamentId(Long tournamentId);
 }
