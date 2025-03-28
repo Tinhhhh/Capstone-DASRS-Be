@@ -20,15 +20,20 @@ import com.sep490.dasrsbackend.repository.RoleRepository;
 import com.sep490.dasrsbackend.repository.TeamRepository;
 import com.sep490.dasrsbackend.service.AccountService;
 import com.sep490.dasrsbackend.service.EmailService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,20 +42,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private AccountConverter accountConverter;
-
-    @Autowired
-    private ExcelImportService excelImportService;
-
+    private final AccountRepository accountRepository;
+    private final AccountConverter accountConverter;
+    private final ExcelImportService excelImportService;
     private final EmailService emailService;
     private final RoleRepository roleRepository;
     private final TeamRepository teamRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.jwt.secret-key}")
+    private String secretKey;
 
     @Override
     public List<AccountDTO> createAccounts(List<AccountDTO> accountDTOs) {
@@ -71,25 +72,24 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountInfoResponse getCurrentAccountInfo(HttpServletRequest request) {
-        UUID accountId = extractAccountIdFromRequest(request);
-        Account account = accountRepository.findById(accountId)
+    public AccountInfoResponse getCurrentAccountInfo(String email) {
+        Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Account not found"));
 
         return accountConverter.convertToAccountInfoResponse(account);
     }
 
+
     @Override
-    public void changePassword(ChangePasswordRequest changePasswordRequest, HttpServletRequest request) {
-        UUID accountId = extractAccountIdFromRequest(request);
-        Account account = accountRepository.findById(accountId)
+    public void changePassword(String username, String oldPassword, String newPassword) {
+        Account account = accountRepository.findByEmail(username)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Account not found"));
 
-        if (!passwordEncoder.matches(changePasswordRequest.getOldPassword(), account.getPassword())) {
+        if (!passwordEncoder.matches(oldPassword, account.getPassword())) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Old password is incorrect");
         }
 
-        account.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        account.setPassword(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
     }
 

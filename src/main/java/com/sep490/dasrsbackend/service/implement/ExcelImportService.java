@@ -10,10 +10,13 @@ import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.TeamRepository;
 import com.sep490.dasrsbackend.repository.TournamentRepository;
+import com.sep490.dasrsbackend.service.EmailService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -30,6 +33,8 @@ public class ExcelImportService {
     private final AccountRepository accountRepository;
     private final AccountConverter accountConverter;
     private final TournamentRepository tournamentRepository;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
     public List<AccountDTO> importAccountsFromExcel(InputStream inputStream) throws IOException {
         List<AccountDTO> accountDTOs = new ArrayList<>();
@@ -48,6 +53,12 @@ public class ExcelImportService {
                 Row row = rowIterator.next();
                 try {
                     AccountDTO accountDTO = parseRowToAccountDTO(row, teamLeaderMap);
+                    // Keep the plain password for the email
+                    String plainPassword = accountDTO.getPassword();
+
+                    // Encode the password for storing in the database
+                    String encodedPassword = passwordEncoder.encode(plainPassword);
+                    accountDTO.setPassword(encodedPassword);
                     Account account = accountConverter.convertToEntity(accountDTO);
 
                     // Save account to database
@@ -55,8 +66,19 @@ public class ExcelImportService {
 
                     // Convert back to DTO for the response
                     accountDTOs.add(accountConverter.convertToDTO(account));
+
+                    emailService.sendAccountInformation(
+                            accountDTO.getFirstName(),
+                            accountDTO.getEmail(),
+                            plainPassword, // Send the plain password here
+                            accountDTO.getEmail(),
+                            "EMAIL_IMPORTED_ACCOUNT.html", // Template name
+                            "Your Account Has Been Created"
+                    );
                 } catch (IllegalArgumentException e) {
                     System.err.println("Invalid row: " + e.getMessage());
+                } catch (MessagingException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -91,7 +113,8 @@ public class ExcelImportService {
         accountDTO.setLeader(isLeader);
 
         // Generate random password
-        accountDTO.setPassword(generateRandomPassword(8));
+        String plainPassword = generateRandomPassword(8);
+        accountDTO.setPassword(plainPassword);
         // Set default Role object
         Role defaultRole = new Role();
         defaultRole.setId(1L); // Default role ID
@@ -212,15 +235,13 @@ public class ExcelImportService {
         return phone;
     }
 
-    private String generateRandomPassword(int length) {
-        SecureRandom random = new SecureRandom();
-        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%";
-        StringBuilder password = new StringBuilder(length);
-
+    public String generateRandomPassword(int length) {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder password = new StringBuilder();
         for (int i = 0; i < length; i++) {
-            password.append(characters.charAt(random.nextInt(characters.length())));
+            int index = (int) (Math.random() * characters.length());
+            password.append(characters.charAt(index));
         }
-
         return password.toString();
     }
 }

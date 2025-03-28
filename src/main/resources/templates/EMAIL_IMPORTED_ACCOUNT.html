@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>[Dasrs] Thông tin tài khoản</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border: 1px solid #dddddd;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .header img {
+            max-width: 200px;
+        }
+
+        .content {
+            text-align: center;
+            font-size: 16px;
+            color: #333333;
+        }
+
+        .content h2 {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 14px;
+            color: #888888;
+            margin-top: 20px;
+        }
+
+        .footer a {
+            color: #888888;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+
+        .footer .social-icons {
+            margin: 20px 0;
+        }
+
+        .footer .social-icons img {
+            width: 24px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="content">
+        <h2>Thông tin tài khoản</h2>
+        <p th:text="'Xin chào ' + ${username} + ','"></p>
+        <p>Đây là thông tin đăng nhập của bạn:</p>
+        <p>Email đăng nhập: <span th:text="${email}"></span></p>
+        <p>Mật khẩu: <span th:text="${password}"></span></p>
+        <p>Vui lòng cập nhật thông tin tài khoản và đổi mật khẩu ngay sau khi đăng nhập.</p>
+    </div>
+    <div class="footer">
+        <div class="social-icons">
+            <a href="#"><img alt="Facebook" src="https://i.imgur.com/NBqZYzn.png"></a>
+            <a href="#"><img alt="Twitter" src="https://imgur.com/7LPMq2B.png"></a>
+            <a href="#"><img alt="Instagram" src="https://imgur.com/FlPZGYu.png"
+                             style="width: 24px"></a>
+        </div>
+        <p><a href="#">Chính sách bảo mật</a> | <a href="#">Hỗ trợ</a> | <a href="#">Điều khoản dịch
+            vụ</a></p>
+        <p>Không được chia sẻ thông tin tài khoản dưới mọi hình thức!</p>
+        <p>© 2024 Dasrs. Cảm ơn bạn đã lựa chọn đồng hành cùng chúng tôi.</p>
+    </div>
+</div>
+</body>
+</html>

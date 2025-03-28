@@ -19,9 +19,9 @@ public interface AccountService {
 
     List<AccountDTO> importAccounts(InputStream excelInputStream) throws Exception;
 
-    AccountInfoResponse getCurrentAccountInfo(HttpServletRequest request);
+    AccountInfoResponse getCurrentAccountInfo(String email);
 
-    void changePassword(ChangePasswordRequest changePasswordRequest, HttpServletRequest request);
+    void changePassword(String username, String oldPassword, String newPassword);
 
     void updateAccountProfilePicture(UUID id, String imageURLMain);
 
