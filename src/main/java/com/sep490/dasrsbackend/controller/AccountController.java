@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.dto.AccountDTO;
+import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
@@ -8,6 +9,7 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.security.JwtTokenProvider;
 import com.sep490.dasrsbackend.service.AccountService;
@@ -31,6 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -129,6 +132,28 @@ public class AccountController {
             return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Player account created successfully.");
         } catch (MessagingException e) {
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send email notification.");
+        } catch (Exception e) {
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER'")
+    @GetMapping("/players")
+    public ResponseEntity<Object> getPlayers() {
+        try {
+            List<PlayerResponse> players = accountService.getPlayers();
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", players);
+        } catch (Exception e) {
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Get players by team name", description = "Retrieve all players associated with a specific team name")
+    @GetMapping("/players-by-team")
+    public ResponseEntity<Object> getPlayerByTeamName(@RequestParam String teamName) {
+        try {
+            List<PlayerResponse> players = accountService.getPlayerByTeamName(teamName);
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", players);
         } catch (Exception e) {
             return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
         }
