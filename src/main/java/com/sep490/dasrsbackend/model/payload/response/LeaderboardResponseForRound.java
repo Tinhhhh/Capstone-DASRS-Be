@@ -11,9 +11,9 @@ import java.util.List;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
-public class LeaderboardResponse {
+@NoArgsConstructor
+public class LeaderboardResponseForRound {
 
     @JsonProperty(value = "round_id", index = 1)
     private Long roundId;
@@ -27,20 +27,17 @@ public class LeaderboardResponse {
     @JsonProperty(value = "top_speed", index = 4)
     private TeamTournamentResponse topSpeed;
 
-    @JsonProperty("leaderboard_id")
-    private Long leaderboardId;
+    @JsonProperty(value = "content", index = 5)
+    private List<LeaderboardData> content;
 
-    @JsonProperty("ranking")
-    private int ranking;
-
-    @JsonProperty("team_score")
-    private double teamScore;
-
-    @JsonProperty("created_date")
-    private String createdDate;
-
-    @JsonProperty("team_id")
-    private Long teamId;
-
-
+    @JsonProperty(value = "page_no", index = 6)
+    private int pageNo;
+    @JsonProperty(value = "page_size", index = 7)
+    private int pageSize;
+    @JsonProperty(value = "total_elements", index = 8)
+    private long totalElements;
+    @JsonProperty(value = "total_pages", index = 9)
+    private int totalPages;
+    @JsonProperty(value = "last", index = 10)
+    private boolean last;
 }

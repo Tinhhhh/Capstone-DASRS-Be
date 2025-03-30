@@ -34,7 +34,7 @@ public class MatchType {
     @Column(name = "match_duration")
     private double matchDuration;
 
-    @JsonProperty("finish_type")
+    @Enumerated(EnumType.STRING)
     @Column(name = "finish_type")
     private FinishType finishType;
 

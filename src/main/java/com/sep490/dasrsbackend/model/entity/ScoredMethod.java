@@ -49,6 +49,7 @@ public class ScoredMethod {
     @Column(name = "total_distance")
     private double totalDistance;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "match_finish_type")
     private FinishType matchFinishType;
 

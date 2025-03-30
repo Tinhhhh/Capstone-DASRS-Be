@@ -1,15 +1,10 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
-import com.sep490.dasrsbackend.model.entity.Leaderboard;
-import com.sep490.dasrsbackend.model.entity.Round;
-import com.sep490.dasrsbackend.model.entity.Team;
+import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
-import com.sep490.dasrsbackend.model.payload.response.LeaderboardResponse;
-import com.sep490.dasrsbackend.model.payload.response.ListLeaderboardResponse;
-import com.sep490.dasrsbackend.repository.LeaderboardRepository;
-import com.sep490.dasrsbackend.repository.RoundRepository;
-import com.sep490.dasrsbackend.repository.TeamRepository;
+import com.sep490.dasrsbackend.model.payload.response.*;
+import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.LeaderboardService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -30,6 +25,8 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     private final RoundRepository roundRepository;
     private final ModelMapper modelMapper;
     private final TeamRepository teamRepository;
+    private final MatchRepository matchRepository;
+    private final MatchTeamRepository matchTeamRepository;
 
     @Override
     public void updateLeaderboard(Long roundId) {
@@ -51,7 +48,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     }
 
     @Override
-    public ListLeaderboardResponse getLeaderboardByRoundId(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir) {
+    public LeaderboardResponseForRound getLeaderboardByRoundId(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir) {
 
         Round round = roundRepository.findById(roundId).orElseThrow(
                 () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round not found")
@@ -60,11 +57,40 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
         Page<Leaderboard> leaderboards = leaderboardRepository.findByRoundId(round.getId(), pageable);
 
-        return getListLeaderboardResponse(leaderboards);
+        if (leaderboards.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Leaderboard not found, please check if the round is valid");
+        }
+
+        LeaderboardResponseForRound leaderboardList = new LeaderboardResponseForRound();
+
+        List<LeaderboardData> leaderboardData = leaderboards.stream()
+                .map(leaderboard -> {
+                    LeaderboardData lbr = modelMapper.map(leaderboard, LeaderboardData.class);
+                    lbr.setTeamId(leaderboard.getTeam().getId());
+                    lbr.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
+                    return lbr;
+                })
+                .toList();
+
+        leaderboardList.setRoundId(round.getId());
+        leaderboardList.setFinishType(round.getMatchType().getFinishType());
+
+        leaderboardList.setContent(leaderboardData);
+        leaderboardList.setPageNo(leaderboards.getNumber());
+        leaderboardList.setPageSize(leaderboards.getSize());
+        leaderboardList.setTotalElements(leaderboards.getTotalElements());
+        leaderboardList.setTotalPages(leaderboards.getTotalPages());
+
+        Result result = getFastestLapTimeAndTopSpeed(round);
+
+        leaderboardList.setFastestLapTime(result.fastestLapTime());
+        leaderboardList.setTopSpeed(result.topSpeed());
+
+        return leaderboardList;
     }
 
     @Override
-    public ListLeaderboardResponse getLeaderboardByTeamId(Long teamId, int pageNo, int pageSize, String sortBy, String sortDir) {
+    public List<LeaderboardData> getLeaderboardByTeamId(Long teamId, int pageNo, int pageSize, String sortBy, String sortDir) {
 
         Team team = teamRepository.findById(teamId).orElseThrow(
                 () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, team not found")
@@ -73,7 +99,17 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
         Page<Leaderboard> leaderboards = leaderboardRepository.findByTeamId(team.getId(), pageable);
 
-        return getListLeaderboardResponse(leaderboards);
+        if (leaderboards.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Leaderboard not found");
+        }
+
+        return leaderboards.stream()
+                .map(leaderboard -> {
+                    LeaderboardData leaderboardData = modelMapper.map(leaderboard, LeaderboardData.class);
+                    leaderboardData.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
+                    return leaderboardData;
+                })
+                .collect(Collectors.toList());
     }
 
     private static Pageable getPageable(int pageNo, int pageSize, String sortBy, String sortDir) {
@@ -81,65 +117,126 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         return PageRequest.of(pageNo, pageSize, sort);
     }
 
-    private ListLeaderboardResponse getListLeaderboardResponse(Page<Leaderboard> leaderboards) {
-        List<LeaderboardResponse> leaderboardList = leaderboards.stream()
-                .map(leaderboard -> {
-                    LeaderboardResponse lbr = modelMapper.map(leaderboard, LeaderboardResponse.class);
-                    lbr.setRoundId(leaderboard.getRound().getId());
-                    lbr.setTeamId(leaderboard.getTeam().getId());
-                    lbr.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
-                    return lbr;
-                })
-                .toList();
-
-        ListLeaderboardResponse response = new ListLeaderboardResponse();
-        response.setContent(leaderboardList);
-        response.setTotalPages(leaderboards.getTotalPages());
-        response.setTotalElements(leaderboards.getTotalElements());
-        response.setPageNo(leaderboards.getNumber());
-        response.setPageSize(leaderboards.getSize());
-        response.setLast(leaderboards.isLast());
-
-        return response;
-    }
-
     @Override
     public ListLeaderboardResponse getLeaderboardByTournamentId(Long tournamentId, int pageNo, int pageSize, String sortBy, String sortDir) {
 
+            List<LeaderboardResponse> leaderboardResponseList = new ArrayList<>();
+
         List<Round> rounds = roundRepository.findByTournamentId(tournamentId);
 
-        List<Leaderboard> leaderboards = new ArrayList<>();
-
         for (Round round : rounds) {
-            List<Leaderboard> leaderboardPage = leaderboardRepository.findByRoundIdNotDisqualified(round.getId());
-            leaderboards.addAll(leaderboardPage);
+            List<Leaderboard> leaderboardPage = leaderboardRepository.findByRoundId(round.getId());
+
+            for (Leaderboard leaderboard : leaderboardPage) {
+                LeaderboardResponse leaderboardResponse = modelMapper.map(leaderboard, LeaderboardResponse.class);
+                leaderboardResponse.setLeaderboardId(leaderboard.getId());
+                leaderboardResponse.setRoundId(round.getId());
+                leaderboardResponse.setFinishType(round.getMatchType().getFinishType());
+                leaderboardResponse.setTeamId(leaderboard.getTeam().getId());
+
+                if (leaderboardResponse.getTopSpeed() == null && leaderboardResponse.getFastestLapTime() == null) {
+                    Result result = getFastestLapTimeAndTopSpeed(round);
+
+                    leaderboardResponse.setFastestLapTime(result.fastestLapTime());
+                    leaderboardResponse.setTopSpeed(result.topSpeed());
+                }
+
+                leaderboardResponseList.add(leaderboardResponse);
+            }
         }
 
         Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
 
         // Sắp xếp danh sách theo Pageable
-        List<Leaderboard> sortedLeaderboards = leaderboards.stream()
+        List<LeaderboardResponse> sortedLeaderboards = leaderboardResponseList.stream()
                 .sorted(getComparator(sortBy, sortDir))
                 .collect(Collectors.toList());
 
         // Cắt danh sách theo Pageable
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), sortedLeaderboards.size());
-        List<Leaderboard> pagedList = sortedLeaderboards.subList(start, end);
+        List<LeaderboardResponse> pagedList = sortedLeaderboards.subList(start, end);
 
         // Tạo đối tượng Page từ danh sách đã phân trang
-        Page<Leaderboard> leaderboard = new PageImpl<>(pagedList, pageable, leaderboards.size());
+        Page<LeaderboardResponse> leaderboard = new PageImpl<>(pagedList, pageable, leaderboardResponseList.size());
 
-        return getListLeaderboardResponse(leaderboard);
+        ListLeaderboardResponse response = new ListLeaderboardResponse();
+        response.setContent(leaderboard.getContent());
+        response.setTotalPages(leaderboard.getTotalPages());
+        response.setTotalElements(leaderboard.getTotalElements());
+        response.setPageNo(leaderboard.getNumber());
+        response.setPageSize(leaderboard.getSize());
+        response.setLast(leaderboard.isLast());
+
+        return response;
     }
 
-    private Comparator<Leaderboard> getComparator(String sortBy, String sortDir) {
+    private Result getFastestLapTimeAndTopSpeed(Round round) {
+        TeamTournamentResponse fastestLapTime = new TeamTournamentResponse();
+        TeamTournamentResponse topSpeed = new TeamTournamentResponse();
 
-        Comparator<Leaderboard> comparator = Comparator.comparing(Leaderboard::getRanking);
-        if ("desc".equalsIgnoreCase(sortDir)) {
-            comparator = comparator.reversed();
+        List<Match> matches = matchRepository.findByRoundId(round.getId());
+
+        double fastestLapTimeValue = 0.0;
+        double topSpeedValue = 0.0;
+        for (Match match : matches) {
+            List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+            for (MatchTeam matchTeam : matchTeams) {
+
+                // hết Test thì cmt đoạn này lại
+                if (matchTeam.getScoreAttribute() == null) {
+                    continue;
+                }
+
+                if (fastestLapTimeValue < matchTeam.getScoreAttribute().getFastestLapTime()) {
+                    fastestLapTimeValue = matchTeam.getScoreAttribute().getFastestLapTime();
+                    fastestLapTime.setId(matchTeam.getTeam().getId());
+                    fastestLapTime.setTeamName(matchTeam.getTeam().getTeamName());
+                    fastestLapTime.setTeamTag(matchTeam.getTeam().getTeamTag());
+                }
+
+                if (topSpeedValue < matchTeam.getScoreAttribute().getTopSpeed()) {
+                    topSpeedValue = matchTeam.getScoreAttribute().getTopSpeed();
+                    topSpeed.setId(matchTeam.getTeam().getId());
+                    topSpeed.setTeamName(matchTeam.getTeam().getTeamName());
+                    topSpeed.setTeamTag(matchTeam.getTeam().getTeamTag());
+                }
+
+            }
         }
-        return comparator;
+        Result result = new Result(fastestLapTime, topSpeed);
+        return result;
+    }
+
+    private record Result(TeamTournamentResponse fastestLapTime, TeamTournamentResponse topSpeed) {
+    }
+
+    private Comparator<LeaderboardResponse> getComparator(String sortBy, String sortDir) {
+
+        Comparator<LeaderboardResponse> comparator;
+
+        switch (sortBy) {
+            case "roundId":
+                comparator = Comparator.comparing(LeaderboardResponse::getRoundId);
+                break;
+            case "finishType":
+                comparator = Comparator.comparing(LeaderboardResponse::getFinishType);
+                break;
+            case "fastestLapTime":
+                comparator = Comparator.comparing(l -> l.getFastestLapTime() != null ? l.getFastestLapTime().getId() : Long.MAX_VALUE);
+                break;
+            case "topSpeed":
+                comparator = Comparator.comparing(l -> l.getTopSpeed() != null ? l.getTopSpeed().getId() : Long.MAX_VALUE);
+                break;
+            case "teamId": // Đảm bảo lấy teamId của LeaderboardResponse, không lấy từ TeamTournamentResponse
+                comparator = Comparator.comparing(LeaderboardResponse::getTeamId);
+                break;
+            default:
+                comparator = Comparator.comparing(LeaderboardResponse::getLeaderboardId);
+                break;
+        }
+
+        return sortDir.equalsIgnoreCase("desc") ? comparator.reversed() : comparator;
     }
 
 }

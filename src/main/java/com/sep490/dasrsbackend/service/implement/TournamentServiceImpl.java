@@ -63,7 +63,8 @@ public class TournamentServiceImpl implements TournamentService {
         }
 
         // Kiểm tra begin phải trước end
-
+        newTournament.setStartDate(DateUtil.convertUTCtoICT(newTournament.getStartDate()));
+        newTournament.setEndDate(DateUtil.convertUTCtoICT(newTournament.getEndDate()));
 
         LocalDateTime startDate = DateUtil.convertToLocalDateTime(newTournament.getStartDate()).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime endDate = DateUtil.convertToLocalDateTime(newTournament.getEndDate()).withHour(23).withMinute(59).withSecond(59);

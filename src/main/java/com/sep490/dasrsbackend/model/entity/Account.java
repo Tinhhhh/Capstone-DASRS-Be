@@ -68,6 +68,12 @@ public class Account {
     @Column(name = "is_leader")
     private boolean isLeader;
 
+    @Column(name = "student_identifier")
+    private String studentIdentifier;
+
+    @Column(name = "school")
+    private String school;
+
     @JsonIgnore
     @CreatedDate
     @Column(name = "created_date", nullable = false, updatable = false)

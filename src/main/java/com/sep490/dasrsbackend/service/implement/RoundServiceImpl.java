@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +34,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -57,6 +57,9 @@ public class RoundServiceImpl implements RoundService {
     @Transactional
     @Override
     public void newRound(NewRound newRound) {
+
+        newRound.setStartDate(DateUtil.convertUTCtoICT(newRound.getStartDate()));
+        newRound.setEndDate(DateUtil.convertUTCtoICT(newRound.getEndDate()));
 
         Tournament tournament = tournamentRepository.findById(newRound.getTournamentId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
@@ -89,6 +92,7 @@ public class RoundServiceImpl implements RoundService {
                 .description(newRound.getDescription())
                 .status(RoundStatus.PENDING)
                 .isLast(newRound.isLast())
+                .isLatest(true)
                 .startDate(newRound.getStartDate())
                 .endDate(newRound.getEndDate())
                 .tournament(tournament)
@@ -193,10 +197,24 @@ public class RoundServiceImpl implements RoundService {
         newRound.setStartDate(DateUtil.convertToDate((rStart.withHour(0).withMinute(0).withSecond(0).withNano(0))));
         newRound.setEndDate(DateUtil.convertToDate((rEnd.withHour(23).withMinute(23).withSecond(23).withNano(23))));
 
+        //Ngaỳ tạo vòng mới phải cách là hôm sau ngày hôm nay
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        Date today = calendar.getTime();
+        if (newRound.getStartDate().before(today)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The round start date is invalid, round start date must be after today: " + DateUtil.formatTimestamp(today));
+        }
+
         validateTime(newRound.getStartDate(), newRound.getEndDate(), tStart, currMatches, tEnd);
     }
 
     private void validateTime(Date rStart, Date rEnd, LocalDateTime tStart, double currMatches, LocalDateTime tEnd) {
+
         //Thời gian bắt đầu sớm nhất của vòng này sẽ bằng
         //thời gian kết thúc của vòng trước đó
         //hoặc thời gian bắt đầu của tournament
@@ -439,6 +457,7 @@ public class RoundServiceImpl implements RoundService {
 
         modelMapper.map(request, round);
 
+        //Đổi match type thì phải generate lại match
         boolean flag = false;
         if (round.getMatchType().getId() != request.getMatchTypeId()) {
             terminatedAllMatch(request.getId());
@@ -469,7 +488,8 @@ public class RoundServiceImpl implements RoundService {
 
     private void editRoundValidation(EditRound editRound, Tournament tournament) {
 
-        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+        //Find round dđể update thì chỉ tìm round status = pending và active
+        List<Round> rounds = roundRepository.findValidRoundByTournamentId(tournament.getId());
 
         //Nếu round đang tạo là round cuối cùng thì team limit phải bằng 0
         if (editRound.isLast() && editRound.getTeamLimit() != 0) {
@@ -579,6 +599,12 @@ public class RoundServiceImpl implements RoundService {
         } else { //Trường hợp round đang tạo không phải là round đầu tiên
             Round previousRound = rounds.get(rounds.size() - 2);
 
+            //Trường hợp round trước đó chưa hoàn thành
+            //Chưa generate match đc
+            if (!previousRound.isLatest() || previousRound.getStatus() != RoundStatus.COMPLETED) {
+                return;
+            }
+
             teamRemains = previousRound.getTeamLimit();
 
             List<Leaderboard> leaderboards = leaderboardRepository
@@ -589,7 +615,7 @@ public class RoundServiceImpl implements RoundService {
 
             //leaderboards empty nghĩa là round 1 chưa hoàn thành, chưa có dữ liệu leaderboard
             if (leaderboards.isEmpty()) {
-                return;
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round is not completed yet, please check the leaderboard");
             }
 
             for (Leaderboard leaderboard : leaderboards) {
@@ -781,9 +807,54 @@ public class RoundServiceImpl implements RoundService {
     //second, minute, hour, day, month, year
     //* = every
 //    @Scheduled(cron = "5 * * * * *")
+    @Async
     @Scheduled(cron = "1 0 0 * * *")
-    public void changeRoundStatus() {
-        logger.info("Change round status task is running");
+    @Transactional
+    public void checkIfRoundEnd() {
+        logger.info("check if a round end task is running");
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        Date date = calendar.getTime();
+
+        //Kiểm tra xem có vòng sẽ kết thúc ko
+        Optional<Round> roundEnd = roundRepository.findByStatusAndEndDateBefore(RoundStatus.ACTIVE, date);
+        if (roundEnd.isPresent()) {
+            logger.info("Found a round that reach end date");
+            Tournament tournament = roundEnd.get().getTournament();
+            if (tournament.getStatus() == TournamentStatus.ACTIVE) {
+                roundEnd.get().setStatus(RoundStatus.COMPLETED);
+                roundRepository.save(roundEnd.get());
+                logger.info("Change round status to completed. Round id: {}", roundEnd.get().getId());
+            }
+
+            List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+
+            for (Round round : rounds) {
+                if ((round.getStatus() == RoundStatus.PENDING || round.getStatus() == RoundStatus.ACTIVE) && round.getId() != roundEnd.get().getId()) {
+                    List<Match> matches = matchRepository.findByRoundId(round.getId());
+                    if (matches.isEmpty()) {
+                        generateMatch(round, tournament);
+                    }
+                    return;
+                }
+            }
+
+        }
+
+
+        logger.info("check if a round end task is completed");
+    }
+
+    @Async
+    @Scheduled(cron = "1 0 0 * * *")
+    @Transactional
+    public void checkIfRoundStart() {
+        logger.info("Check if a round start task is running");
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -805,19 +876,7 @@ public class RoundServiceImpl implements RoundService {
             }
         }
 
-        //Kiểm tra xem có vòng sẽ kết thúc ko
-        Optional<Round> roundEnd = roundRepository.findByStatusAndEndDateBefore(RoundStatus.ACTIVE, date);
-        if (roundEnd.isPresent()) {
-            logger.info("Found a round that reach end date");
-            Tournament tournament = roundEnd.get().getTournament();
-            if (tournament.getStatus() == TournamentStatus.ACTIVE) {
-                roundEnd.get().setStatus(RoundStatus.COMPLETED);
-                roundRepository.save(roundEnd.get());
-                logger.info("Change round status to completed. Round id: {}", roundEnd.get().getId());
-            }
-        }
-
-        logger.info("Change round status task is completed");
+        logger.info("Check if a round start task is completed");
     }
 
 }

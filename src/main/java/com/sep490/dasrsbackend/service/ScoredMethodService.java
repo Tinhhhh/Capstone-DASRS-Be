@@ -8,7 +8,7 @@ import com.sep490.dasrsbackend.model.payload.response.ScoredMethodResponse;
 
 public interface ScoredMethodService {
 
-    void createNewScoredMethod(NewScoreMethod newScoreMethod);
+    ScoredMethodResponse createNewScoredMethod(NewScoreMethod newScoreMethod);
 
     ScoredMethodResponse getScoredMethod(Long scoredMethodId);
 
