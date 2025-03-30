@@ -19,7 +19,7 @@ import java.util.UUID;
 public interface AccountService {
     List<AccountDTO> createAccounts(List<AccountDTO> accountDTOs);
 
-    List<AccountDTO> importAccounts(InputStream excelInputStream) throws Exception;
+    List<AccountDTO> importAccounts(InputStream excelInputStream, List<String> errorMessages) throws Exception;
 
     AccountInfoResponse getCurrentAccountInfo(String email);
 

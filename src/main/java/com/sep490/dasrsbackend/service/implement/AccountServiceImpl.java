@@ -66,9 +66,9 @@ public class AccountServiceImpl implements AccountService {
                 .collect(Collectors.toList());
     }
 
-    public List<AccountDTO> importAccounts(InputStream excelInputStream) throws Exception {
+    public List<AccountDTO> importAccounts(InputStream excelInputStream, List<String> errorMessages) throws Exception {
         // Import Excel data
-        List<AccountDTO> accountDTOs = excelImportService.importAccountsFromExcel(excelInputStream);
+        List<AccountDTO> accountDTOs = excelImportService.importAccountsFromExcel(excelInputStream, errorMessages);
         // Save accounts in the database
         return createAccounts(accountDTOs);
     }
