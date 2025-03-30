@@ -14,6 +14,7 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.RoleRepository;
@@ -35,6 +36,7 @@ import org.springframework.stereotype.Service;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -245,5 +247,67 @@ public class AccountServiceImpl implements AccountService {
 
         // Send registration email
         sendRegistrationEmail(account, request.getPassword());
+    }
+
+    public List<PlayerResponse> getPlayerList() {
+        List<Account> accounts = accountRepository.findAllPlayers();
+        return accounts.stream()
+                .map(account -> new PlayerResponse(
+                        account.getAccountId(),
+                        account.getLastName(),
+                        account.getFirstName(),
+                        account.getEmail(),
+                        account.getGender(),
+                        account.getPhone(),
+                        account.getAvatar(),
+                        account.isLeader(),
+                        account.getTeam() != null ? account.getTeam().getId() : null,
+                        account.getTeam() != null ? account.getTeam().getTeamName() : null
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PlayerResponse> getPlayerByTeamName(String teamName) {
+        // Validate teamName
+        if (teamName == null || teamName.isBlank()) {
+            throw new IllegalArgumentException("Team name must not be null or empty.");
+        }
+        // Fetch players by team name
+        List<Account> players = accountRepository.findPlayersByTeamName(teamName);
+        return players.stream()
+                .map(account -> new PlayerResponse(
+                        account.getAccountId(),
+                        account.getLastName(),
+                        account.getFirstName(),
+                        account.getEmail(),
+                        account.getGender(),
+                        account.getPhone(),
+                        account.getAvatar(),
+                        account.isLeader(),
+                        account.getTeam() != null ? account.getTeam().getId() : null,
+                        account.getTeam() != null ? account.getTeam().getTeamName() : null
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PlayerResponse> getPlayers() {
+        // Fetch players with the role "PLAYER"
+        List<Account> players = accountRepository.findAccountsByRole(RoleEnum.PLAYER.getRole());
+        return players.stream()
+                .map(account -> new PlayerResponse(
+                        account.getAccountId(),
+                        account.getLastName(),
+                        account.getFirstName(),
+                        account.getEmail(),
+                        account.getGender(),
+                        account.getPhone(),
+                        account.getAvatar(),
+                        account.isLeader(),
+                        account.getTeam() != null ? account.getTeam().getId() : null,
+                        account.getTeam() != null ? account.getTeam().getTeamName() : null
+                ))
+                .collect(Collectors.toList());
     }
 }
