@@ -21,7 +21,7 @@ import java.util.Date;
 public class ResourceResponseForAdmin {
 
     @JsonProperty("resource_id")
-    private Long resourceId;
+    private Long id;
 
     @JsonProperty("resource_name")
     private String resourceName;

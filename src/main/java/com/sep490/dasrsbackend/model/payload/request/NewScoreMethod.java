@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.model.payload.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sep490.dasrsbackend.model.enums.FinishType;
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -28,6 +29,11 @@ public class NewScoreMethod {
 
     @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
     @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
+    @JsonProperty("total_race_time")
+    private double totalRaceTime;
+
+    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
+    @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
     @JsonProperty("off_track")
     private double offTrack;
 
@@ -44,4 +50,7 @@ public class NewScoreMethod {
     @DecimalMin(value = "1.0", message = "Team number must be at least 1.0")
     @JsonProperty("total_distance")
     private double totalDistance;
+
+    @JsonProperty("match_finish_type")
+    private FinishType matchFinishType;
 }

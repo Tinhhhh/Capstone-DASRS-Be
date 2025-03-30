@@ -1,6 +1,8 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.sep490.dasrsbackend.model.enums.FinishType;
+import com.sep490.dasrsbackend.model.enums.MatchTypeStatus;
 import com.sep490.dasrsbackend.model.enums.ScoredMethodStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,6 +37,9 @@ public class ScoredMethod {
     @Column(name = "off_track")
     private double offTrack;
 
+    @Column(name = "total_race_time")
+    private double totalRaceTime;
+
     @Column(name = "assist_usage")
     private double assistUsageCount;
 
@@ -43,6 +48,9 @@ public class ScoredMethod {
 
     @Column(name = "total_distance")
     private double totalDistance;
+
+    @Column(name = "match_finish_type")
+    private FinishType matchFinishType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")

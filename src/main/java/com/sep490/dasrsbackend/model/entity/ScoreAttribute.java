@@ -23,7 +23,6 @@ public class ScoreAttribute {
     @Column(name = "score_attribute_id")
     private Long id;
 
-
     @Column(name = "lap")
     private int lap;
 

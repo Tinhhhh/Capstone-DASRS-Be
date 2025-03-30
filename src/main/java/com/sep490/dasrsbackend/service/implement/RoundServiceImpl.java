@@ -553,7 +553,6 @@ public class RoundServiceImpl implements RoundService {
         roundRepository.save(round);
     }
 
-
     private void generateMatch(Round round, Tournament tournament) {
 
         MatchType matchType = round.getMatchType();
@@ -746,10 +745,11 @@ public class RoundServiceImpl implements RoundService {
 
     @Override
     public List<RoundResponse> findRoundByTournamentId(Long id) {
+        // by admin, organizer
         Tournament tournament = tournamentRepository.findById(id)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
 
-        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+        List<Round> rounds = roundRepository.findByTournamentId(tournament.getId());
         List<RoundResponse> roundResponses = new ArrayList<>();
         rounds.forEach(round -> {
             RoundResponse roundResponse = findRoundByRoundId(round.getId());
@@ -793,7 +793,7 @@ public class RoundServiceImpl implements RoundService {
 
         Date date = calendar.getTime();
 
-        //Kiểm tra xem có vòng nào bắt đầu ko
+        //Kiểm tra xem có vòng sẽ bắt đầu ko
         Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.PENDING, date);
         if (round.isPresent()) {
             logger.info("Found a round that reach start date");
@@ -805,7 +805,7 @@ public class RoundServiceImpl implements RoundService {
             }
         }
 
-        //Kiểm tra xem có vòng nào kết thúc ko
+        //Kiểm tra xem có vòng sẽ kết thúc ko
         Optional<Round> roundEnd = roundRepository.findByStatusAndEndDateBefore(RoundStatus.ACTIVE, date);
         if (roundEnd.isPresent()) {
             logger.info("Found a round that reach end date");
