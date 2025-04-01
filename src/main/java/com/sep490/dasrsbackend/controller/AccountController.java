@@ -56,7 +56,6 @@ public class AccountController {
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> importAccounts(@RequestParam("file") MultipartFile file) {
         try {
-            // Validate file input
             if (file.isEmpty()) {
                 return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "The file must not be empty.");
             }
@@ -64,12 +63,10 @@ public class AccountController {
             List<String> errorMessages = new ArrayList<>();
             List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream(), errorMessages);
 
-            // Handle cases where there are errors
             if (!errorMessages.isEmpty()) {
                 return ResponseBuilder.responseBuilderWithData(HttpStatus.BAD_REQUEST, "Some rows failed to import.", errorMessages);
             }
 
-            // Check if any accounts were successfully imported
             if (accounts.isEmpty()) {
                 return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "No accounts were imported. Please check the file content.");
             }
@@ -77,13 +74,10 @@ public class AccountController {
             return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Accounts imported successfully.", accounts);
 
         } catch (IOException e) {
-            // Handle file processing exceptions
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process the uploaded file. Please check the file and try again.");
         } catch (IllegalArgumentException e) {
-            // Handle validation-related exceptions
             return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
-            // Catch any other unexpected exceptions
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again.");
         }
     }
