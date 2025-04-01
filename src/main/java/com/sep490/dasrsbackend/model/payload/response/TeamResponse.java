@@ -11,10 +11,15 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TeamResponse {
+
     private Long id;
+
     private String name;
-    private String tag; // Represents teamTag
-    private boolean disqualified; // Represents isDisqualified
+
+    private String tag;
+
+    private boolean disqualified;
+
     private TeamStatus status;
 }
 

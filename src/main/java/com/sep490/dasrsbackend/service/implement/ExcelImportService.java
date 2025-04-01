@@ -43,7 +43,6 @@ public class ExcelImportService {
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rowIterator = sheet.iterator();
 
-            // Skip the header row
             if (rowIterator.hasNext()) {
                 rowIterator.next();
             }
@@ -53,7 +52,6 @@ public class ExcelImportService {
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
 
-                // Skip empty rows
                 if (isRowEmpty(row)) {
                     continue;
                 }
@@ -61,29 +59,29 @@ public class ExcelImportService {
                 try {
                     AccountDTO accountDTO = parseRowToAccountDTO(row, teamLeaderMap);
                     if (accountDTO == null) {
-                        continue; // Skip invalid rows
+                        continue;
+                    }
+                    if (accountRepository.existsByEmail(accountDTO.getEmail())) {
+                        errorMessages.add("Row " + (row.getRowNum() + 1) + ": Email " + accountDTO.getEmail() + " already exists.");
+                        continue;
                     }
 
-                    // Keep the plain password for the email
                     String plainPassword = accountDTO.getPassword();
 
-                    // Encode the password for storing in the database
                     String encodedPassword = passwordEncoder.encode(plainPassword);
                     accountDTO.setPassword(encodedPassword);
                     Account account = accountConverter.convertToEntity(accountDTO);
 
-                    // Save account to database
                     account = accountRepository.save(account);
 
-                    // Convert back to DTO for the response
                     accountDTOs.add(accountConverter.convertToDTO(account));
 
                     emailService.sendAccountInformation(
                             accountDTO.getFirstName(),
                             accountDTO.getEmail(),
-                            plainPassword, // Send the plain password here
+                            plainPassword,
                             accountDTO.getEmail(),
-                            "EMAIL_IMPORTED_ACCOUNT.html", // Template name
+                            "EMAIL_IMPORTED_ACCOUNT.html",
                             "Your Account Has Been Created"
                     );
                 } catch (IllegalArgumentException e) {
@@ -93,7 +91,6 @@ public class ExcelImportService {
                 }
             }
         }
-        // Log or handle error messages
         if (!errorMessages.isEmpty()) {
             System.err.println("Import Errors:");
             errorMessages.forEach(System.err::println);
@@ -119,12 +116,16 @@ public class ExcelImportService {
             accountDTO.setDob(validateDate(row.getCell(5)));
             accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6))));
 
+            // Validate student identifier and school (New Fields)
+            accountDTO.setStudentIdentifier(validateNonEmpty(getCellValueAsString(row.getCell(7)), "Student Identifier"));
+            accountDTO.setSchool(validateNonEmpty(getCellValueAsString(row.getCell(8)), "School"));
+
             // Automatically assign the tournament with ACTIVE status
             Tournament tournament = tournamentRepository.findByStatus(TournamentStatus.ACTIVE)
                     .orElseThrow(() -> new IllegalArgumentException("No active tournament found. Please activate a tournament."));
 
-            String teamName = getCellValueAsString(row.getCell(8));
-            String teamTag = getCellValueAsString(row.getCell(9));
+            String teamName = getCellValueAsString(row.getCell(10));
+            String teamTag = getCellValueAsString(row.getCell(11));
             Team team = validateOrCreateTeam(teamName, teamTag, tournament);
 
             if (team == null || team.getId() == null) {
@@ -133,7 +134,7 @@ public class ExcelImportService {
 
             accountDTO.setTeamId(team);
 
-            boolean isLeader = getCellValueAsBoolean(row.getCell(7));
+            boolean isLeader = getCellValueAsBoolean(row.getCell(9));
             validateTeamLeader(team, isLeader, teamLeaderMap);
             accountDTO.setLeader(isLeader);
 
