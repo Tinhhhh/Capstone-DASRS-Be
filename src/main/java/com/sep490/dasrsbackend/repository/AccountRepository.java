@@ -28,6 +28,9 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
     @Query("SELECT a FROM Account a WHERE a.role.roleName = :role")
     Page<Account> findAccountsByRole(@Param("role") String role, Pageable pageable);
+
+    boolean existsByEmail(String email);
+
 }
 
 
