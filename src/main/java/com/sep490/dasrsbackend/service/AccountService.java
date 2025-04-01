@@ -7,6 +7,7 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.ListPlayersResponse;
 import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import jakarta.mail.MessagingException;
@@ -19,7 +20,7 @@ import java.util.UUID;
 public interface AccountService {
     List<AccountDTO> createAccounts(List<AccountDTO> accountDTOs);
 
-    List<AccountDTO> importAccounts(InputStream excelInputStream) throws Exception;
+    List<AccountDTO> importAccounts(InputStream excelInputStream, List<String> errorMessages) throws Exception;
 
     AccountInfoResponse getCurrentAccountInfo(String email);
 
@@ -41,5 +42,5 @@ public interface AccountService {
 
     List<PlayerResponse> getPlayerByTeamName(String teamName);
 
-    List<PlayerResponse> getPlayers();
+    ListPlayersResponse getPlayers(int pageNo, int pageSize, String sortBy, String sortDirection);
 }

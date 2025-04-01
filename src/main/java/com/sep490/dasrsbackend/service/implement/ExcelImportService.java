@@ -7,6 +7,7 @@ import com.sep490.dasrsbackend.model.entity.Role;
 import com.sep490.dasrsbackend.model.entity.Team;
 import com.sep490.dasrsbackend.model.entity.Tournament;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
+import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.TeamRepository;
 import com.sep490.dasrsbackend.repository.TournamentRepository;
@@ -36,7 +37,7 @@ public class ExcelImportService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
 
-    public List<AccountDTO> importAccountsFromExcel(InputStream inputStream) throws IOException {
+    public List<AccountDTO> importAccountsFromExcel(InputStream inputStream, List<String> errorMessages) throws IOException {
         List<AccountDTO> accountDTOs = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
@@ -51,8 +52,18 @@ public class ExcelImportService {
 
             while (rowIterator.hasNext()) {
                 Row row = rowIterator.next();
+
+                // Skip empty rows
+                if (isRowEmpty(row)) {
+                    continue;
+                }
+
                 try {
                     AccountDTO accountDTO = parseRowToAccountDTO(row, teamLeaderMap);
+                    if (accountDTO == null) {
+                        continue; // Skip invalid rows
+                    }
+
                     // Keep the plain password for the email
                     String plainPassword = accountDTO.getPassword();
 
@@ -76,53 +87,75 @@ public class ExcelImportService {
                             "Your Account Has Been Created"
                     );
                 } catch (IllegalArgumentException e) {
-                    System.err.println("Invalid row: " + e.getMessage());
+                    errorMessages.add("Row " + (row.getRowNum() + 1) + ": " + e.getMessage());
                 } catch (MessagingException e) {
-                    throw new RuntimeException(e);
+                    errorMessages.add("Row " + (row.getRowNum() + 1) + ": Failed to send email - " + e.getMessage());
                 }
             }
+        }
+        // Log or handle error messages
+        if (!errorMessages.isEmpty()) {
+            System.err.println("Import Errors:");
+            errorMessages.forEach(System.err::println);
         }
         return accountDTOs;
     }
 
+
     private AccountDTO parseRowToAccountDTO(Row row, Map<Long, Boolean> teamLeaderMap) {
         AccountDTO accountDTO = new AccountDTO();
 
-        // Read and validate fields
-        accountDTO.setEmail(validateEmail(getCellValueAsString(row.getCell(0)))); // Email
-        accountDTO.setFirstName(validateNonEmpty(getCellValueAsString(row.getCell(1)), "First Name")); // First Name
-        accountDTO.setLastName(validateNonEmpty(getCellValueAsString(row.getCell(2)), "Last Name")); // Last Name
-        accountDTO.setAddress(validateNonEmpty(getCellValueAsString(row.getCell(3)), "Address")); // Address
-        accountDTO.setGender(validateGender(getCellValueAsString(row.getCell(4)))); // Gender
-        accountDTO.setDob(validateDate(row.getCell(5))); // Date of Birth
-        accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6)))); // Phone
+        try {
+            // Validate and set fields
+            String email = getCellValueAsString(row.getCell(0));
+            if (email == null || email.trim().isEmpty()) {
+                throw new IllegalArgumentException("Email cannot be null or empty.");
+            }
+            accountDTO.setEmail(validateEmail(email));
+            accountDTO.setFirstName(validateNonEmpty(getCellValueAsString(row.getCell(1)), "First Name"));
+            accountDTO.setLastName(validateNonEmpty(getCellValueAsString(row.getCell(2)), "Last Name"));
+            accountDTO.setAddress(validateNonEmpty(getCellValueAsString(row.getCell(3)), "Address"));
+            accountDTO.setGender(validateGender(getCellValueAsString(row.getCell(4))));
+            accountDTO.setDob(validateDate(row.getCell(5)));
+            accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6))));
 
-        Long tournamentId = getCellValueAsLong(row.getCell(10)); // Assuming Tournament ID is in column 10
-        Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new IllegalArgumentException("Tournament ID " + tournamentId + " not found"));
+            // Validate student identifier and school (New Fields)
+            accountDTO.setStudentIdentifier(validateNonEmpty(getCellValueAsString(row.getCell(7)), "Student Identifier"));
+            accountDTO.setSchool(validateNonEmpty(getCellValueAsString(row.getCell(8)), "School"));
 
-        // Validate team
-        String teamName = getCellValueAsString(row.getCell(8)); // Team Name
-        String teamTag = getCellValueAsString(row.getCell(9)); // Team Tag
-        Team team = validateOrCreateTeam(teamName, teamTag, tournament);
-        accountDTO.setTeamId(team);
+            // Automatically assign the tournament with ACTIVE status
+            Tournament tournament = tournamentRepository.findByStatus(TournamentStatus.ACTIVE)
+                    .orElseThrow(() -> new IllegalArgumentException("No active tournament found. Please activate a tournament."));
 
-        // Validate leader
-        boolean isLeader = getCellValueAsBoolean(row.getCell(7)); // Is Leader
-        validateTeamLeader(team, isLeader, teamLeaderMap);
-        accountDTO.setLeader(isLeader);
+            String teamName = getCellValueAsString(row.getCell(10));
+            String teamTag = getCellValueAsString(row.getCell(11));
+            Team team = validateOrCreateTeam(teamName, teamTag, tournament);
 
-        // Generate random password
-        String plainPassword = generateRandomPassword(8);
-        accountDTO.setPassword(plainPassword);
-        // Set default Role object
-        Role defaultRole = new Role();
-        defaultRole.setId(1L); // Default role ID
-        defaultRole.setRoleName("PLAYER"); // Default role name
-        accountDTO.setRoleId(defaultRole);
+            if (team == null || team.getId() == null) {
+                throw new IllegalArgumentException("Team could not be created or found.");
+            }
+
+            accountDTO.setTeamId(team);
+
+            boolean isLeader = getCellValueAsBoolean(row.getCell(9));
+            validateTeamLeader(team, isLeader, teamLeaderMap);
+            accountDTO.setLeader(isLeader);
+
+            String plainPassword = generateRandomPassword(8);
+            accountDTO.setPassword(plainPassword);
+
+            Role defaultRole = new Role();
+            defaultRole.setId(1L);
+            defaultRole.setRoleName("PLAYER");
+            accountDTO.setRoleId(defaultRole);
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Row error: " + e.getMessage());
+        }
 
         return accountDTO;
     }
+
 
     private void validateTeamLeader(Team team, boolean isLeader, Map<Long, Boolean> teamLeaderMap) {
         if (isLeader) {
@@ -134,26 +167,25 @@ public class ExcelImportService {
     }
 
     private Team validateOrCreateTeam(String teamName, String teamTag, Tournament tournament) {
-        // Check if the team already exists
-        Team team = teamRepository.findByTeamNameAndTeamTag(teamName, teamTag)
-                .orElse(null);
+        Team team = teamRepository.findByTeamNameAndTeamTag(teamName, teamTag).orElse(null);
 
         if (team == null) {
-            // Create a new team
             team = new Team();
             team.setTeamName(teamName);
             team.setTeamTag(teamTag);
-            team.setStatus(TeamStatus.ACTIVE); // Default status
+            team.setStatus(TeamStatus.ACTIVE);
             team.setDisqualified(false);
             team.setTournament(tournament);
 
-            // Save the team
             team = teamRepository.save(team);
-        }
 
+            // Verify the team is saved properly
+            if (team.getId() == null) {
+                throw new IllegalArgumentException("Failed to create or retrieve team: " + teamName);
+            }
+        }
         return team;
     }
-
 
     private String getCellValueAsString(Cell cell) {
         if (cell == null) {
@@ -243,5 +275,17 @@ public class ExcelImportService {
             password.append(characters.charAt(index));
         }
         return password.toString();
+    }
+    private boolean isRowEmpty(Row row) {
+        if (row == null) {
+            return true;
+        }
+        for (int cellNum = 0; cellNum < row.getLastCellNum(); cellNum++) {
+            Cell cell = row.getCell(cellNum);
+            if (cell != null && cell.getCellType() != CellType.BLANK) {
+                return false;
+            }
+        }
+        return true;
     }
 }

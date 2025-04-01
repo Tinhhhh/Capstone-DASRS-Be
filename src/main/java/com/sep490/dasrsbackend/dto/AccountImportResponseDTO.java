@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
-public class ParticipantDTO {
+public class AccountImportResponseDTO {
 
     @JsonProperty("account_id")
     private UUID accountId;
@@ -20,11 +20,25 @@ public class ParticipantDTO {
 
     private String email;
 
-    private String avatar;
-
-    private String phone;
+    private String address;
 
     private String gender;
 
     private LocalDate dob;
+
+    private String phone;
+
+    private String avatar;
+
+    @JsonProperty("is_locked")
+    private boolean isLocked;
+
+    @JsonProperty("is_leader")
+    private boolean isLeader;
+
+    @JsonProperty("role_name")
+    private String roleName;
+
+    @JsonProperty("team_name")
+    private String teamName;
 }

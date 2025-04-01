@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.controller;
 
+import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
@@ -9,6 +10,7 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.ListPlayersResponse;
 import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.security.JwtTokenProvider;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -46,16 +49,45 @@ public class AccountController {
     private final ExcelImportService excelImportService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Operation(summary = "Register a new account by import excel file", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
+    @Operation(
+            summary = "Register a new account by importing an Excel file",
+            description = "Register new accounts by importing an Excel file. All required fields must be filled. A confirmation email will be sent after successful registration."
+    )
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AccountDTO>> importAccounts(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Object> importAccounts(@RequestParam("file") MultipartFile file) {
         try {
-            List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream());
-            return ResponseEntity.ok(accounts);
+            // Validate file input
+            if (file.isEmpty()) {
+                return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "The file must not be empty.");
+            }
+
+            List<String> errorMessages = new ArrayList<>();
+            List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream(), errorMessages);
+
+            // Handle cases where there are errors
+            if (!errorMessages.isEmpty()) {
+                return ResponseBuilder.responseBuilderWithData(HttpStatus.BAD_REQUEST, "Some rows failed to import.", errorMessages);
+            }
+
+            // Check if any accounts were successfully imported
+            if (accounts.isEmpty()) {
+                return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "No accounts were imported. Please check the file content.");
+            }
+
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Accounts imported successfully.", accounts);
+
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            // Handle file processing exceptions
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process the uploaded file. Please check the file and try again.");
+        } catch (IllegalArgumentException e) {
+            // Handle validation-related exceptions
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            // Catch any other unexpected exceptions
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again.");
         }
     }
+
 
     @Operation(summary = "Register a new account by admin", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
     @ApiResponses(value = {@ApiResponse(responseCode = "202", description = "Successfully Registered", content = @Content(examples = @ExampleObject(value = """
@@ -137,14 +169,19 @@ public class AccountController {
         }
     }
 
-    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER'")
+    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER' with pagination support")
     @GetMapping("/players")
-    public ResponseEntity<Object> getPlayers() {
+    public ResponseEntity<Object> getPlayers(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection
+    ) {
         try {
-            List<PlayerResponse> players = accountService.getPlayers();
-            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", players);
+            ListPlayersResponse playersResponse = accountService.getPlayers(pageNo, pageSize, sortBy, sortDirection);
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", playersResponse);
         } catch (Exception e) {
-            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve players: " + e.getMessage());
         }
     }
 
