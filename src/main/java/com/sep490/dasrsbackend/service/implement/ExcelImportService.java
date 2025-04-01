@@ -119,12 +119,16 @@ public class ExcelImportService {
             accountDTO.setDob(validateDate(row.getCell(5)));
             accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6))));
 
+            // Validate student identifier and school (New Fields)
+            accountDTO.setStudentIdentifier(validateNonEmpty(getCellValueAsString(row.getCell(7)), "Student Identifier"));
+            accountDTO.setSchool(validateNonEmpty(getCellValueAsString(row.getCell(8)), "School"));
+
             // Automatically assign the tournament with ACTIVE status
             Tournament tournament = tournamentRepository.findByStatus(TournamentStatus.ACTIVE)
                     .orElseThrow(() -> new IllegalArgumentException("No active tournament found. Please activate a tournament."));
 
-            String teamName = getCellValueAsString(row.getCell(8));
-            String teamTag = getCellValueAsString(row.getCell(9));
+            String teamName = getCellValueAsString(row.getCell(10));
+            String teamTag = getCellValueAsString(row.getCell(11));
             Team team = validateOrCreateTeam(teamName, teamTag, tournament);
 
             if (team == null || team.getId() == null) {
@@ -133,7 +137,7 @@ public class ExcelImportService {
 
             accountDTO.setTeamId(team);
 
-            boolean isLeader = getCellValueAsBoolean(row.getCell(7));
+            boolean isLeader = getCellValueAsBoolean(row.getCell(9));
             validateTeamLeader(team, isLeader, teamLeaderMap);
             accountDTO.setLeader(isLeader);
 

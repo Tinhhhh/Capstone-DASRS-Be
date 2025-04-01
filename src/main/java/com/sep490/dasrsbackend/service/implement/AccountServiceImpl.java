@@ -14,6 +14,7 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.ListPlayersResponse;
 import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.repository.AccountRepository;
@@ -29,6 +30,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -292,10 +297,18 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<PlayerResponse> getPlayers() {
-        // Fetch players with the role "PLAYER"
-        List<Account> players = accountRepository.findAccountsByRole(RoleEnum.PLAYER.getRole());
-        return players.stream()
+    public ListPlayersResponse getPlayers(int pageNo, int pageSize, String sortBy, String sortDirection) {
+        Sort sort = sortDirection.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        Page<Account> playersPage = accountRepository.findAccountsByRole(RoleEnum.PLAYER.getRole(), pageable);
+
+        return getListPlayersResponse(playersPage);
+    }
+
+    // Helper method to convert Page<Account> to ListPlayersResponse
+    private ListPlayersResponse getListPlayersResponse(Page<Account> playersPage) {
+        List<PlayerResponse> playerResponses = playersPage.getContent().stream()
                 .map(account -> new PlayerResponse(
                         account.getAccountId(),
                         account.getLastName(),
@@ -309,5 +322,14 @@ public class AccountServiceImpl implements AccountService {
                         account.getTeam() != null ? account.getTeam().getTeamName() : null
                 ))
                 .collect(Collectors.toList());
+
+        return new ListPlayersResponse(
+                playerResponses,
+                playersPage.getNumber(),
+                playersPage.getSize(),
+                playersPage.getTotalElements(),
+                playersPage.getTotalPages(),
+                playersPage.isLast()
+        );
     }
 }

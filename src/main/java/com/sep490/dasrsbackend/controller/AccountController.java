@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.controller;
 
+import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
@@ -9,6 +10,7 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.ListPlayersResponse;
 import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.security.JwtTokenProvider;
@@ -167,14 +169,19 @@ public class AccountController {
         }
     }
 
-    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER'")
+    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER' with pagination support")
     @GetMapping("/players")
-    public ResponseEntity<Object> getPlayers() {
+    public ResponseEntity<Object> getPlayers(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection
+    ) {
         try {
-            List<PlayerResponse> players = accountService.getPlayers();
-            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", players);
+            ListPlayersResponse playersResponse = accountService.getPlayers(pageNo, pageSize, sortBy, sortDirection);
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", playersResponse);
         } catch (Exception e) {
-            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve players: " + e.getMessage());
         }
     }
 
