@@ -1,11 +1,13 @@
 package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.Util.AccountSpecification;
 import com.sep490.dasrsbackend.converter.AccountConverter;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.Role;
 import com.sep490.dasrsbackend.model.entity.Team;
 import com.sep490.dasrsbackend.model.enums.EmailTemplateName;
+import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.enums.RoleEnum;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
@@ -34,6 +36,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -297,18 +300,22 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public ListPlayersResponse getPlayers(int pageNo, int pageSize, String sortBy, String sortDirection) {
-        Sort sort = sortDirection.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+    public ListPlayersResponse getPlayers(int pageNo, int pageSize, PlayerSort sortBy, String keyword) {
+        // Apply sorting direction and field
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+
+        // Apply pagination
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        Page<Account> playersPage = accountRepository.findAccountsByRole(RoleEnum.PLAYER.getRole(), pageable);
+        // Apply search filter for keyword (team name)
+        Specification<Account> spec = Specification.where(AccountSpecification.hasKeyword(keyword));
 
-        return getListPlayersResponse(playersPage);
-    }
+        // Fetch filtered and sorted players
+        Page<Account> playersPage = accountRepository.findAll(spec, pageable);
+        List<Account> players = playersPage.getContent();
 
-    // Helper method to convert Page<Account> to ListPlayersResponse
-    private ListPlayersResponse getListPlayersResponse(Page<Account> playersPage) {
-        List<PlayerResponse> playerResponses = playersPage.getContent().stream()
+        // Convert players to response format
+        List<PlayerResponse> playerResponses = players.stream()
                 .map(account -> new PlayerResponse(
                         account.getAccountId(),
                         account.getLastName(),
@@ -323,13 +330,13 @@ public class AccountServiceImpl implements AccountService {
                 ))
                 .collect(Collectors.toList());
 
-        return new ListPlayersResponse(
-                playerResponses,
-                playersPage.getNumber(),
-                playersPage.getSize(),
-                playersPage.getTotalElements(),
-                playersPage.getTotalPages(),
-                playersPage.isLast()
-        );
+        return ListPlayersResponse.builder()
+                .players(playerResponses)
+                .totalPages(playersPage.getTotalPages())
+                .totalElements(playersPage.getTotalElements())
+                .pageNo(playersPage.getNumber())
+                .pageSize(playersPage.getSize())
+                .last(playersPage.isLast())
+                .build();
     }
 }

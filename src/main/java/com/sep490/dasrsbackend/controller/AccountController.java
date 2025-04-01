@@ -3,6 +3,7 @@ package com.sep490.dasrsbackend.controller;
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
+import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
@@ -163,21 +164,22 @@ public class AccountController {
         }
     }
 
-    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER' with pagination support")
+    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER' with pagination, sorting, and search by team name")
     @GetMapping("/players")
     public ResponseEntity<Object> getPlayers(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
-            @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
-            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection
+            @RequestParam(name = "sortBy") PlayerSort sortBy,
+            @RequestParam(name = "keyword", required = false) String keyword
     ) {
         try {
-            ListPlayersResponse playersResponse = accountService.getPlayers(pageNo, pageSize, sortBy, sortDirection);
+            ListPlayersResponse playersResponse = accountService.getPlayers(pageNo, pageSize, sortBy, keyword);
             return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", playersResponse);
         } catch (Exception e) {
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve players: " + e.getMessage());
         }
     }
+
 
     @Operation(summary = "Get players by team name", description = "Retrieve all players associated with a specific team name")
     @GetMapping("/players-by-team")
