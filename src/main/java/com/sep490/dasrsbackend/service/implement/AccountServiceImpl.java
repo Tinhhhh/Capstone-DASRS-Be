@@ -14,22 +14,29 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.RoleRepository;
 import com.sep490.dasrsbackend.repository.TeamRepository;
 import com.sep490.dasrsbackend.service.AccountService;
 import com.sep490.dasrsbackend.service.EmailService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,20 +44,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private AccountConverter accountConverter;
-
-    @Autowired
-    private ExcelImportService excelImportService;
-
+    private final AccountRepository accountRepository;
+    private final AccountConverter accountConverter;
+    private final ExcelImportService excelImportService;
     private final EmailService emailService;
     private final RoleRepository roleRepository;
     private final TeamRepository teamRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.jwt.secret-key}")
+    private String secretKey;
 
     @Override
     public List<AccountDTO> createAccounts(List<AccountDTO> accountDTOs) {
@@ -63,33 +66,32 @@ public class AccountServiceImpl implements AccountService {
                 .collect(Collectors.toList());
     }
 
-    public List<AccountDTO> importAccounts(InputStream excelInputStream) throws Exception {
+    public List<AccountDTO> importAccounts(InputStream excelInputStream, List<String> errorMessages) throws Exception {
         // Import Excel data
-        List<AccountDTO> accountDTOs = excelImportService.importAccountsFromExcel(excelInputStream);
+        List<AccountDTO> accountDTOs = excelImportService.importAccountsFromExcel(excelInputStream, errorMessages);
         // Save accounts in the database
         return createAccounts(accountDTOs);
     }
 
     @Override
-    public AccountInfoResponse getCurrentAccountInfo(HttpServletRequest request) {
-        UUID accountId = extractAccountIdFromRequest(request);
-        Account account = accountRepository.findById(accountId)
+    public AccountInfoResponse getCurrentAccountInfo(String email) {
+        Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Account not found"));
 
         return accountConverter.convertToAccountInfoResponse(account);
     }
 
+
     @Override
-    public void changePassword(ChangePasswordRequest changePasswordRequest, HttpServletRequest request) {
-        UUID accountId = extractAccountIdFromRequest(request);
-        Account account = accountRepository.findById(accountId)
+    public void changePassword(String username, String oldPassword, String newPassword) {
+        Account account = accountRepository.findByEmail(username)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Account not found"));
 
-        if (!passwordEncoder.matches(changePasswordRequest.getOldPassword(), account.getPassword())) {
+        if (!passwordEncoder.matches(oldPassword, account.getPassword())) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Old password is incorrect");
         }
 
-        account.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        account.setPassword(passwordEncoder.encode(newPassword));
         accountRepository.save(account);
     }
 
@@ -245,5 +247,67 @@ public class AccountServiceImpl implements AccountService {
 
         // Send registration email
         sendRegistrationEmail(account, request.getPassword());
+    }
+
+    public List<PlayerResponse> getPlayerList() {
+        List<Account> accounts = accountRepository.findAllPlayers();
+        return accounts.stream()
+                .map(account -> new PlayerResponse(
+                        account.getAccountId(),
+                        account.getLastName(),
+                        account.getFirstName(),
+                        account.getEmail(),
+                        account.getGender(),
+                        account.getPhone(),
+                        account.getAvatar(),
+                        account.isLeader(),
+                        account.getTeam() != null ? account.getTeam().getId() : null,
+                        account.getTeam() != null ? account.getTeam().getTeamName() : null
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PlayerResponse> getPlayerByTeamName(String teamName) {
+        // Validate teamName
+        if (teamName == null || teamName.isBlank()) {
+            throw new IllegalArgumentException("Team name must not be null or empty.");
+        }
+        // Fetch players by team name
+        List<Account> players = accountRepository.findPlayersByTeamName(teamName);
+        return players.stream()
+                .map(account -> new PlayerResponse(
+                        account.getAccountId(),
+                        account.getLastName(),
+                        account.getFirstName(),
+                        account.getEmail(),
+                        account.getGender(),
+                        account.getPhone(),
+                        account.getAvatar(),
+                        account.isLeader(),
+                        account.getTeam() != null ? account.getTeam().getId() : null,
+                        account.getTeam() != null ? account.getTeam().getTeamName() : null
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PlayerResponse> getPlayers() {
+        // Fetch players with the role "PLAYER"
+        List<Account> players = accountRepository.findAccountsByRole(RoleEnum.PLAYER.getRole());
+        return players.stream()
+                .map(account -> new PlayerResponse(
+                        account.getAccountId(),
+                        account.getLastName(),
+                        account.getFirstName(),
+                        account.getEmail(),
+                        account.getGender(),
+                        account.getPhone(),
+                        account.getAvatar(),
+                        account.isLeader(),
+                        account.getTeam() != null ? account.getTeam().getId() : null,
+                        account.getTeam() != null ? account.getTeam().getTeamName() : null
+                ))
+                .collect(Collectors.toList());
     }
 }

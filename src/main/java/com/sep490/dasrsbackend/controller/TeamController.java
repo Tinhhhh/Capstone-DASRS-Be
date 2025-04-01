@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
+import com.sep490.dasrsbackend.model.payload.response.TeamMemberResponse;
 import com.sep490.dasrsbackend.service.TeamService;
 import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.service.TeamService;
@@ -68,8 +69,8 @@ public class TeamController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully assigned member to match");
     }
 
-    @GetMapping("/{teamId}/members")
-    public ResponseEntity<List<TeamResponse>> getTeamMembers(@PathVariable Long teamId) {
+    @GetMapping("/members/{teamId}")
+    public ResponseEntity<List<TeamMemberResponse>> getTeamMembers(@PathVariable Long teamId) {
         return ResponseEntity.ok(teamService.getTeamMembers(teamId));
     }
 

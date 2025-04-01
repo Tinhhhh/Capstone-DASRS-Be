@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.dto.AccountDTO;
+import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
@@ -8,7 +9,9 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
+import com.sep490.dasrsbackend.security.JwtTokenProvider;
 import com.sep490.dasrsbackend.service.AccountService;
 import com.sep490.dasrsbackend.service.implement.ExcelImportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,7 +32,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -40,17 +45,47 @@ public class AccountController {
 
     private final AccountService accountService;
     private final ExcelImportService excelImportService;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    @Operation(summary = "Register a new account by import excel file", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
+    @Operation(
+            summary = "Register a new account by importing an Excel file",
+            description = "Register new accounts by importing an Excel file. All required fields must be filled. A confirmation email will be sent after successful registration."
+    )
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<List<AccountDTO>> importAccounts(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Object> importAccounts(@RequestParam("file") MultipartFile file) {
         try {
-            List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream());
-            return ResponseEntity.ok(accounts);
+            // Validate file input
+            if (file.isEmpty()) {
+                return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "The file must not be empty.");
+            }
+
+            List<String> errorMessages = new ArrayList<>();
+            List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream(), errorMessages);
+
+            // Handle cases where there are errors
+            if (!errorMessages.isEmpty()) {
+                return ResponseBuilder.responseBuilderWithData(HttpStatus.BAD_REQUEST, "Some rows failed to import.", errorMessages);
+            }
+
+            // Check if any accounts were successfully imported
+            if (accounts.isEmpty()) {
+                return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "No accounts were imported. Please check the file content.");
+            }
+
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Accounts imported successfully.", accounts);
+
         } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            // Handle file processing exceptions
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process the uploaded file. Please check the file and try again.");
+        } catch (IllegalArgumentException e) {
+            // Handle validation-related exceptions
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            // Catch any other unexpected exceptions
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again.");
         }
     }
+
 
     @Operation(summary = "Register a new account by admin", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
     @ApiResponses(value = {@ApiResponse(responseCode = "202", description = "Successfully Registered", content = @Content(examples = @ExampleObject(value = """
@@ -63,12 +98,18 @@ public class AccountController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.ACCEPTED, "Successfully Register", "An email had been sent to email owner.");
     }
 
-    @Operation(summary = "Change account password", description = "Allows users to change their account password.")
     @PostMapping("/change-password")
-    public ResponseEntity<Object> changePassword(@RequestBody @Valid ChangePasswordRequest changePasswordRequest) {
-        accountService.changePassword(changePasswordRequest, null);
-        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Password changed successfully.");
+    public ResponseEntity<?> changePassword(
+            @RequestHeader("Authorization") String token,
+            @RequestBody ChangePasswordRequest request) {
+        jwtTokenProvider.validateToken(token.replace("Bearer ", "")); // Validate the JWT
+        String username = jwtTokenProvider.getUsernameFromJwt(token.replace("Bearer ", ""));
+
+        accountService.changePassword(username, request.getOldPassword(), request.getNewPassword());
+
+        return ResponseEntity.ok("Password updated successfully");
     }
+
 
     @Operation(summary = "Update account profile picture", description = "Update the profile picture of an account.")
     @PutMapping("/update-profile-picture")
@@ -86,9 +127,17 @@ public class AccountController {
 
     @Operation(summary = "Get current account information", description = "Fetch the current logged-in account details.")
     @GetMapping("/current-account")
-    public ResponseEntity<Object> getCurrentAccountInfo(HttpServletRequest request) {
-        AccountInfoResponse accountInfo = accountService.getCurrentAccountInfo(request);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Current account information retrieved successfully.", accountInfo);
+    public ResponseEntity<Object> getCurrentAccountInfo(@RequestHeader("Authorization") String token) {
+        jwtTokenProvider.validateToken(token.replace("Bearer ", "")); // Validate the token
+        String email = jwtTokenProvider.getUsernameFromJwt(token.replace("Bearer ", "")); // Extract email
+
+        AccountInfoResponse accountInfo = accountService.getCurrentAccountInfo(email);
+
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Current account information retrieved successfully.",
+                accountInfo
+        );
     }
 
     @Operation(summary = "Get account information by admin", description = "Fetch account details as an admin.")
@@ -113,6 +162,28 @@ public class AccountController {
             return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Player account created successfully.");
         } catch (MessagingException e) {
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send email notification.");
+        } catch (Exception e) {
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER'")
+    @GetMapping("/players")
+    public ResponseEntity<Object> getPlayers() {
+        try {
+            List<PlayerResponse> players = accountService.getPlayers();
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", players);
+        } catch (Exception e) {
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Get players by team name", description = "Retrieve all players associated with a specific team name")
+    @GetMapping("/players-by-team")
+    public ResponseEntity<Object> getPlayerByTeamName(@RequestParam String teamName) {
+        try {
+            List<PlayerResponse> players = accountService.getPlayerByTeamName(teamName);
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", players);
         } catch (Exception e) {
             return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
         }

@@ -33,6 +33,6 @@ build/
 .vscode/
 
 # Ignore application properties file
-/src/main/resources/application_local.properties
+src/main/resources/application.properties
 
 settings.xml

@@ -1,34 +1,19 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.FinishType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
-public class LeaderboardResponse {
-
-    @JsonProperty(value = "round_id", index = 1)
-    private Long roundId;
-
-    @JsonProperty(value = "finish_type", index = 2)
-    private FinishType finishType;
-
-    @JsonProperty(value = "fastest_lap_time", index = 3)
-    private TeamTournamentResponse fastestLapTime;
-
-    @JsonProperty(value = "top_speed", index = 4)
-    private TeamTournamentResponse topSpeed;
+@NoArgsConstructor
+public class LeaderboardData {
 
     @JsonProperty("leaderboard_id")
-    private Long leaderboardId;
+    private Long id;
 
     @JsonProperty("ranking")
     private int ranking;
@@ -41,6 +26,4 @@ public class LeaderboardResponse {
 
     @JsonProperty("team_id")
     private Long teamId;
-
-
 }

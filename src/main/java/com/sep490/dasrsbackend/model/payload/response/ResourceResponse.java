@@ -15,7 +15,7 @@ import lombok.Setter;
 public class ResourceResponse {
 
     @JsonProperty("resource_id")
-    private Long resourceId;
+    private Long id;
 
     @JsonProperty("resource_name")
     private String resourceName;

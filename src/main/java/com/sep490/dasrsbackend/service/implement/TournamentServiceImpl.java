@@ -4,6 +4,8 @@ import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.Util.GenerateCode;
 import com.sep490.dasrsbackend.Util.Schedule;
 import com.sep490.dasrsbackend.Util.TournamentSpecification;
+import com.sep490.dasrsbackend.converter.TeamConverter;
+import com.sep490.dasrsbackend.dto.ParticipantDTO;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
@@ -12,10 +14,7 @@ import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
-import com.sep490.dasrsbackend.model.payload.response.ListTournament;
-import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
-import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
-import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
+import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.MatchRepository;
 import com.sep490.dasrsbackend.repository.RoundRepository;
 import com.sep490.dasrsbackend.repository.TeamRepository;
@@ -37,6 +36,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,6 +48,7 @@ public class TournamentServiceImpl implements TournamentService {
     private final ModelMapper modelMapper;
     private final TeamRepository teamRepository;
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(TournamentServiceImpl.class);
+    private final TeamConverter teamConverter;
 
 
     @Override
@@ -62,7 +63,8 @@ public class TournamentServiceImpl implements TournamentService {
         }
 
         // Kiểm tra begin phải trước end
-
+        newTournament.setStartDate(DateUtil.convertUTCtoICT(newTournament.getStartDate()));
+        newTournament.setEndDate(DateUtil.convertUTCtoICT(newTournament.getEndDate()));
 
         LocalDateTime startDate = DateUtil.convertToLocalDateTime(newTournament.getStartDate()).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime endDate = DateUtil.convertToLocalDateTime(newTournament.getEndDate()).withHour(23).withMinute(59).withSecond(59);
@@ -418,12 +420,25 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     @Override
-    public List<Account> getUsersByTournament(Long tournamentId) {
+    public List<ParticipantDTO> getUsersByTournament(Long tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Tournament not found"));
 
-        List<Account> participants = new ArrayList<>();
-        tournament.getTeamList().forEach(team -> participants.addAll(team.getAccountList()));
+        List<ParticipantDTO> participants = new ArrayList<>();
+        tournament.getTeamList().forEach(team -> {
+            team.getAccountList().forEach(account -> {
+                ParticipantDTO dto = new ParticipantDTO();
+                dto.setAccountId(account.getAccountId());
+                dto.setFirstName(account.getFirstName());
+                dto.setLastName(account.getLastName());
+                dto.setEmail(account.getEmail());
+                dto.setAvatar(account.getAvatar());
+                dto.setPhone(account.getPhone());
+                dto.setGender(account.getGender());
+                dto.setDob(account.getDob());
+                participants.add(dto);
+            });
+        });
 
         return participants;
     }
@@ -465,4 +480,14 @@ public class TournamentServiceImpl implements TournamentService {
 
         logger.info("End tournament task is completed.");
     }
+
+    public List<TeamResponse> getTeamsByTournamentId(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Tournament not found"));
+
+        return tournament.getTeamList().stream()
+                .map(teamConverter::convertToTeamResponse)
+                .collect(Collectors.toList());
+    }
+
 }

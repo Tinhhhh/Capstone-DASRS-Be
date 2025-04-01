@@ -33,10 +33,12 @@ public class ScoredMethodServiceImpl implements ScoredMethodService {
     private final ScoreAttributeRepository scoreAttributeRepository;
 
     @Override
-    public void createNewScoredMethod(NewScoreMethod newScoreMethod) {
+    public ScoredMethodResponse createNewScoredMethod(NewScoreMethod newScoreMethod) {
         ScoredMethod scoredMethod = modelMapper.map(newScoreMethod, ScoredMethod.class);
         scoredMethod.setStatus(ScoredMethodStatus.ACTIVE);
         scoredMethodRepository.save(scoredMethod);
+
+        return modelMapper.map(scoredMethod, ScoredMethodResponse.class);
     }
 
     @Override

@@ -6,8 +6,8 @@ import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
-import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
+import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
 import com.sep490.dasrsbackend.repository.*;
@@ -322,7 +322,6 @@ public class MatchServiceImpl implements MatchService {
                     "Change match slot fails. The start date must be after the round start date");
         }
 
-
     }
 
 
@@ -359,13 +358,14 @@ public class MatchServiceImpl implements MatchService {
         score += sm.getAssistUsageCount() * sa.getAssistUsageCount();
         score += sm.getAverageSpeed() * sa.getAverageSpeed();
         score += sm.getTotalDistance() * sa.getTotalDistance();
+        score += sm.getTotalRaceTime() * sa.getTotalRaceTime();
 
-        return score;
+        return score <= 0 ? 0 : score;
     }
 
     @Scheduled(cron = "1 0 * * * *")
-    public void detectUnassignedMaps() {
-        logger.info("Detecting unassigned maps task running at {}", LocalDateTime.now());
+    public void detectUnassignedMatch() {
+        logger.info("Detecting unassigned match task running at {}", LocalDateTime.now());
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -379,17 +379,27 @@ public class MatchServiceImpl implements MatchService {
         if (t.isPresent()) {
             Tournament tournament = t.get();
             List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE);
+//            List<Round> rounds = roundRepository.findByTournamentId(tournament.getId());
 
             if (!rounds.isEmpty()) {
                 List<Match> matches = matchRepository.findByRoundId(rounds.get(0).getId());
 
                 for (Match match : matches) {
                     if (match.getTimeEnd().before(DateUtil.convertToDate(LocalDateTime.now()))) {
-                        match.setStatus(MatchStatus.UNASSIGNED);
-                        matchRepository.save(match);
+
+                        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+
+                        for (MatchTeam matchTeam : matchTeams) {
+                            if (matchTeam.getAccount() == null && match.getStatus() == MatchStatus.PENDING) {
+                                match.setStatus(MatchStatus.UNASSIGNED);
+                                matchRepository.save(match);
+                                logger.info("Match {} is unassigned", match.getId());
+                            }
+
+                        }
+
                     }
                 }
-
             } else {
                 logger.info("No active round found");
             }

@@ -2,13 +2,13 @@ package com.sep490.dasrsbackend.model.payload.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 
 @Data
 @Builder
@@ -49,4 +49,13 @@ public class NewAccountByStaff {
     @Schema(description = "Team ID to assign the player to", example = "1")
     @JsonProperty("team_id")
     private Long teamId;
+
+    @Schema(description = "User's date of birth", example = "2000-01-01")
+    @NotNull(message = "Date of birth is mandatory")
+    private LocalDate dob;
+
+    @Schema(description = "User's gender", example = "Male")
+    @NotEmpty(message = "Gender is mandatory")
+    @Pattern(regexp = "^(Male|Female|Other)$", message = "Gender must be Male, Female, or Other")
+    private String gender;
 }

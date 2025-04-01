@@ -39,11 +39,9 @@ public class Match {
     @Column(name = "match_score")
     private double matchScore;
 
-    @FutureOrPresent
     @Column(name = "time_start")
     private Date timeStart;
 
-    @Future
     @Column(name = "time_end")
     private Date timeEnd;
 

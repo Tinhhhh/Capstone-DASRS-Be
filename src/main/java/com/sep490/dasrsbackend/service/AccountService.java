@@ -1,11 +1,13 @@
 package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.dto.AccountDTO;
+import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
 import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,11 +19,11 @@ import java.util.UUID;
 public interface AccountService {
     List<AccountDTO> createAccounts(List<AccountDTO> accountDTOs);
 
-    List<AccountDTO> importAccounts(InputStream excelInputStream) throws Exception;
+    List<AccountDTO> importAccounts(InputStream excelInputStream, List<String> errorMessages) throws Exception;
 
-    AccountInfoResponse getCurrentAccountInfo(HttpServletRequest request);
+    AccountInfoResponse getCurrentAccountInfo(String email);
 
-    void changePassword(ChangePasswordRequest changePasswordRequest, HttpServletRequest request);
+    void changePassword(String username, String oldPassword, String newPassword);
 
     void updateAccountProfilePicture(UUID id, String imageURLMain);
 
@@ -36,4 +38,8 @@ public interface AccountService {
     void newAccountByAdmin(NewAccountByAdmin account) throws MessagingException;
 
     void newAccountByStaff(NewAccountByStaff request) throws MessagingException;
+
+    List<PlayerResponse> getPlayerByTeamName(String teamName);
+
+    List<PlayerResponse> getPlayers();
 }
