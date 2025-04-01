@@ -811,12 +811,12 @@ public class RoundServiceImpl implements RoundService {
     @Scheduled(cron = "1 0 0 * * *")
     @Transactional
     public void checkIfRoundEnd() {
-        logger.info("check if a round end task is running");
+        logger.info("Round end task is running");
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.SECOND, 1);
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date date = calendar.getTime();
@@ -847,19 +847,19 @@ public class RoundServiceImpl implements RoundService {
         }
 
 
-        logger.info("check if a round end task is completed");
+        logger.info("Round end task is completed");
     }
 
     @Async
     @Scheduled(cron = "1 0 0 * * *")
     @Transactional
     public void checkIfRoundStart() {
-        logger.info("Check if a round start task is running");
+        logger.info("Round start task is running");
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.SECOND, 1);
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date date = calendar.getTime();
@@ -876,7 +876,7 @@ public class RoundServiceImpl implements RoundService {
             }
         }
 
-        logger.info("Check if a round start task is completed");
+        logger.info("Round start task is completed");
     }
 
 }

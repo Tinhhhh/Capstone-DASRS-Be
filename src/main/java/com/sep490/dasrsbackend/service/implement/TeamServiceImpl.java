@@ -10,7 +10,6 @@ import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamMemberResponse;
-import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.MatchRepository;
 import com.sep490.dasrsbackend.repository.MatchTeamRepository;

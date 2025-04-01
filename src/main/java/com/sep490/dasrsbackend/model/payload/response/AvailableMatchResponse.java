@@ -2,17 +2,19 @@ package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class MatchResponse {
+@NoArgsConstructor
+public class AvailableMatchResponse {
 
     @JsonProperty("match_id")
     private Long id;
@@ -32,5 +34,7 @@ public class MatchResponse {
     @JsonProperty("status")
     private MatchStatus status;
 
-    private List<TeamTournamentResponse> teams;
+    List<TeamTournamentResponse> teams;
+
+
 }

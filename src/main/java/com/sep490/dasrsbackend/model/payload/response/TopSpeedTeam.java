@@ -10,9 +10,12 @@ import java.util.UUID;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
-public class TeamTournamentResponse {
+@AllArgsConstructor
+public class TopSpeedTeam {
+
+    @JsonProperty("speed")
+    private Double topSpeed;
 
     @JsonProperty("team_id")
     private Long id;
@@ -25,4 +28,6 @@ public class TeamTournamentResponse {
 
     @JsonProperty("account_id")
     private UUID accountId;
+
+
 }

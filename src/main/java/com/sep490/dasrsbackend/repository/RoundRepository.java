@@ -16,6 +16,7 @@ import java.util.Optional;
 @Repository
 public interface RoundRepository extends JpaRepository<Round, Long>, JpaSpecificationExecutor<Round> {
     List<Round> findByTournamentIdAndStatus(Long tournamentId, RoundStatus roundStatus);
+
     List<Round> findByTournamentId(Long tournamentId);
     @Query("SELECT r FROM Round r WHERE r.tournament.id = :id AND (r.status = 'PENDING' OR r.status = 'ACTIVE')")
     List<Round> findValidRoundByTournamentId(@Param("id") Long id);
