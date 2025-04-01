@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.NewResource;
 import com.sep490.dasrsbackend.service.ResourceService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +37,8 @@ public class ResourceController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved data ", resourceService.getResource(resourceId));
     }
 
-    @GetMapping("")
+    @Operation(summary = "Get all resources types")
+    @GetMapping()
     public ResponseEntity<Object> getAllResource(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
@@ -46,6 +48,7 @@ public class ResourceController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved all resources", resourceService.getAllResourceForAll(pageNo, pageSize, sortBy, sortDirection));
     }
 
+    @Operation(summary = "Get all resources types for admin")
     @GetMapping("/admin")
     public ResponseEntity<Object> getAllResourceForAdmin(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
@@ -62,5 +65,21 @@ public class ResourceController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Resource disabled successfully");
     }
 
+    @Operation(summary = "Get all ressources type = map")
+    @GetMapping("/map")
+    public ResponseEntity<Object> getResourceForOrganizer(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection
+    ) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved all resources", resourceService.getAllResourceMap(pageNo, pageSize, sortBy, sortDirection));
+    }
+
+    @Operation(summary = "Get map by round id")
+    @GetMapping("/map/round/{roundId}")
+    public ResponseEntity<Object> getMapByRoundId(@PathVariable Long roundId) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved map", resourceService.getMapByRoundId(roundId));
+    }
 
 }
