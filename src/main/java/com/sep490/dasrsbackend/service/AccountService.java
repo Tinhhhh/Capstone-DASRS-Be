@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
+import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
 import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
@@ -42,5 +43,5 @@ public interface AccountService {
 
     List<PlayerResponse> getPlayerByTeamName(String teamName);
 
-    ListPlayersResponse getPlayers(int pageNo, int pageSize, String sortBy, String sortDirection);
+    ListPlayersResponse getPlayers(int pageNo, int pageSize, PlayerSort sortBy, String keyword);
 }

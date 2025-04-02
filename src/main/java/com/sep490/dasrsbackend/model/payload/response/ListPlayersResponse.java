@@ -2,11 +2,13 @@ package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import java.util.List;
 
 @Data
 @AllArgsConstructor
+@Builder
 public class ListPlayersResponse {
 
     @JsonProperty(value = "players", index = 1)
