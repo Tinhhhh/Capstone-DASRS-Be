@@ -67,7 +67,7 @@ public class ResourceController {
 
     @Operation(summary = "Get all ressources type = map")
     @GetMapping("/map")
-    public ResponseEntity<Object> getResourceForOrganizer(
+    public ResponseEntity<Object> getResourceMap(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
