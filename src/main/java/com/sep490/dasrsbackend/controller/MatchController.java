@@ -1,5 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
+import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.model.enums.MatchSort;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
@@ -17,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,10 +44,14 @@ public class MatchController {
     }
 
     @GetMapping("/round/{roundId}")
-    public ResponseEntity<Object> getMatchByRoundId(@PathVariable Long roundId) {
+    public ResponseEntity<Object> getMatchByRoundId(@RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+                                                    @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+                                                    @RequestParam(name = "sortBy") MatchSort sortBy,
+                                                    @PathVariable Long roundId,
+                                                    @RequestParam(name = "keyword", required = false) String keyword) {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved matches",
-                matchService.getMatchByRoundId(roundId));
+                matchService.getMatchByRoundId(pageNo, pageSize, sortBy, roundId, keyword));
     }
 
     @PutMapping("/slot/{matchId}")

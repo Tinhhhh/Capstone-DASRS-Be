@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
+import com.sep490.dasrsbackend.Util.MatchSpecification;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
@@ -8,6 +9,7 @@ import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
+import com.sep490.dasrsbackend.model.payload.response.ListMatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponseForTeam;
 import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
@@ -19,6 +21,11 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;
 import org.slf4j.Logger;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -148,12 +155,20 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
-    public List<MatchResponse> getMatchByRoundId(Long roundId) {
+    public ListMatchResponse getMatchByRoundId(int pageNo, int pageSize, MatchSort sortBy, Long roundId, String keyword) {
 
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found, please contact administrator for more information"));
 
-        List<Match> matches = matchRepository.findByRoundId(round.getId());
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<Match> matchSpecification = Specification.where(
+                MatchSpecification.hasRoundId(round.getId()).and(MatchSpecification.hasMatchName(keyword))
+        );
+
+        Page<Match> matchPage = matchRepository.findAll(matchSpecification, pageable);
+        List<Match> matches = matchPage.getContent();
         List<MatchResponse> matchResponses = new ArrayList<>();
 
         matches.forEach(match -> {
@@ -161,7 +176,15 @@ public class MatchServiceImpl implements MatchService {
             matchResponses.add(matchResponse);
         });
 
-        return matchResponses;
+        ListMatchResponse listMatchResponse = new ListMatchResponse();
+        listMatchResponse.setContent(matchResponses);
+        listMatchResponse.setPageNo(matchPage.getNumber());
+        listMatchResponse.setPageSize(matchPage.getSize());
+        listMatchResponse.setTotalElements(matchPage.getTotalElements());
+        listMatchResponse.setTotalPages(matchPage.getTotalPages());
+        listMatchResponse.setLast(matchPage.isLast());
+
+        return listMatchResponse;
     }
 
     @Transactional

@@ -3,31 +3,23 @@ package com.sep490.dasrsbackend.model.payload.request;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.UUID;
 
 @Getter
-@NoArgsConstructor
+@Setter
 @AllArgsConstructor
-public class MatchCarData {
+@NoArgsConstructor
+public class UpdateCarCustomization {
 
-    @JsonProperty("match_id")
-    private Long matchId;
+    private Long carId;
 
-    @JsonProperty("team_id")
-    private Long teamId;
-
-    @JsonProperty("player_id")
-    private Long playerId;
-
-    @JsonProperty("team_tag")
-    private String teamTag;
-
-    @JsonProperty("car_name")
-    private String carName;
+    private UUID accountId;
 
     @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
     @DecimalMax(value = "10.0", message = "Team number must be at most 10.0")

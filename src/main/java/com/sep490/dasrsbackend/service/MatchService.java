@@ -1,8 +1,10 @@
 package com.sep490.dasrsbackend.service;
 
+import com.sep490.dasrsbackend.model.enums.MatchSort;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
+import com.sep490.dasrsbackend.model.payload.response.ListMatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponseForTeam;
 
@@ -15,7 +17,7 @@ public interface MatchService {
 
     void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee);
 
-    List<MatchResponse> getMatchByRoundId(Long roundId);
+    ListMatchResponse getMatchByRoundId(int pageNo, int pageSize, MatchSort sortBy, Long roundId, String keyword);
 
     void updateMatchTeamScore(MatchScoreData matchScoreData);
 
