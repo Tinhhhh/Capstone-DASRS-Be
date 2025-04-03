@@ -301,20 +301,15 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public ListPlayersResponse getPlayers(int pageNo, int pageSize, PlayerSort sortBy, String keyword) {
-        // Apply sorting direction and field
         Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
 
-        // Apply pagination
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        // Apply search filter for keyword (team name)
         Specification<Account> spec = Specification.where(AccountSpecification.hasKeyword(keyword));
 
-        // Fetch filtered and sorted players
         Page<Account> playersPage = accountRepository.findAll(spec, pageable);
         List<Account> players = playersPage.getContent();
 
-        // Convert players to response format
         List<PlayerResponse> playerResponses = players.stream()
                 .map(account -> new PlayerResponse(
                         account.getAccountId(),
