@@ -1,22 +1,21 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Entity
-@Builder
-@Table(name = "match_team")
-public class MatchTeam {
+@Table(name = "account_car")
+public class AccountCar {
 
     @EmbeddedId
-    private MatchTeamId id;
-
-    @Column(name = "team_tag")
-    private String teamTag;
+    private AccountCarId id;
 
     @Column(name = "car_name")
     private String carName;
@@ -55,25 +54,14 @@ public class MatchTeam {
     private Double brake;
 
     @ManyToOne
-    @MapsId("matchId")
-    @JoinColumn(name = "match_Id")
-    Match match;
-
-    @ManyToOne
-    @JoinColumn(name = "account_id")
+    @MapsId("accountId")
+    @JoinColumn(name = "account_Id")
     Account account;
 
     @ManyToOne
-    @JoinColumn(name = "score_attribute_id")
-    private ScoreAttribute scoreAttribute;
+    @MapsId("carId")
+    @JoinColumn(name = "car_Id")
+    Car car;
 
-    @ManyToOne
-    @MapsId("teamId")
-    @JoinColumn(name = "team_Id")
-    Team team;
-
-    @ManyToOne
-    @JoinColumn(name = "car_id")
-    private Car car;
 
 }
