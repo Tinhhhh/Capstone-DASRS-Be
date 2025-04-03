@@ -75,13 +75,8 @@ public class RoundController {
             @RequestParam(name = "sortBy") RoundSort sortBy,
             @RequestParam(name = "keyword", required = false) String keyword
     ) {
-        try {
-            // Retrieve the rounds based on the accountId with pagination, sorting, and filtering
-            GetRoundsByAccountResponse roundsResponse = roundService.getRoundsByAccountId(accountId, pageNo, pageSize, sortBy, keyword);
-            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Rounds retrieved successfully.", roundsResponse);
-        } catch (Exception e) {
-            // Handle errors
-            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve rounds: " + e.getMessage());
-        }
+        GetRoundsByAccountResponse roundsResponse = roundService.getRoundsByAccountId(accountId, pageNo, pageSize, sortBy, keyword);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Rounds retrieved successfully.", roundsResponse);
     }
+
 }
