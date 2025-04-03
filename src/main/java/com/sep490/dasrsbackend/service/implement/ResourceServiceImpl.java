@@ -3,6 +3,7 @@ package com.sep490.dasrsbackend.service.implement;
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.Resource;
 import com.sep490.dasrsbackend.model.entity.Round;
+import com.sep490.dasrsbackend.model.enums.ResourceType;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.NewResource;
@@ -127,6 +128,47 @@ public class ResourceServiceImpl implements ResourceService {
         listMapResponse.setLast(resources.isLast());
 
         return listMapResponse;
+    }
+
+    @Override
+    public ListResourceResponse getAllResourceMap(int pageNo, int pageSize, String sortBy, String sortDirection) {
+        Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDirection);
+
+        Page<Resource> resources = resourceRepository.findByIsEnable(true, pageable);
+
+        List<ResourceResponse> resourceResponse = resources.stream()
+                .filter(resource -> resource.getResourceType() == ResourceType.MAP)
+                .map(resource -> modelMapper.map(resource, ResourceResponse.class))
+                .toList();
+
+        ListResourceResponse listMapResponse = new ListResourceResponse();
+        listMapResponse.setContent(resourceResponse);
+        listMapResponse.setTotalPages(resources.getTotalPages());
+        listMapResponse.setTotalElements(resources.getTotalElements());
+        listMapResponse.setPageSize(resources.getSize());
+        listMapResponse.setPageNo(resources.getNumber());
+        listMapResponse.setLast(resources.isLast());
+
+        return listMapResponse;
+    }
+
+    @Override
+    public ResourceResponse getMapByRoundId(Long roundId) {
+
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
+
+        Resource resource = round.getResource();
+
+        if (resource.getResourceType() != ResourceType.MAP) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Resource is not a map. Please contact admin");
+        }
+
+        if (!resource.isEnable()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Resource is not enable. Please contact admin");
+        }
+
+        return modelMapper.map(resource, ResourceResponse.class);
     }
 
 }

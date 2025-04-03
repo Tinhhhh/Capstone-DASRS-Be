@@ -12,7 +12,10 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TeamTournamentResponse {
+public class FastestLapTimeTeam {
+
+    @JsonProperty("lap_time")
+    private Double fastestLapTime;
 
     @JsonProperty("team_id")
     private Long id;
@@ -25,4 +28,5 @@ public class TeamTournamentResponse {
 
     @JsonProperty("account_id")
     private UUID accountId;
+
 }

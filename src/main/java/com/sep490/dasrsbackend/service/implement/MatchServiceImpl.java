@@ -9,6 +9,7 @@ import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
+import com.sep490.dasrsbackend.model.payload.response.MatchResponseForTeam;
 import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.LeaderboardService;
@@ -48,13 +49,14 @@ public class MatchServiceImpl implements MatchService {
     private final static Logger logger = org.slf4j.LoggerFactory.getLogger(MatchServiceImpl.class);
 
     @Override
-    public List<MatchResponse> getMatches(Long teamId) {
+    public List<MatchResponseForTeam> getMatches(Long teamId) {
 
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Team not found, please contact administrator for more information"));
 
         List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(team.getId());
         List<Match> matches = new ArrayList<>();
+        List<MatchResponseForTeam> matchesResponse = new ArrayList<>();
 
         modelMapper.getConfiguration().setFieldMatchingEnabled(true)
                 .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
@@ -66,14 +68,18 @@ public class MatchServiceImpl implements MatchService {
             matches.add(matchTeam.getMatch());
         }
 
-        List<MatchResponse> matchesResponse = new ArrayList<>();
         for (Match match : matches) {
-            MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
+            MatchResponseForTeam matchResponse = modelMapper.map(match, MatchResponseForTeam.class);
             matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
             matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
-            List<TeamTournamentResponse> teams = new ArrayList<>();
-            teams.add(modelMapper.map(team, TeamTournamentResponse.class));
-            matchResponse.setTeams(teams);
+
+            for (MatchTeam matchTeam : matchTeams) {
+                if (matchTeam.getMatch().getId() == match.getId()) {
+                    if (matchTeam.getAccount() != null) {
+                        matchResponse.setAccountId(matchTeam.getAccount().getAccountId());
+                    }
+                }
+            }
             matchesResponse.add(matchResponse);
         }
 
@@ -151,30 +157,7 @@ public class MatchServiceImpl implements MatchService {
         List<MatchResponse> matchResponses = new ArrayList<>();
 
         matches.forEach(match -> {
-            MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
-            matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
-            matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
-
-            List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
-
-            if (matchTeams.isEmpty()) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information");
-            }
-
-            modelMapper.getConfiguration().setFieldMatchingEnabled(true)
-                    .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
-                    .setAmbiguityIgnored(true)
-                    .setSkipNullEnabled(false)
-                    .setMatchingStrategy(MatchingStrategies.STRICT);
-
-            List<TeamTournamentResponse> teams = new ArrayList<>();
-
-            matchTeams.forEach(matchTeam -> {
-                Team team = matchTeam.getTeam();
-                teams.add(modelMapper.map(team, TeamTournamentResponse.class));
-            });
-
-            matchResponse.setTeams(teams);
+            MatchResponse matchResponse = getMatchResponse(match);
             matchResponses.add(matchResponse);
         });
 
@@ -340,13 +323,69 @@ public class MatchServiceImpl implements MatchService {
         List<MatchResponse> matchResponses = new ArrayList<>();
 
         for (Match match : matches) {
-            MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
-            matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
-            matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
+            MatchResponse matchResponse = getMatchResponse(match);
             matchResponses.add(matchResponse);
         }
 
         return matchResponses;
+    }
+
+    private MatchResponse getMatchResponse(Match match) {
+        MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
+        matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
+        matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
+
+        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+
+        if (matchTeams.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information");
+        }
+
+        modelMapper.getConfiguration().setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
+                .setAmbiguityIgnored(true)
+                .setSkipNullEnabled(false)
+                .setMatchingStrategy(MatchingStrategies.STRICT);
+
+        List<TeamTournamentResponse> teams = new ArrayList<>();
+
+        matchTeams.forEach(matchTeam -> {
+            Team team = matchTeam.getTeam();
+            TeamTournamentResponse teamTournamentResponse = modelMapper.map(team, TeamTournamentResponse.class);
+
+            if (matchTeam.getMatch().getId() == match.getId()) {
+                if (matchTeam.getAccount() != null) {
+                    teamTournamentResponse.setAccountId(matchTeam.getAccount().getAccountId());
+                }
+            }
+            teams.add(teamTournamentResponse);
+        });
+
+        matchResponse.setTeams(teams);
+        return matchResponse;
+    }
+
+    @Override
+    public MatchResponse getAvailableMatch(LocalDateTime date) {
+
+        // Chuyển đổi LocalDateTime sang Date
+        Date calendarDate = DateUtil.convertToDate(date);
+
+        // Kiểm tra xem có tournament nào đang hoạt động không
+        Tournament tournament = tournamentRepository.findByStatusAndStartDateBefore(TournamentStatus.ACTIVE, calendarDate)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "No match found due to no active tournament currently"));
+
+        Round round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.ACTIVE, calendarDate)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "No match found due to no active round currently"));
+
+        String time = DateUtil.formatTimestamp(DateUtil.convertToDate(date), "yyyy-MM-dd HH:00:00");
+        Match match = matchRepository.findMatchByHour(time);
+
+        if (match == null) {
+            throw new DasrsException(HttpStatus.NOT_FOUND, "No match found in the current hour");
+        }
+
+        return getMatchResponse(match);
     }
 
     private double calculateScore(ScoredMethod sm, ScoreAttribute sa) {
@@ -370,7 +409,7 @@ public class MatchServiceImpl implements MatchService {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.SECOND, 1);
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date date = calendar.getTime();

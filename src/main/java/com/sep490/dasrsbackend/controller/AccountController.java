@@ -1,7 +1,9 @@
 package com.sep490.dasrsbackend.controller;
 
+import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
+import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
@@ -9,6 +11,7 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.ListPlayersResponse;
 import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.security.JwtTokenProvider;
@@ -54,7 +57,6 @@ public class AccountController {
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> importAccounts(@RequestParam("file") MultipartFile file) {
         try {
-            // Validate file input
             if (file.isEmpty()) {
                 return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "The file must not be empty.");
             }
@@ -62,12 +64,10 @@ public class AccountController {
             List<String> errorMessages = new ArrayList<>();
             List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream(), errorMessages);
 
-            // Handle cases where there are errors
             if (!errorMessages.isEmpty()) {
                 return ResponseBuilder.responseBuilderWithData(HttpStatus.BAD_REQUEST, "Some rows failed to import.", errorMessages);
             }
 
-            // Check if any accounts were successfully imported
             if (accounts.isEmpty()) {
                 return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "No accounts were imported. Please check the file content.");
             }
@@ -75,13 +75,10 @@ public class AccountController {
             return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Accounts imported successfully.", accounts);
 
         } catch (IOException e) {
-            // Handle file processing exceptions
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process the uploaded file. Please check the file and try again.");
         } catch (IllegalArgumentException e) {
-            // Handle validation-related exceptions
             return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
-            // Catch any other unexpected exceptions
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again.");
         }
     }
@@ -167,16 +164,22 @@ public class AccountController {
         }
     }
 
-    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER'")
+    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER' with pagination, sorting, and search by team name")
     @GetMapping("/players")
-    public ResponseEntity<Object> getPlayers() {
+    public ResponseEntity<Object> getPlayers(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy") PlayerSort sortBy,
+            @RequestParam(name = "keyword", required = false) String keyword
+    ) {
         try {
-            List<PlayerResponse> players = accountService.getPlayers();
-            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", players);
+            ListPlayersResponse playersResponse = accountService.getPlayers(pageNo, pageSize, sortBy, keyword);
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", playersResponse);
         } catch (Exception e) {
-            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve players: " + e.getMessage());
         }
     }
+
 
     @Operation(summary = "Get players by team name", description = "Retrieve all players associated with a specific team name")
     @GetMapping("/players-by-team")

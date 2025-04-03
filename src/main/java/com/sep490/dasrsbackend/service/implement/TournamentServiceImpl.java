@@ -99,7 +99,7 @@ public class TournamentServiceImpl implements TournamentService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Start date must be after today.");
         }
 
-        // Kiểm tra begin phải cách hiện tại ít nhất 1 tuần và không quá 3 tháng
+        // Kiểm tra begin phải cách hiện tại ít nhất 1 tuần và không quá 3 tuaần
         calendar.add(Calendar.WEEK_OF_YEAR, 1);
         Date minBegin = calendar.getTime();
         calendar.add(Calendar.WEEK_OF_YEAR, 3);
@@ -450,7 +450,7 @@ public class TournamentServiceImpl implements TournamentService {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.SECOND, 1);
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date date = calendar.getTime();

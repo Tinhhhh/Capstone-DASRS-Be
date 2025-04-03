@@ -10,9 +10,12 @@ import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
+import com.sep490.dasrsbackend.model.payload.response.GetPlayerRoundResponse;
+import com.sep490.dasrsbackend.model.payload.response.GetRoundsByAccountResponse;
 import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.RoundService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
@@ -30,10 +33,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -51,6 +56,7 @@ public class RoundServiceImpl implements RoundService {
     private final ScoreAttributeRepository scoreAttributeRepository;
     private final MatchTeamRepository matchTeamRepository;
     private final ResourceRepository resourceRepository;
+    private final AccountRepository accountRepository;
 
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(RoundServiceImpl.class);
 
@@ -811,12 +817,12 @@ public class RoundServiceImpl implements RoundService {
     @Scheduled(cron = "1 0 0 * * *")
     @Transactional
     public void checkIfRoundEnd() {
-        logger.info("check if a round end task is running");
+        logger.info("Round end task is running");
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.SECOND, 1);
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date date = calendar.getTime();
@@ -847,19 +853,19 @@ public class RoundServiceImpl implements RoundService {
         }
 
 
-        logger.info("check if a round end task is completed");
+        logger.info("Round end task is completed");
     }
 
     @Async
     @Scheduled(cron = "1 0 0 * * *")
     @Transactional
     public void checkIfRoundStart() {
-        logger.info("Check if a round start task is running");
+        logger.info("Round start task is running");
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.SECOND, 1);
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date date = calendar.getTime();
@@ -876,7 +882,48 @@ public class RoundServiceImpl implements RoundService {
             }
         }
 
-        logger.info("Check if a round start task is completed");
+        logger.info("Round start task is completed");
+    }
+
+    @Override
+    public GetRoundsByAccountResponse getRoundsByAccountId(UUID accountId, int pageNo, int pageSize, RoundSort sortBy, String keyword) {
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        Specification<Round> spec = Specification.where(RoundSpecification.hasKeyword(keyword));
+
+        Page<Round> roundsPage = roundRepository.findAll(spec, pageable);
+        List<Round> rounds = roundsPage.getContent();
+
+        List<GetPlayerRoundResponse> roundResponses = rounds.stream()
+                .map(round -> new GetPlayerRoundResponse(
+                        round.getId(),
+                        round.getRoundName(),
+                        round.getTeamLimit(),
+                        round.isLast(),
+                        round.getDescription(),
+                        round.getStatus(),
+                        round.getStartDate() != null ? round.getStartDate().toString() : null,
+                        round.getEndDate() != null ? round.getEndDate().toString() : null,
+                        round.getCreatedDate() != null ? round.getCreatedDate().toString() : null,
+                        round.getTournament() != null ? round.getTournament().getId() : null,
+                        round.getScoredMethod() != null ? round.getScoredMethod().getId() : null,
+                        round.getEnvironment() != null ? round.getEnvironment().getId() : null,
+                        round.getMatchType() != null ? round.getMatchType().getId() : null,
+                        round.getMatchType() != null ? round.getMatchType().getMatchTypeName() : null,
+                        round.getResource() != null ? round.getResource().getId() : null,
+                        round.getMatchType() != null ? round.getMatchType().getFinishType() : null
+                ))
+                .collect(Collectors.toList());
+
+        return GetRoundsByAccountResponse.builder()
+                .rounds(roundResponses)
+                .totalPages(roundsPage.getTotalPages())
+                .totalElements(roundsPage.getTotalElements())
+                .pageNo(roundsPage.getNumber())
+                .pageSize(roundsPage.getSize())
+                .last(roundsPage.isLast())
+                .build();
     }
 
 }

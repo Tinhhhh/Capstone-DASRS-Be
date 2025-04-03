@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.util.UUID;
@@ -10,7 +11,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TeamMemberResponse {
+
+    @JsonProperty("id")
     private UUID id; // Account ID
+
+    @JsonProperty("full_name")
     private String fullName; // Full name of the member
 }
 

@@ -4,12 +4,14 @@ import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
+import com.sep490.dasrsbackend.model.payload.response.MatchResponseForTeam;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 public interface MatchService {
-    List<MatchResponse> getMatches(Long teamId);
+    List<MatchResponseForTeam> getMatches(Long teamId);
 
     void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee);
 
@@ -22,4 +24,7 @@ public interface MatchService {
     void changeMatchSlot(Long MatchId, ChangeMatchSlot changeMatchSlot);
 
     List<MatchResponse> getMatchesByTournamentId(Long tournamentId);
+
+    MatchResponse getAvailableMatch(LocalDateTime date);
+
 }
