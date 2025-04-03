@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface RoundRepository extends JpaRepository<Round, Long>, JpaSpecificationExecutor<Round> {
@@ -27,4 +28,11 @@ public interface RoundRepository extends JpaRepository<Round, Long>, JpaSpecific
     Optional<Round> findByStatusAndStartDateBefore(RoundStatus roundStatus, Date date);
 
     Optional<Round> findByStatusAndEndDateBefore(RoundStatus roundStatus, Date date);
+
+    @Query("SELECT DISTINCT r FROM Round r " +
+            "JOIN r.matchList m " +
+            "JOIN m.matchTeamList mt " +
+            "JOIN mt.account a " +
+            "WHERE a.accountId = :accountId")
+    List<Round> findRoundsByAccountId(@Param("accountId") UUID accountId);
 }
