@@ -22,10 +22,10 @@ public class LeaderboardResponse {
     private FinishType finishType;
 
     @JsonProperty(value = "fastest_lap_time", index = 3)
-    private TeamTournamentResponse fastestLapTime;
+    private FastestLapTimeTeam fastestLapTime;
 
     @JsonProperty(value = "top_speed", index = 4)
-    private TeamTournamentResponse topSpeed;
+    private TopSpeedTeam topSpeed;
 
     @JsonProperty("leaderboard_id")
     private Long leaderboardId;

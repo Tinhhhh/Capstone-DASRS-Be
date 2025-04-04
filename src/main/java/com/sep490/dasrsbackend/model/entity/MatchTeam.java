@@ -21,12 +21,6 @@ public class MatchTeam {
     @Column(name = "car_name")
     private String carName;
 
-    @Column(name = "wheels")
-    private Integer wheels;
-
-    @Column(name = "colors")
-    private Integer colors;
-
     @Column(name = "front_camper")
     private Double frontCamper;
 
@@ -60,17 +54,8 @@ public class MatchTeam {
     @Column(name = "brake")
     private Double brake;
 
-    @Column(name = "decals")
-    private Integer decals;
-
-    @Column(name = "neon")
-    private Integer neon;
-
-    @Column(name = "spoilers")
-    private Integer spoilers;
-
-    @Column(name = "sirens")
-    private Boolean sirens;
+    @Column(name = "attempt")
+    private int attempt;
 
     @ManyToOne
     @MapsId("matchId")
@@ -89,5 +74,9 @@ public class MatchTeam {
     @MapsId("teamId")
     @JoinColumn(name = "team_Id")
     Team team;
+
+    @ManyToOne
+    @JoinColumn(name = "car_id")
+    private Car car;
 
 }

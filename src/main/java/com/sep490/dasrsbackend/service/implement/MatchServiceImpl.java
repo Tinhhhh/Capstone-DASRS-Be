@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
+import com.sep490.dasrsbackend.Util.MatchSpecification;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
@@ -8,8 +9,8 @@ import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
-import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
-import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
+import com.sep490.dasrsbackend.model.payload.request.UnityRoomRequest;
+import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.LeaderboardService;
 import com.sep490.dasrsbackend.service.MatchService;
@@ -18,6 +19,11 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
 import org.modelmapper.convention.MatchingStrategies;
 import org.slf4j.Logger;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -48,13 +54,14 @@ public class MatchServiceImpl implements MatchService {
     private final static Logger logger = org.slf4j.LoggerFactory.getLogger(MatchServiceImpl.class);
 
     @Override
-    public List<MatchResponse> getMatches(Long teamId) {
+    public List<MatchResponseForTeam> getMatches(Long teamId) {
 
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Team not found, please contact administrator for more information"));
 
         List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(team.getId());
         List<Match> matches = new ArrayList<>();
+        List<MatchResponseForTeam> matchesResponse = new ArrayList<>();
 
         modelMapper.getConfiguration().setFieldMatchingEnabled(true)
                 .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
@@ -66,14 +73,18 @@ public class MatchServiceImpl implements MatchService {
             matches.add(matchTeam.getMatch());
         }
 
-        List<MatchResponse> matchesResponse = new ArrayList<>();
         for (Match match : matches) {
-            MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
+            MatchResponseForTeam matchResponse = modelMapper.map(match, MatchResponseForTeam.class);
             matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
             matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
-            List<TeamTournamentResponse> teams = new ArrayList<>();
-            teams.add(modelMapper.map(team, TeamTournamentResponse.class));
-            matchResponse.setTeams(teams);
+
+            for (MatchTeam matchTeam : matchTeams) {
+                if (matchTeam.getMatch().getId() == match.getId()) {
+                    if (matchTeam.getAccount() != null) {
+                        matchResponse.setAccountId(matchTeam.getAccount().getAccountId());
+                    }
+                }
+            }
             matchesResponse.add(matchResponse);
         }
 
@@ -111,6 +122,14 @@ public class MatchServiceImpl implements MatchService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assigner is not in the leader of the current team");
         }
 
+        if (match.getTimeStart().before(DateUtil.convertToDate(LocalDateTime.now()))) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Match has already started");
+        }
+
+        if (match.getStatus() != MatchStatus.PENDING) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Match is not in pending status");
+        }
+
 
         // Đảm bảo tất cả thành viên đều tham gia trận đấu
         List<Account> availableMembers = accountRepository.findByTeamId(member.getTeam().getId());
@@ -142,43 +161,36 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
-    public List<MatchResponse> getMatchByRoundId(Long roundId) {
+    public ListMatchResponse getMatchByRoundId(int pageNo, int pageSize, MatchSort sortBy, Long roundId, String keyword) {
 
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found, please contact administrator for more information"));
 
-        List<Match> matches = matchRepository.findByRoundId(round.getId());
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<Match> matchSpecification = Specification.where(
+                MatchSpecification.hasRoundId(round.getId()).and(MatchSpecification.hasMatchName(keyword))
+        );
+
+        Page<Match> matchPage = matchRepository.findAll(matchSpecification, pageable);
+        List<Match> matches = matchPage.getContent();
         List<MatchResponse> matchResponses = new ArrayList<>();
 
         matches.forEach(match -> {
-            MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
-            matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
-            matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
-
-            List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
-
-            if (matchTeams.isEmpty()) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information");
-            }
-
-            modelMapper.getConfiguration().setFieldMatchingEnabled(true)
-                    .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
-                    .setAmbiguityIgnored(true)
-                    .setSkipNullEnabled(false)
-                    .setMatchingStrategy(MatchingStrategies.STRICT);
-
-            List<TeamTournamentResponse> teams = new ArrayList<>();
-
-            matchTeams.forEach(matchTeam -> {
-                Team team = matchTeam.getTeam();
-                teams.add(modelMapper.map(team, TeamTournamentResponse.class));
-            });
-
-            matchResponse.setTeams(teams);
+            MatchResponse matchResponse = getMatchResponse(match);
             matchResponses.add(matchResponse);
         });
 
-        return matchResponses;
+        ListMatchResponse listMatchResponse = new ListMatchResponse();
+        listMatchResponse.setContent(matchResponses);
+        listMatchResponse.setPageNo(matchPage.getNumber());
+        listMatchResponse.setPageSize(matchPage.getSize());
+        listMatchResponse.setTotalElements(matchPage.getTotalElements());
+        listMatchResponse.setTotalPages(matchPage.getTotalPages());
+        listMatchResponse.setLast(matchPage.isLast());
+
+        return listMatchResponse;
     }
 
     @Transactional
@@ -340,13 +352,141 @@ public class MatchServiceImpl implements MatchService {
         List<MatchResponse> matchResponses = new ArrayList<>();
 
         for (Match match : matches) {
-            MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
-            matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
-            matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
+            MatchResponse matchResponse = getMatchResponse(match);
             matchResponses.add(matchResponse);
         }
 
         return matchResponses;
+    }
+
+    private MatchResponse getMatchResponse(Match match) {
+        MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
+        matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
+        matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
+
+        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+
+        if (matchTeams.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information");
+        }
+
+        modelMapper.getConfiguration().setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
+                .setAmbiguityIgnored(true)
+                .setSkipNullEnabled(false)
+                .setMatchingStrategy(MatchingStrategies.STRICT);
+
+        List<TeamTournamentResponse> teams = new ArrayList<>();
+
+        matchTeams.forEach(matchTeam -> {
+            Team team = matchTeam.getTeam();
+            TeamTournamentResponse teamTournamentResponse = modelMapper.map(team, TeamTournamentResponse.class);
+
+            if (matchTeam.getMatch().getId() == match.getId()) {
+                if (matchTeam.getAccount() != null) {
+                    teamTournamentResponse.setAccountId(matchTeam.getAccount().getAccountId());
+                }
+            }
+            teams.add(teamTournamentResponse);
+        });
+
+        matchResponse.setTeams(teams);
+        return matchResponse;
+    }
+
+    @Override
+    public UnityMatchResponse getAvailableMatch(LocalDateTime date) {
+
+        // Chuyển đổi LocalDateTime sang Date
+        Date calendarDate = DateUtil.convertToDate(date);
+
+        // Kiểm tra xem có tournament nào đang hoạt động không
+        Tournament tournament = tournamentRepository.findByStatusAndStartDateBefore(TournamentStatus.ACTIVE, calendarDate)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "No match found due to no active tournament currently"));
+
+        Round round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.ACTIVE, calendarDate)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "No match found due to no active round currently"));
+
+        String time = DateUtil.formatTimestamp(DateUtil.convertToDate(date), "yyyy-MM-dd HH:00:00");
+        Match match = matchRepository.findMatchByHour(time);
+
+        if (match == null) {
+            throw new DasrsException(HttpStatus.NOT_FOUND, "No match found in the current hour");
+        }
+
+        MatchResponse matchResponse = modelMapper.map(getMatchResponse(match), MatchResponse.class);
+        UnityMatchResponse unityMatchResponse = modelMapper.map(matchResponse, UnityMatchResponse.class);
+        unityMatchResponse.setMatchId(match.getId());
+        unityMatchResponse.setResourceId(round.getResource().getId());
+        unityMatchResponse.setResourceName(round.getResource().getResourceName());
+        unityMatchResponse.setResourceType(round.getResource().getResourceType());
+        unityMatchResponse.setEnvironmentId(round.getEnvironment().getId());
+        unityMatchResponse.setEnvironmentName(round.getEnvironment().getName());
+
+        return unityMatchResponse;
+    }
+
+    @Override
+    public UnityRoomResponse isValidPlayerInMatch(UnityRoomRequest unityRoomRequest) {
+
+        UnityRoomResponse unityRoomResponse = new UnityRoomResponse();
+        unityRoomResponse.setSuccess(false);
+
+        Optional<Match> matchOpt = matchRepository.findByMatchCode(unityRoomRequest.getMatchCode());
+        if (matchOpt.isEmpty()) {
+            unityRoomResponse.setMessage("Match not found");
+            return unityRoomResponse;
+        }
+
+        Match match = matchOpt.get();
+
+        if (match.getStatus() != MatchStatus.PENDING) {
+            unityRoomResponse.setMessage("Match is not available");
+            return unityRoomResponse;
+        }
+
+        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+
+        Account account = accountRepository.findById(unityRoomRequest.getAccountId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Account not found, please contact administrator for more information"));
+
+        UUID accountId = unityRoomRequest.getAccountId();
+        Long teamId = account.getTeam().getId();
+
+        boolean isValidPlayer = false;
+
+        for (MatchTeam matchTeam : matchTeams) {
+            if (matchTeam.getTeam().getId().equals(teamId) && matchTeam.getAccount().getAccountId().equals(accountId)) {
+                if (matchTeam.getAttempt() == 0) {
+                    isValidPlayer = true;
+                    break;
+                } else {
+                    unityRoomResponse.setMessage("You have already joined the match");
+                    return unityRoomResponse;
+                }
+            }
+        }
+
+        if (!isValidPlayer) {
+            unityRoomResponse.setMessage("You were not assigned to join the match");
+            return unityRoomResponse;
+        }
+
+        Date joinTimeICT = DateUtil.convertUTCtoICT(unityRoomRequest.getJoinTime());
+
+        if (match.getTimeStart().after(joinTimeICT)) {
+            unityRoomResponse.setMessage("Match has not started yet");
+            return unityRoomResponse;
+        }
+
+        if (match.getTimeEnd().before(joinTimeICT)) {
+            unityRoomResponse.setMessage("Match has ended");
+            return unityRoomResponse;
+        }
+
+        unityRoomResponse.setSuccess(true);
+        unityRoomResponse.setMessage("Valid player");
+        return unityRoomResponse;
     }
 
     private double calculateScore(ScoredMethod sm, ScoreAttribute sa) {
@@ -370,7 +510,7 @@ public class MatchServiceImpl implements MatchService {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.SECOND, 1);
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date date = calendar.getTime();
@@ -408,5 +548,7 @@ public class MatchServiceImpl implements MatchService {
         }
         logger.info("Detecting unassigned maps task finished at {}", LocalDateTime.now());
     }
+
+//    @Scheduled(cron = "0 55 * * * *")
 
 }

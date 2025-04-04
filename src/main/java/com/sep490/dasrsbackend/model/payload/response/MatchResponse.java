@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import lombok.*;
 
-import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -32,6 +32,5 @@ public class MatchResponse {
     @JsonProperty("status")
     private MatchStatus status;
 
-    List<TeamTournamentResponse> teams;
-
+    private List<TeamTournamentResponse> teams;
 }

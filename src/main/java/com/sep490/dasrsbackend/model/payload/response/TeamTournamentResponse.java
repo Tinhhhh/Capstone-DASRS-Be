@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -20,4 +22,7 @@ public class TeamTournamentResponse {
 
     @JsonProperty("team_tag")
     private String teamTag;
+
+    @JsonProperty("account_id")
+    private UUID accountId;
 }

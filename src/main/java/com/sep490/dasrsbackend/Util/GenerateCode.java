@@ -4,6 +4,7 @@ import lombok.experimental.UtilityClass;
 
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.util.Random;
 
 @UtilityClass
 public class GenerateCode {
@@ -27,4 +28,18 @@ public class GenerateCode {
         return StringBuilder.append(season).append(year).toString();
 
     }
+
+    public String generateUniqueCode() {
+        // Tạo 3 số đầu tiên ngẫu nhiên trong khoảng 100 - 999
+        Random random = new Random();
+        int firstPart = random.nextInt(1000); // Random từ 100 đến 999
+
+        // Lấy 3 số cuối từ thời gian hiện tại tính bằng mili giây
+        long currentTimeMillis = System.currentTimeMillis();
+        int secondPart = (int) (currentTimeMillis % 1000); // Lấy 3 chữ số cuối
+
+        // Ghép lại 3 số đầu tiên và 3 số sau thành mã duy nhất
+        return String.format("%03d%03d", firstPart, secondPart);
+    }
+
 }

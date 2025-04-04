@@ -1,17 +1,17 @@
 package com.sep490.dasrsbackend.controller;
 
+import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.dto.AccountDTO;
-import com.sep490.dasrsbackend.model.entity.Account;
+import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
-import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
-import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
-import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
-import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
+import com.sep490.dasrsbackend.model.payload.request.*;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.ListPlayersResponse;
 import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.security.JwtTokenProvider;
+import com.sep490.dasrsbackend.service.AccountCarService;
 import com.sep490.dasrsbackend.service.AccountService;
 import com.sep490.dasrsbackend.service.implement.ExcelImportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,7 +33,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -46,6 +44,7 @@ public class AccountController {
     private final AccountService accountService;
     private final ExcelImportService excelImportService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AccountCarService accountCarService;
 
     @Operation(
             summary = "Register a new account by importing an Excel file",
@@ -54,7 +53,6 @@ public class AccountController {
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> importAccounts(@RequestParam("file") MultipartFile file) {
         try {
-            // Validate file input
             if (file.isEmpty()) {
                 return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "The file must not be empty.");
             }
@@ -62,12 +60,10 @@ public class AccountController {
             List<String> errorMessages = new ArrayList<>();
             List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream(), errorMessages);
 
-            // Handle cases where there are errors
             if (!errorMessages.isEmpty()) {
                 return ResponseBuilder.responseBuilderWithData(HttpStatus.BAD_REQUEST, "Some rows failed to import.", errorMessages);
             }
 
-            // Check if any accounts were successfully imported
             if (accounts.isEmpty()) {
                 return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "No accounts were imported. Please check the file content.");
             }
@@ -75,13 +71,10 @@ public class AccountController {
             return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Accounts imported successfully.", accounts);
 
         } catch (IOException e) {
-            // Handle file processing exceptions
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process the uploaded file. Please check the file and try again.");
         } catch (IllegalArgumentException e) {
-            // Handle validation-related exceptions
             return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
-            // Catch any other unexpected exceptions
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again.");
         }
     }
@@ -90,8 +83,8 @@ public class AccountController {
     @Operation(summary = "Register a new account by admin", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
     @ApiResponses(value = {@ApiResponse(responseCode = "202", description = "Successfully Registered", content = @Content(examples = @ExampleObject(value = """
 
-        """))), @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(schema = @Schema(implementation = ExceptionResponse.class), examples = @ExampleObject(value = """
-        """)))})
+            """))), @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(schema = @Schema(implementation = ExceptionResponse.class), examples = @ExampleObject(value = """
+            """)))})
     @PostMapping("/by-admin")
     public ResponseEntity<Object> AccountRegistrationByAdmin(@RequestBody @Valid NewAccountByAdmin request) throws MessagingException {
         accountService.newAccountByAdmin(request);
@@ -167,16 +160,22 @@ public class AccountController {
         }
     }
 
-    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER'")
+    @Operation(summary = "Get all players", description = "Retrieve all accounts with the role 'PLAYER' with pagination, sorting, and search by team name")
     @GetMapping("/players")
-    public ResponseEntity<Object> getPlayers() {
+    public ResponseEntity<Object> getPlayers(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy") PlayerSort sortBy,
+            @RequestParam(name = "keyword", required = false) String keyword
+    ) {
         try {
-            List<PlayerResponse> players = accountService.getPlayers();
-            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", players);
+            ListPlayersResponse playersResponse = accountService.getPlayers(pageNo, pageSize, sortBy, keyword);
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Players retrieved successfully.", playersResponse);
         } catch (Exception e) {
-            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve players: " + e.getMessage());
         }
     }
+
 
     @Operation(summary = "Get players by team name", description = "Retrieve all players associated with a specific team name")
     @GetMapping("/players-by-team")
@@ -187,5 +186,15 @@ public class AccountController {
         } catch (Exception e) {
             return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    @GetMapping("/loadout/{accountId}/{carId}")
+    public ResponseEntity<Object> getCarLoadout(@PathVariable Long carId, @PathVariable UUID accountId) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Car loadout retrieved successfully.", accountCarService.getCarLoadout(carId, accountId));
+    }
+
+    @PutMapping("/loadout/{accountId}/{carId}")
+    public ResponseEntity<Object> updateCarLoadout(@PathVariable Long carId, @PathVariable UUID accountId, @RequestBody @Valid UpdateCarCustomization customization) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Car loadout updated successfully.", accountCarService.updateCarLoadout(carId, accountId, customization));
     }
 }

@@ -1,11 +1,13 @@
 package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.Util.AccountSpecification;
 import com.sep490.dasrsbackend.converter.AccountConverter;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.Role;
 import com.sep490.dasrsbackend.model.entity.Team;
 import com.sep490.dasrsbackend.model.enums.EmailTemplateName;
+import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.enums.RoleEnum;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
@@ -14,6 +16,7 @@ import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
+import com.sep490.dasrsbackend.model.payload.response.ListPlayersResponse;
 import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.repository.AccountRepository;
@@ -29,6 +32,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -292,10 +300,17 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public List<PlayerResponse> getPlayers() {
-        // Fetch players with the role "PLAYER"
-        List<Account> players = accountRepository.findAccountsByRole(RoleEnum.PLAYER.getRole());
-        return players.stream()
+    public ListPlayersResponse getPlayers(int pageNo, int pageSize, PlayerSort sortBy, String keyword) {
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        Specification<Account> spec = Specification.where(AccountSpecification.hasKeyword(keyword));
+
+        Page<Account> playersPage = accountRepository.findAll(spec, pageable);
+        List<Account> players = playersPage.getContent();
+
+        List<PlayerResponse> playerResponses = players.stream()
                 .map(account -> new PlayerResponse(
                         account.getAccountId(),
                         account.getLastName(),
@@ -309,5 +324,14 @@ public class AccountServiceImpl implements AccountService {
                         account.getTeam() != null ? account.getTeam().getTeamName() : null
                 ))
                 .collect(Collectors.toList());
+
+        return ListPlayersResponse.builder()
+                .players(playerResponses)
+                .totalPages(playersPage.getTotalPages())
+                .totalElements(playersPage.getTotalElements())
+                .pageNo(playersPage.getNumber())
+                .pageSize(playersPage.getSize())
+                .last(playersPage.isLast())
+                .build();
     }
 }

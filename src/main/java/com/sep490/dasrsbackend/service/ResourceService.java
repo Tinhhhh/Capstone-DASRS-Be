@@ -18,4 +18,9 @@ public interface ResourceService {
     ListResourceResponseForAdmin getAllResourceForAdmin(int pageNo, int pageSize, String sortBy, String sortDirection);
 
     ListResourceResponse getAllResourceForAll(int pageNo, int pageSize, String sortBy, String sortDirection);
+
+    ListResourceResponse getAllResourceMap(int pageNo, int pageSize, String sortBy, String sortDirection);
+
+    ResourceResponse getMapByRoundId(Long roundId);
+
 }

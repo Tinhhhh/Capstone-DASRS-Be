@@ -6,13 +6,17 @@ import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
+import com.sep490.dasrsbackend.model.payload.response.GetRoundsByAccountResponse;
 import com.sep490.dasrsbackend.service.RoundService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/rounds")
@@ -60,6 +64,19 @@ public class RoundController {
     public ResponseEntity<Object> changeRoundStatus(@PathVariable Long roundId, @RequestParam(name = "status") RoundStatus status) {
         roundService.changeRoundStatus(roundId, status);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Round status changed successfully");
+    }
+
+    @Operation(summary = "Get rounds by account ID", description = "Retrieve rounds for the specified account with pagination, sorting, and optional search by round name or tournament name")
+    @GetMapping("/player/rounds")
+    public ResponseEntity<Object> getRoundsByAccountId(
+            @RequestParam(name = "accountId") UUID accountId,
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy") RoundSort sortBy,
+            @RequestParam(name = "keyword", required = false) String keyword
+    ) {
+        GetRoundsByAccountResponse roundsResponse = roundService.getRoundsByAccountId(accountId, pageNo, pageSize, sortBy, keyword);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Rounds retrieved successfully.", roundsResponse);
     }
 
 }

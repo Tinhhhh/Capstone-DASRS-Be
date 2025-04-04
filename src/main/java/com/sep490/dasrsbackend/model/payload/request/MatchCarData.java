@@ -29,12 +29,6 @@ public class MatchCarData {
     @JsonProperty("car_name")
     private String carName;
 
-    @Min(value = 1, message = "Team number must be at least 1")
-    private int wheels;
-
-    @Min(value = 1, message = "Team number must be at least 1")
-    private int colors;
-
     @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
     @DecimalMax(value = "10.0", message = "Team number must be at most 10.0")
     @JsonProperty("front_camper")
@@ -84,14 +78,4 @@ public class MatchCarData {
     @PositiveOrZero
     private double brake;
 
-    @Min(value = 1, message = "Team number must be at least 1")
-    private int decals;
-
-    @Min(value = 1, message = "Team number must be at least 1")
-    private int neon;
-
-    @Min(value = 1, message = "Team number must be at least 1")
-    private int spoilers;
-
-    private boolean sirens;
 }

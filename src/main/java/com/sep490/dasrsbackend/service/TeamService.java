@@ -2,7 +2,6 @@ package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamMemberResponse;
-import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 
 import java.util.List;
 import java.util.UUID;

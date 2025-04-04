@@ -120,7 +120,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     @Override
     public ListLeaderboardResponse getLeaderboardByTournamentId(Long tournamentId, int pageNo, int pageSize, String sortBy, String sortDir) {
 
-            List<LeaderboardResponse> leaderboardResponseList = new ArrayList<>();
+        List<LeaderboardResponse> leaderboardResponseList = new ArrayList<>();
 
         List<Round> rounds = roundRepository.findByTournamentId(tournamentId);
 
@@ -172,15 +172,32 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     }
 
     private Result getFastestLapTimeAndTopSpeed(Round round) {
-        TeamTournamentResponse fastestLapTime = new TeamTournamentResponse();
-        TeamTournamentResponse topSpeed = new TeamTournamentResponse();
+        FastestLapTimeTeam fastestLapTime = new FastestLapTimeTeam();
+        TopSpeedTeam topSpeed = new TopSpeedTeam();
 
         List<Match> matches = matchRepository.findByRoundId(round.getId());
 
         double fastestLapTimeValue = 0.0;
         double topSpeedValue = 0.0;
+
         for (Match match : matches) {
+
             List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+
+            //Hết test thì cmt đoạn này lại
+            for (int i = 0; i < matchTeams.size(); i++) {
+                if (fastestLapTimeValue == 0.0 && matchTeams.get(i).getScoreAttribute() != null) {
+                    fastestLapTimeValue = matchTeams.get(i).getScoreAttribute().getFastestLapTime();
+                    fastestLapTime.setId(matchTeams.get(i).getTeam().getId());
+                    fastestLapTime.setTeamName(matchTeams.get(i).getTeam().getTeamName());
+                    fastestLapTime.setTeamTag(matchTeams.get(i).getTeam().getTeamTag());
+                    fastestLapTime.setAccountId(matchTeams.get(i).getAccount().getAccountId());
+                    fastestLapTime.setFastestLapTime(fastestLapTimeValue);
+                    break;
+                }
+            }
+
+
             for (MatchTeam matchTeam : matchTeams) {
 
                 // hết Test thì cmt đoạn này lại
@@ -188,11 +205,13 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                     continue;
                 }
 
-                if (fastestLapTimeValue < matchTeam.getScoreAttribute().getFastestLapTime()) {
+                if (fastestLapTimeValue > matchTeam.getScoreAttribute().getFastestLapTime()) {
                     fastestLapTimeValue = matchTeam.getScoreAttribute().getFastestLapTime();
                     fastestLapTime.setId(matchTeam.getTeam().getId());
                     fastestLapTime.setTeamName(matchTeam.getTeam().getTeamName());
                     fastestLapTime.setTeamTag(matchTeam.getTeam().getTeamTag());
+                    fastestLapTime.setAccountId(matchTeam.getAccount().getAccountId());
+                    fastestLapTime.setFastestLapTime(fastestLapTimeValue);
                 }
 
                 if (topSpeedValue < matchTeam.getScoreAttribute().getTopSpeed()) {
@@ -200,6 +219,8 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                     topSpeed.setId(matchTeam.getTeam().getId());
                     topSpeed.setTeamName(matchTeam.getTeam().getTeamName());
                     topSpeed.setTeamTag(matchTeam.getTeam().getTeamTag());
+                    topSpeed.setAccountId(matchTeam.getAccount().getAccountId());
+                    topSpeed.setTopSpeed(topSpeedValue);
                 }
 
             }
@@ -208,7 +229,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         return result;
     }
 
-    private record Result(TeamTournamentResponse fastestLapTime, TeamTournamentResponse topSpeed) {
+    private record Result(FastestLapTimeTeam fastestLapTime, TopSpeedTeam topSpeed) {
     }
 
     private Comparator<LeaderboardResponse> getComparator(String sortBy, String sortDir) {
