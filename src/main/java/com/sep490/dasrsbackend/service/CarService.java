@@ -12,7 +12,7 @@ public interface CarService {
 
     CarResponse getCarById(Long id);
 
-    NewCar createCar(NewCar newCar);
+    void createCar(NewCar newCar);
 
     EditCar updateCar(Long id, EditCar editCar);
 }
