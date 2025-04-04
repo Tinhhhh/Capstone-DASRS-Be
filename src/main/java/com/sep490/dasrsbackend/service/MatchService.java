@@ -2,11 +2,10 @@ package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.model.enums.MatchSort;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
-import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
-import com.sep490.dasrsbackend.model.payload.response.ListMatchResponse;
-import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
-import com.sep490.dasrsbackend.model.payload.response.MatchResponseForTeam;
+import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
+import com.sep490.dasrsbackend.model.payload.request.UnityRoomRequest;
+import com.sep490.dasrsbackend.model.payload.response.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,6 +26,8 @@ public interface MatchService {
 
     List<MatchResponse> getMatchesByTournamentId(Long tournamentId);
 
-    MatchResponse getAvailableMatch(LocalDateTime date);
+    UnityMatchResponse getAvailableMatch(LocalDateTime date);
+
+    UnityRoomResponse isValidPlayerInMatch(UnityRoomRequest unityRoomRequest);
 
 }

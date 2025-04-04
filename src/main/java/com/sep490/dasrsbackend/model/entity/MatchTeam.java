@@ -54,6 +54,9 @@ public class MatchTeam {
     @Column(name = "brake")
     private Double brake;
 
+    @Column(name = "attempt")
+    private int attempt;
+
     @ManyToOne
     @MapsId("matchId")
     @JoinColumn(name = "match_Id")

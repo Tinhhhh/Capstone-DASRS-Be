@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MatchRepository extends JpaRepository<Match, Long>, JpaSpecificationExecutor<Match> {
@@ -24,4 +25,6 @@ public interface MatchRepository extends JpaRepository<Match, Long>, JpaSpecific
             "WHERE date_trunc('hour', time_start) = date_trunc('hour', CAST(:time AS TIMESTAMP))",
             nativeQuery = true)
     Match findMatchByHour(@Param("time") String time);
+
+    Optional<Match> findByMatchCode(String matchCode);
 }

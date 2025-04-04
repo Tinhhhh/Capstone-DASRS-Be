@@ -308,69 +308,6 @@ public class RoundServiceImpl implements RoundService {
         return dateTime.getHour() >= Schedule.LUNCH_BREAK_START && dateTime.getHour() < Schedule.LUNCH_BREAK_END;
     }
 
-    private static Map<String, Double> getRoundPrereq(Tournament tournament, List<Round> rounds, NewRound newRound) {
-        //Đây là hàm kiểm tra xem thời gian tối thiểu cần thiết để tạo vòng sau cùng
-        //Tuỳ theo số lượng đội tham gia và số vòng đã tạo ra mà sẽ có số trận đấu tối thiểu khác nhau
-        Map<String, Double> roundPrereq = new HashMap<>();
-        double currMatches = -1;
-        int nextRoundMatches = newRound.getTeamLimit();
-        int roundRemains = -1;
-        if (tournament.getTeamNumber() < Schedule.TEAM_THRESHOLD) {
-            //Trường hợp số lượng team tham gia < 15
-            //Trường sẽ tạo round 1. số round cần thiết của round 2 là 5-7
-            if (rounds.isEmpty()) {
-                currMatches = tournament.getTeamNumber();
-                roundRemains = 2;
-            }
-
-            //Trường hợp tạo round 2
-            if (rounds.size() == 1) {
-                //Có 5-7 đội tham gia
-                currMatches = 7;
-                roundRemains = 1;
-            }
-
-            if (rounds.size() == 2) {
-                currMatches = 3;
-                roundRemains = 0;
-            }
-        } else {
-            //Trường hợp số lượng team tham gia >= 15
-            if (rounds.isEmpty()) {
-                currMatches = tournament.getTeamNumber();
-                roundRemains = 3;
-            }
-
-            if (rounds.size() == 1) {
-                currMatches = 10;
-                roundRemains = 2;
-            }
-
-            if (rounds.size() == 2) {
-                currMatches = 5;
-                roundRemains = 1;
-            }
-
-            if (rounds.size() == 3) {
-                currMatches = 3;
-                roundRemains = 0;
-            }
-
-        }
-
-        if (nextRoundMatches == -1 || roundRemains == -1 || currMatches == -1) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error. Please check the total matches");
-        }
-
-        double currentRoundMatches = currMatches * Schedule.SLOT_DURATION;
-        double totalHours = nextRoundMatches * Schedule.SLOT_DURATION;
-        double totalDayNeeds = Math.ceil(totalHours / Schedule.MAX_WORKING_HOURS) + roundRemains;
-        roundPrereq.put("currRoundMatches", currentRoundMatches);
-        roundPrereq.put("nextRoundTimeNeeds", totalHours);
-        roundPrereq.put("totalDayNeeds", totalDayNeeds);
-        return roundPrereq;
-    }
-
     public static boolean validateWorkingHours(LocalDateTime startTime, LocalDateTime endTime, int minHours) {
 
         if (startTime.isAfter(endTime)) {
@@ -651,13 +588,13 @@ public class RoundServiceImpl implements RoundService {
                 //Bóc tách match type code để lấy số đội mỗi trận đấu và số ng tham gia mỗi đội
 
                 //Ví dụ match type code: PVP-21T
+                //Ví dụ match type code: SP-1
                 String[] parts = matchTypePrefix.split("-"); //PVP, 21T
                 int teamCount = 0;
                 int playersPerTeam = 0;
                 if (parts.length > 1) {
                     String numberPart = parts[1].substring(0, 2);
                     teamCount = Character.getNumericValue(numberPart.charAt(0)); // Số đội - 2
-                    playersPerTeam = Character.getNumericValue(numberPart.charAt(1)); // Số người mỗi đội - 1
 
                     if (randomTeam.size() % teamCount != 0) {
                         throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "The number of teams is not suitable for this match type, please change the match type");
@@ -741,6 +678,7 @@ public class RoundServiceImpl implements RoundService {
             matchTeam.setMatch(match);
             matchTeam.setTeam(team);
             matchTeam.setTeamTag(team.getTeamTag());
+            matchTeam.setAttempt(0);
             matchTeamRepository.save(matchTeam);
         }
 

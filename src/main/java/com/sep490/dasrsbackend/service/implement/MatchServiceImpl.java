@@ -9,10 +9,8 @@ import com.sep490.dasrsbackend.model.exception.TournamentRuleException;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
-import com.sep490.dasrsbackend.model.payload.response.ListMatchResponse;
-import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
-import com.sep490.dasrsbackend.model.payload.response.MatchResponseForTeam;
-import com.sep490.dasrsbackend.model.payload.response.TeamTournamentResponse;
+import com.sep490.dasrsbackend.model.payload.request.UnityRoomRequest;
+import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.LeaderboardService;
 import com.sep490.dasrsbackend.service.MatchService;
@@ -122,6 +120,14 @@ public class MatchServiceImpl implements MatchService {
 
         if (leader.getTeam().getId() != team.getId()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assigner is not in the leader of the current team");
+        }
+
+        if (match.getTimeStart().before(DateUtil.convertToDate(LocalDateTime.now()))) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Match has already started");
+        }
+
+        if (match.getStatus() != MatchStatus.PENDING) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Match is not in pending status");
         }
 
 
@@ -389,7 +395,7 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
-    public MatchResponse getAvailableMatch(LocalDateTime date) {
+    public UnityMatchResponse getAvailableMatch(LocalDateTime date) {
 
         // Chuyển đổi LocalDateTime sang Date
         Date calendarDate = DateUtil.convertToDate(date);
@@ -408,7 +414,79 @@ public class MatchServiceImpl implements MatchService {
             throw new DasrsException(HttpStatus.NOT_FOUND, "No match found in the current hour");
         }
 
-        return getMatchResponse(match);
+        MatchResponse matchResponse = modelMapper.map(getMatchResponse(match), MatchResponse.class);
+        UnityMatchResponse unityMatchResponse = modelMapper.map(matchResponse, UnityMatchResponse.class);
+        unityMatchResponse.setMatchId(match.getId());
+        unityMatchResponse.setResourceId(round.getResource().getId());
+        unityMatchResponse.setResourceName(round.getResource().getResourceName());
+        unityMatchResponse.setResourceType(round.getResource().getResourceType());
+        unityMatchResponse.setEnvironmentId(round.getEnvironment().getId());
+        unityMatchResponse.setEnvironmentName(round.getEnvironment().getName());
+
+        return unityMatchResponse;
+    }
+
+    @Override
+    public UnityRoomResponse isValidPlayerInMatch(UnityRoomRequest unityRoomRequest) {
+
+        UnityRoomResponse unityRoomResponse = new UnityRoomResponse();
+        unityRoomResponse.setSuccess(false);
+
+        Optional<Match> matchOpt = matchRepository.findByMatchCode(unityRoomRequest.getMatchCode());
+        if (matchOpt.isEmpty()) {
+            unityRoomResponse.setMessage("Match not found");
+            return unityRoomResponse;
+        }
+
+        Match match = matchOpt.get();
+
+        if (match.getStatus() != MatchStatus.PENDING) {
+            unityRoomResponse.setMessage("Match is not available");
+            return unityRoomResponse;
+        }
+
+        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+
+        Account account = accountRepository.findById(unityRoomRequest.getAccountId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Account not found, please contact administrator for more information"));
+
+        UUID accountId = unityRoomRequest.getAccountId();
+        Long teamId = account.getTeam().getId();
+
+        boolean isValidPlayer = false;
+
+        for (MatchTeam matchTeam : matchTeams) {
+            if (matchTeam.getTeam().getId().equals(teamId) && matchTeam.getAccount().getAccountId().equals(accountId)) {
+                if (matchTeam.getAttempt() == 0) {
+                    isValidPlayer = true;
+                    break;
+                } else {
+                    unityRoomResponse.setMessage("You have already joined the match");
+                    return unityRoomResponse;
+                }
+            }
+        }
+
+        if (!isValidPlayer) {
+            unityRoomResponse.setMessage("You were not assigned to join the match");
+            return unityRoomResponse;
+        }
+
+        Date joinTimeICT = DateUtil.convertUTCtoICT(unityRoomRequest.getJoinTime());
+
+        if (match.getTimeStart().after(joinTimeICT)) {
+            unityRoomResponse.setMessage("Match has not started yet");
+            return unityRoomResponse;
+        }
+
+        if (match.getTimeEnd().before(joinTimeICT)) {
+            unityRoomResponse.setMessage("Match has ended");
+            return unityRoomResponse;
+        }
+
+        unityRoomResponse.setSuccess(true);
+        unityRoomResponse.setMessage("Valid player");
+        return unityRoomResponse;
     }
 
     private double calculateScore(ScoredMethod sm, ScoreAttribute sa) {

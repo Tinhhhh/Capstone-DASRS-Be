@@ -7,6 +7,7 @@ import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
+import com.sep490.dasrsbackend.model.payload.request.UnityRoomRequest;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.service.MatchService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -92,6 +94,20 @@ public class MatchController {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved available match",
                 matchService.getAvailableMatch(date));
+    }
+
+    @GetMapping("/unity")
+    public ResponseEntity<Object> isPlayerInUnity(@RequestParam("accountId") UUID accountId,
+                                                  @RequestParam("matchCode") String matchCode,
+                                                  @RequestParam("joinTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date joinTime) {
+        UnityRoomRequest unityRoomRequest = new UnityRoomRequest(
+                accountId,
+                matchCode,
+                joinTime
+        );
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK, "Successfully retrieved data",
+                matchService.isValidPlayerInMatch(unityRoomRequest));
     }
 
 
