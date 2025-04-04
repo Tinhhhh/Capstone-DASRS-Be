@@ -30,9 +30,9 @@ public class MatchTypeServiceImpl implements MatchTypeService {
 
         String matchTypeCode;
         if (newMatchType.getPlayerNumber() == 1) {
-            matchTypeCode = "SP" + "-" + newMatchType.getPlayerNumber();
+            matchTypeCode = "SP" + newMatchType.getPlayerNumber() + "-" + newMatchType.getTeamNumber();
         } else {
-            matchTypeCode = "MP" + "-" + newMatchType.getPlayerNumber();
+            matchTypeCode = "MP" + newMatchType.getPlayerNumber() + "-" + newMatchType.getTeamNumber();
         }
 
         MatchType matchType = MatchType.builder()

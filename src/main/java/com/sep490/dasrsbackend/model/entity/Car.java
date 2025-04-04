@@ -54,6 +54,39 @@ public class Car {
     @Column(name = "traction_helper_strength")
     private double tractionHelperStrength;
 
+    @Column(name = "front_camper")
+    private double frontCamper;
+
+    @Column(name = "rear_camper")
+    private double rearCamper;
+
+    @Column(name = "front_ssr")
+    private double frontSSR;
+
+    @Column(name = "rear_ssr")
+    private double rearSSR;
+
+    @Column(name = "front_suspension")
+    private double frontSuspension;
+
+    @Column(name = "rear_suspension")
+    private double rearSuspension;
+
+    @Column(name = "front_ssd")
+    private double frontSSD;
+
+    @Column(name = "rear_ssd")
+    private double rearSSD;
+
+    @Column(name = "engine")
+    private double engine;
+
+    @Column(name = "handling")
+    private double handling;
+
+    @Column(name = "brake")
+    private double brake;
+
     @Column(name = "is_enabled")
     private boolean isEnabled;
 

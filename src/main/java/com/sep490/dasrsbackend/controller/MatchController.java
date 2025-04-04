@@ -20,7 +20,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -97,14 +96,7 @@ public class MatchController {
     }
 
     @GetMapping("/unity")
-    public ResponseEntity<Object> isPlayerInUnity(@RequestParam("accountId") UUID accountId,
-                                                  @RequestParam("matchCode") String matchCode,
-                                                  @RequestParam("joinTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Date joinTime) {
-        UnityRoomRequest unityRoomRequest = new UnityRoomRequest(
-                accountId,
-                matchCode,
-                joinTime
-        );
+    public ResponseEntity<Object> isPlayerInUnity(@RequestParam @Valid UnityRoomRequest unityRoomRequest) {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved data",
                 matchService.isValidPlayerInMatch(unityRoomRequest));

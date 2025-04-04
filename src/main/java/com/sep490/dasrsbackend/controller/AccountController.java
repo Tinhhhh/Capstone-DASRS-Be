@@ -2,19 +2,16 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.dto.AccountDTO;
-import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
-import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
-import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
-import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
-import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
+import com.sep490.dasrsbackend.model.payload.request.*;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
 import com.sep490.dasrsbackend.model.payload.response.ListPlayersResponse;
 import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
 import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
 import com.sep490.dasrsbackend.security.JwtTokenProvider;
+import com.sep490.dasrsbackend.service.AccountCarService;
 import com.sep490.dasrsbackend.service.AccountService;
 import com.sep490.dasrsbackend.service.implement.ExcelImportService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +22,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -37,7 +33,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -49,6 +44,7 @@ public class AccountController {
     private final AccountService accountService;
     private final ExcelImportService excelImportService;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AccountCarService accountCarService;
 
     @Operation(
             summary = "Register a new account by importing an Excel file",
@@ -87,8 +83,8 @@ public class AccountController {
     @Operation(summary = "Register a new account by admin", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
     @ApiResponses(value = {@ApiResponse(responseCode = "202", description = "Successfully Registered", content = @Content(examples = @ExampleObject(value = """
 
-        """))), @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(schema = @Schema(implementation = ExceptionResponse.class), examples = @ExampleObject(value = """
-        """)))})
+            """))), @ApiResponse(responseCode = "400", description = "Validation error", content = @Content(schema = @Schema(implementation = ExceptionResponse.class), examples = @ExampleObject(value = """
+            """)))})
     @PostMapping("/by-admin")
     public ResponseEntity<Object> AccountRegistrationByAdmin(@RequestBody @Valid NewAccountByAdmin request) throws MessagingException {
         accountService.newAccountByAdmin(request);
@@ -190,5 +186,15 @@ public class AccountController {
         } catch (Exception e) {
             return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    @GetMapping("/loadout/{accountId}/{carId}")
+    public ResponseEntity<Object> getCarLoadout(@PathVariable Long carId, @PathVariable UUID accountId) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Car loadout retrieved successfully.", accountCarService.getCarLoadout(carId, accountId));
+    }
+
+    @PutMapping("/loadout/{accountId}/{carId}")
+    public ResponseEntity<Object> updateCarLoadout(@PathVariable Long carId, @PathVariable UUID accountId, @RequestBody @Valid UpdateCarCustomization customization) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Car loadout updated successfully.", accountCarService.updateCarLoadout(carId, accountId, customization));
     }
 }

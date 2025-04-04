@@ -17,10 +17,6 @@ import java.util.UUID;
 @NoArgsConstructor
 public class UpdateCarCustomization {
 
-    private Long carId;
-
-    private UUID accountId;
-
     @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
     @DecimalMax(value = "10.0", message = "Team number must be at most 10.0")
     @JsonProperty("front_camper")
@@ -61,13 +57,16 @@ public class UpdateCarCustomization {
     @JsonProperty("rear_ssd")
     private double rearSSD;
 
-    @PositiveOrZero
+    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
+    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
     private double engine;
 
-    @PositiveOrZero
+    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
+    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
     private double handling;
 
-    @PositiveOrZero
+    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
+    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
     private double brake;
 
 }

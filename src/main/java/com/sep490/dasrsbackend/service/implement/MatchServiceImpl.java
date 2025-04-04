@@ -549,4 +549,6 @@ public class MatchServiceImpl implements MatchService {
         logger.info("Detecting unassigned maps task finished at {}", LocalDateTime.now());
     }
 
+//    @Scheduled(cron = "0 55 * * * *")
+
 }

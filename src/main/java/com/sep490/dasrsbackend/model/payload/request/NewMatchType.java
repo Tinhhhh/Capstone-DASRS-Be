@@ -18,8 +18,13 @@ public class NewMatchType {
 
     @JsonProperty("player_number")
     @Min(value = 1, message = "playerNumber must be at least 1")
-    @Max(value = 19, message = "playerNumber must not exceed 19")
+    @Max(value = 5, message = "playerNumber must not exceed 5")
     private int playerNumber;
+
+    @Min(value = 1, message = "teamNumber must be at least 1")
+    @Max(value = 19, message = "teamNumber must not exceed 19")
+    @JsonProperty("team_number")
+    private int teamNumber;
 
     @JsonProperty("match_duration")
     @DecimalMin(value = "0.5", message = "matchDuration must be at least 0.5")
