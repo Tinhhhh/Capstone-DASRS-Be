@@ -28,12 +28,8 @@ public class MatchTypeServiceImpl implements MatchTypeService {
     @Override
     public void newMatchType(NewMatchType newMatchType) {
 
-        String matchTypeCode;
-        if (newMatchType.getPlayerNumber() == 1) {
-            matchTypeCode = "SP" + newMatchType.getPlayerNumber() + "-" + newMatchType.getTeamNumber();
-        } else {
-            matchTypeCode = "MP" + newMatchType.getPlayerNumber() + "-" + newMatchType.getTeamNumber();
-        }
+        String matchTypeCode = newMatchType.getPlayerNumber() + "P" + newMatchType.getTeamNumber() + "T";
+
 
         MatchType matchType = MatchType.builder()
                 .matchTypeName(newMatchType.getMatchTypeName().trim())

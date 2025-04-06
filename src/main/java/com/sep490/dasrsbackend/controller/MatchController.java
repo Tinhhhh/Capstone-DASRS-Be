@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.enums.MatchSort;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
@@ -96,7 +97,11 @@ public class MatchController {
     }
 
     @GetMapping("/unity")
-    public ResponseEntity<Object> isPlayerInUnity(@RequestParam @Valid UnityRoomRequest unityRoomRequest) {
+    public ResponseEntity<Object> isPlayerInUnity(@RequestParam("accountId") UUID accountId,
+                                                  @RequestParam("roomId") String matchCode,
+                                                  @RequestParam("joinTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime joinTime) {
+        UnityRoomRequest unityRoomRequest = new UnityRoomRequest(accountId, matchCode, DateUtil.convertToDate(joinTime));
+
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved data",
                 matchService.isValidPlayerInMatch(unityRoomRequest));

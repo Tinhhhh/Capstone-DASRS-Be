@@ -29,7 +29,7 @@ public class GenerateCode {
 
     }
 
-    public String generateUniqueCode() {
+    public String generateMatchCode() {
         // Tạo 3 số đầu tiên ngẫu nhiên trong khoảng 100 - 999
         Random random = new Random();
         int firstPart = random.nextInt(1000); // Random từ 100 đến 999

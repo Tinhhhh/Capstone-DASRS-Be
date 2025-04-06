@@ -78,15 +78,6 @@ public class Car {
     @Column(name = "rear_ssd")
     private double rearSSD;
 
-    @Column(name = "engine")
-    private double engine;
-
-    @Column(name = "handling")
-    private double handling;
-
-    @Column(name = "brake")
-    private double brake;
-
     @Column(name = "is_enabled")
     private boolean isEnabled;
 

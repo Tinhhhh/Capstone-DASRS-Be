@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
+import com.sep490.dasrsbackend.Util.GenerateCode;
 import com.sep490.dasrsbackend.Util.MatchSpecification;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.*;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -200,6 +202,11 @@ public class MatchServiceImpl implements MatchService {
         Match match = matchRepository.findById(matchScoreData.getMatchId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found, please contact administrator for more information"));
 
+        Account account = accountRepository.findById(matchScoreData.getPlayerId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Account not found, please contact administrator for more information"));
+
+        Team team = account.getTeam();
+
         ScoreAttribute scoreAttribute = ScoreAttribute.builder()
                 .lap(matchScoreData.getLap())
                 .fastestLapTime(matchScoreData.getFastestLapTime())
@@ -215,7 +222,7 @@ public class MatchServiceImpl implements MatchService {
         scoreAttribute = scoreAttributeRepository.save(scoreAttribute);
 
         //Cập nhật vào match team => tạo instance, set score attr, set car config
-        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchId(matchScoreData.getTeamId(), matchScoreData.getMatchId())
+        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchId(team.getId(), matchScoreData.getMatchId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information"));
 
         if (!matchTeam.getAccount().getAccountId().equals(matchScoreData.getPlayerId())) {
@@ -408,12 +415,12 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "No match found due to no active round currently"));
 
         String time = DateUtil.formatTimestamp(DateUtil.convertToDate(date), "yyyy-MM-dd HH:00:00");
-        Match match = matchRepository.findMatchByHour(time);
+        Optional<Match> matchOtp = matchRepository.findMatchByHour(time);
 
-        if (match == null) {
+        if (matchOtp.isEmpty()) {
             throw new DasrsException(HttpStatus.NOT_FOUND, "No match found in the current hour");
         }
-
+        Match match = matchOtp.get();
         MatchResponse matchResponse = modelMapper.map(getMatchResponse(match), MatchResponse.class);
         UnityMatchResponse unityMatchResponse = modelMapper.map(matchResponse, UnityMatchResponse.class);
         unityMatchResponse.setMatchId(match.getId());
@@ -549,6 +556,61 @@ public class MatchServiceImpl implements MatchService {
         logger.info("Detecting unassigned maps task finished at {}", LocalDateTime.now());
     }
 
-//    @Scheduled(cron = "0 55 * * * *")
+    @Scheduled(cron = "1 * * * * *")
+    public void detectUpcomingMatch() {
+        logger.info("Detecting upcoming match task running at {}", LocalDateTime.now());
+        logger.info("is working hours ?");
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Khoảng thời gian diễn ra trận đấu
+        LocalTime morningStart = LocalTime.of(7, 45);  // 7:45 sáng
+        LocalTime morningEnd = LocalTime.of(10, 45);   // 10:45 sáng
+        LocalTime afternoonStart = LocalTime.of(12, 45); // 12:45 chiều
+        LocalTime afternoonEnd = LocalTime.of(16, 45);  // 16:45 chiều
+
+        LocalTime currentHrs = now.toLocalTime();
+
+        // Kiểm tra nếu thời gian hiện tại nằm trong khoảng thời gian diễn ra trận đấu
+        if ((currentHrs.isAfter(morningStart) && currentHrs.isBefore(morningEnd)) ||
+                (currentHrs.isAfter(afternoonStart) && currentHrs.isBefore(afternoonEnd))) {
+            logger.info("Working hours");
+            logger.info("Checking for upcoming matches...");
+
+            // Kiểm tra xem có tournament nào đang hoạt động không
+            Tournament tournament = tournamentRepository.findByStatusAndStartDateBefore(TournamentStatus.ACTIVE, DateUtil.convertToDate(now))
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "No match found due to no active tournament currently"));
+
+            logger.info("Tournament found: {}", tournament.getId());
+
+            List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE);
+
+            logger.info("Round found: {}", rounds.get(0).getId());
+
+            if (!rounds.isEmpty()) {
+                now = now.plusHours(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+                String time = DateUtil.formatTimestamp(DateUtil.convertToDate(now), "yyyy-MM-dd HH:00:00");
+                Optional<Match> matchOtp = matchRepository.findMatchByHour(time);
+
+                if (matchOtp.isEmpty() || matchOtp.get().getStatus() != MatchStatus.PENDING) {
+                    logger.info("No match found in the current hour");
+                }
+
+                Match match = matchOtp.get();
+                match.setMatchCode(match.getMatchCode() + GenerateCode.generateMatchCode());
+                matchRepository.save(match);
+                logger.info("Match found, code generated: {}", match.getId());
+
+            } else {
+                logger.info("No active round found");
+            }
+
+        } else {
+            logger.info("Not working hours");
+        }
+
+        logger.info("Detecting upcoming maps task finished at {}", LocalDateTime.now());
+
+    }
 
 }

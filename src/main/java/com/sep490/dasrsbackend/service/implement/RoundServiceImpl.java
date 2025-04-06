@@ -35,6 +35,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -585,25 +587,27 @@ public class RoundServiceImpl implements RoundService {
                 //Bóc tách match type code để lấy số đội mỗi trận đấu và số ng tham gia mỗi đội
 
                 //MatchTypeCode = SP/MP + số người mỗi đội + số đội tham gia
-                //Ví dụ match type code: "SP1-1"
-                String[] parts = matchTypePrefix.split("-"); // [SP1, 1]
+                //Ví dụ match type code: "11P2T"
+                String[] parts = matchTypePrefix.split("P"); // [2P, 11T]
 
 
                 if (parts.length != 2) {
                     throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Match type code is invalid, please contact the administrator");
                 }
 
-                String prefix = parts[0]; // SP1
-                String teamCountStr = parts[1]; // 1
+                String prefix = parts[0]; // 2P
+                String teamCountStr = parts[1]; // 11T
 
-                // Tách số người mỗi đội từ cuối chuỗi prefix (vd: SP1 => lấy 1 là số người mỗi đội)
-                String playerPerTeamStr = prefix.replaceAll("\\D+", ""); // Lấy ra số sau chữ cái
-                if (playerPerTeamStr.isEmpty() || !teamCountStr.matches("\\d+")) {
+                // Tách số người mỗi đội từ chuỗi prefix (vd: 2P11T)
+                Matcher matcher = Pattern.compile("(\\d+)P(\\d+)T").matcher(prefix);
+                if (!matcher.matches()) {
                     throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Match type code is invalid, please contact the administrator");
                 }
 
-                int playersPerTeam = Integer.parseInt(playerPerTeamStr); // số người mỗi team
-                int teamCount = Integer.parseInt(teamCountStr); // số team
+                int playersPerTeam = Integer.parseInt(matcher.group(1)); // số người mỗi team
+                int teamCount = Integer.parseInt(matcher.group(2)); // số team
+
+                isPlayersPerTeamValid(round.getTournament().getId(), playersPerTeam);
 
                 if (randomTeam.size() % teamCount != 0) {
                     throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "The number of teams is not suitable for this match type, please change the match type");
@@ -662,6 +666,28 @@ public class RoundServiceImpl implements RoundService {
                     startTime = startTime.plusHours(Schedule.SLOT_DURATION);
                 }
             }
+        }
+
+    }
+
+    private void isPlayersPerTeamValid(Long id, int playersPerTeam) {
+        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(id, TeamStatus.ACTIVE);
+        List<Team> invalidTeams = new ArrayList<>();
+        for (Team team : teams) {
+            List<Account> accounts = accountRepository.findByTeamIdAndIsLocked(team.getId(), false);
+            if (accounts.size() < playersPerTeam) {
+                invalidTeams.add(team);
+            }
+        }
+
+        if (!invalidTeams.isEmpty()) {
+
+            StringBuilder msg = new StringBuilder();
+            for (Team team : invalidTeams) {
+                msg.append(team.getTeamName()).append(", ");
+            }
+
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The number of players in these teams is not enough: " + msg + ". Please check the team list");
         }
 
     }
