@@ -40,6 +40,9 @@ public class GetPlayerRoundResponse {
     @JsonProperty("tournament_id")
     private Long tournamentId;
 
+    @JsonProperty("tournament_name")
+    private String tournamentName;
+
     @JsonProperty("scored_method_id")
     private Long scoredMethodId;
 

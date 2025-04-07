@@ -9,4 +9,6 @@ public interface MatchTypeService {
     void newMatchType(NewMatchType newMatchType);
     MatchTypeResponse getMatchType(Long id);
     ListMatchType getAllMatchType(int pageNo, int pageSize, String sortBy, String sortDir);
+    void updateMatchType(Long id, NewMatchType newMatchType);
+    void deleteMatchType(Long id);
 }

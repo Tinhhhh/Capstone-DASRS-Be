@@ -10,4 +10,12 @@ public interface EnvironmentService {
     EnvironmentResponse getEnvironment(Long id);
 
     ListEnvironment getAllEnvironment(int pageNo, int pageSize, String sortBy, String sortDir);
+
+    void updateEnvironment(Long id, NewEnvironment request);
+
+    void deleteEnvironment(Long id);
+
+    ListEnvironment getAllActiveEnvironments(int pageNo, int pageSize, String sortBy, String sortDir);
+
+    EnvironmentResponse getActiveEnvironment(Long id);
 }

@@ -907,6 +907,7 @@ public class RoundServiceImpl implements RoundService {
                         round.getEndDate() != null ? round.getEndDate().toString() : null,
                         round.getCreatedDate() != null ? round.getCreatedDate().toString() : null,
                         round.getTournament() != null ? round.getTournament().getId() : null,
+                        round.getTournament() != null ? round.getTournament().getTournamentName() : null,
                         round.getScoredMethod() != null ? round.getScoredMethod().getId() : null,
                         round.getEnvironment() != null ? round.getEnvironment().getId() : null,
                         round.getMatchType() != null ? round.getMatchType().getId() : null,
