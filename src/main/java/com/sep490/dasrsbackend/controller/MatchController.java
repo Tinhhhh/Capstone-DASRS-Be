@@ -89,5 +89,12 @@ public class MatchController {
                 matchService.getAvailableMatch(date));
     }
 
-
+    @GetMapping("/by-round-and-player")
+    @Operation(summary = "Get matches by round and player",
+            description = "Returns only matches from a round where the player participated")
+    public ResponseEntity<Object> getMatchesByRoundAndPlayer(@RequestParam Long roundId, @RequestParam UUID accountId) {
+        List<MatchResponse> responses = matchService.getMatchByRoundIdAndPlayerId(roundId, accountId);
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK, "Matches retrieved successfully", responses);
+    }
 }

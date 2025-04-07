@@ -27,4 +27,5 @@ public interface MatchService {
 
     MatchResponse getAvailableMatch(LocalDateTime date);
 
+    List<MatchResponse> getMatchByRoundIdAndPlayerId(Long roundId, UUID accountId);
 }
