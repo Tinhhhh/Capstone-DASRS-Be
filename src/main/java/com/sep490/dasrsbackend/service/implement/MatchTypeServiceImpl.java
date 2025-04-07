@@ -64,4 +64,27 @@ public class MatchTypeServiceImpl implements MatchTypeService {
 
         return listMatchType;
     }
+
+    @Override
+    public void updateMatchType(Long id, NewMatchType newMatchType) {
+        MatchType matchType = matchTypeRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Match type not found"));
+
+        matchType.setMatchTypeName(newMatchType.getMatchTypeName().trim());
+        matchType.setMatchTypeCode(newMatchType.getMatchTypeCode().toUpperCase());
+        matchType.setMatchDuration(newMatchType.getMatchDuration());
+        matchType.setFinishType(newMatchType.getFinishType());
+
+        matchTypeRepository.save(matchType);
+    }
+
+    @Override
+    public void deleteMatchType(Long id) {
+        MatchType matchType = matchTypeRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Match type not found"));
+
+        matchType.setStatus(MatchTypeStatus.INACTIVE);
+        matchTypeRepository.save(matchType);
+    }
+
 }
