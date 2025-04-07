@@ -43,10 +43,10 @@ public class NewAccountByAdmin {
     @Pattern(regexp = "(84|0[3|5|7|8|9])+([0-9]{8})\\b", message = "Please enter a valid(+84) phone number")
     private String phone;
 
-    @Schema(description = "User's password", example = "Password1")
-//    @NotEmpty(message = "Password cannot be blank")
-    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d).{8,16}$", message = "Minimum 8 characters, at least one uppercase letter and number")
-    private String password;
+//    @Schema(description = "User's password", example = "Password1")
+//   @NotEmpty(message = "Password cannot be blank")
+//    @Pattern(regexp = "^(?=.*[A-Z])(?=.*\\d).{8,16}$", message = "Minimum 8 characters, at least one uppercase letter and number")
+//    private String password;
 
     @Schema(description = "Register's role", example = "2")
     @JsonProperty("role_id")

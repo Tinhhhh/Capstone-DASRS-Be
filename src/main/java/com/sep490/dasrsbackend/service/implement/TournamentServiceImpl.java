@@ -443,7 +443,7 @@ public class TournamentServiceImpl implements TournamentService {
         return participants;
     }
 
-    @Scheduled(cron = "1 0 0 * * *")
+    @Scheduled(cron = "1 0 0 * * ?")
     public void endTournament() {
         logger.info("End tournament task is running.");
 

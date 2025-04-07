@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.enums.MatchSort;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -95,8 +97,21 @@ public class MatchController {
                 matchService.getAvailableMatch(date));
     }
 
+    @GetMapping("/by-round-and-player")
+    @Operation(summary = "Get matches by round and player",
+            description = "Returns only matches from a round where the player participated")
+    public ResponseEntity<Object> getMatchesByRoundAndPlayer(@RequestParam Long roundId, @RequestParam UUID accountId) {
+        List<MatchResponse> responses = matchService.getMatchByRoundIdAndPlayerId(roundId, accountId);
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK, "Matches retrieved successfully", responses);
+    }
+
     @GetMapping("/unity")
-    public ResponseEntity<Object> isPlayerInUnity(@RequestParam @Valid UnityRoomRequest unityRoomRequest) {
+    public ResponseEntity<Object> isPlayerInUnity(@RequestParam("accountId") UUID accountId,
+                                                  @RequestParam("roomId") String matchCode,
+                                                  @RequestParam("joinTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime joinTime) {
+        UnityRoomRequest unityRoomRequest = new UnityRoomRequest(accountId, matchCode, DateUtil.convertToDate(joinTime));
+
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved data",
                 matchService.isValidPlayerInMatch(unityRoomRequest));

@@ -9,22 +9,18 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.UUID;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class MatchCarData {
 
-    @JsonProperty("match_id")
-    private Long matchId;
-
-    @JsonProperty("team_id")
-    private Long teamId;
+    @JsonProperty("match_code")
+    private String matchCode;
 
     @JsonProperty("player_id")
-    private Long playerId;
-
-    @JsonProperty("team_tag")
-    private String teamTag;
+    private UUID playerId;
 
     @JsonProperty("car_name")
     private String carName;
@@ -68,14 +64,5 @@ public class MatchCarData {
     @DecimalMax(value = "10000.0", message = "Team number must be at most 10000.0")
     @JsonProperty("rear_ssd")
     private double rearSSD;
-
-    @PositiveOrZero
-    private double engine;
-
-    @PositiveOrZero
-    private double handling;
-
-    @PositiveOrZero
-    private double brake;
 
 }

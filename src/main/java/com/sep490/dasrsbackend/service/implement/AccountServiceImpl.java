@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.AccountSpecification;
+import com.sep490.dasrsbackend.Util.GenerateCode;
 import com.sep490.dasrsbackend.converter.AccountConverter;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
@@ -12,7 +13,6 @@ import com.sep490.dasrsbackend.model.enums.RoleEnum;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
-import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
@@ -24,13 +24,9 @@ import com.sep490.dasrsbackend.repository.RoleRepository;
 import com.sep490.dasrsbackend.repository.TeamRepository;
 import com.sep490.dasrsbackend.service.AccountService;
 import com.sep490.dasrsbackend.service.EmailService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -42,9 +38,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -164,11 +158,15 @@ public class AccountServiceImpl implements AccountService {
 
         if (request.getRoleId() == 1) {
             if (request.getTeamId() == null) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST,"Account need to be assigned to a team");
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Account need to be assigned to a team");
             }
         }
 
-        Team team = teamRepository.findById(request.getTeamId()).orElse(null);
+        Team team = null;
+        if (request.getTeamId() != null) {
+            team = teamRepository.findById(request.getTeamId())
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
+        }
 
         if (request.getRoleId() >= 4) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Registration fails, invalid role");
@@ -178,6 +176,8 @@ public class AccountServiceImpl implements AccountService {
             throw new RegisterAccountExistedException("Account already exists");
         }
 
+        String password = GenerateCode.generateRandomPassword(9);
+
         Account account = Account.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -186,7 +186,7 @@ public class AccountServiceImpl implements AccountService {
                 .phone(request.getPhone())
                 .gender("")
                 .dob(null)
-                .password(passwordEncoder.encode(request.getPassword()))
+                .password(passwordEncoder.encode(password))
                 .isLocked(false)
                 .isLeader(false)
                 .role(role)
@@ -198,13 +198,13 @@ public class AccountServiceImpl implements AccountService {
         }
 
         accountRepository.save(account);
-        sendRegistrationEmail(account, request.getPassword());
+        sendRegistrationEmail(account, password);
     }
 
     private void sendRegistrationEmail(Account account, String password) throws MessagingException {
         emailService.sendAccountInformation(
                 account.fullName(), account.getEmail(), password, account.getEmail(),
-                EmailTemplateName.ADMIN_CREATE_ACCOUNT.getName(), "[Dasrs] Thông tin tài khoản của bạn");
+                EmailTemplateName.ADMIN_CREATE_ACCOUNT.getName(), "[Dasrs service] Thông tin tài khoản của bạn, cảm ơn đã sử dụng hệ thống của chúng tôi");
     }
 
     private UUID extractAccountIdFromRequest(HttpServletRequest request) {

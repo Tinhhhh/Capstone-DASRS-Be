@@ -1,31 +1,36 @@
 package com.sep490.dasrsbackend.security;
 
+import com.sep490.dasrsbackend.model.entity.AccessToken;
 import com.sep490.dasrsbackend.model.entity.Account;
+import com.sep490.dasrsbackend.model.entity.RefreshToken;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.repository.AccessTokenRepository;
 import com.sep490.dasrsbackend.repository.AccountRepository;
-import com.sep490.dasrsbackend.repository.PasswordResetTokenRepository;
+import com.sep490.dasrsbackend.repository.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final AccountRepository accountRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     @Value("${app.jwt.secret-key}")
     private String jwtSecret;
 
@@ -36,7 +41,7 @@ public class JwtTokenProvider {
     private long jwtRefreshExpiration;
 
     private final AccessTokenRepository accessTokenRepository;
-    private final PasswordResetTokenRepository resetPasswordTokenRepository;
+    private final Logger logger = org.slf4j.LoggerFactory.getLogger(JwtTokenProvider.class);
 
     private Key key() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
@@ -118,13 +123,32 @@ public class JwtTokenProvider {
         return expiration.before(new Date());
     }
 
-    @Scheduled(cron = "0 0 2 * * *")
-    public void scheduledDeleteExpiredToken() {
-        passwordResetTokenRepository.deleteByRevokedIsTrue();
+    @Scheduled(cron = "0 0 2 * * ?")
+    @Transactional
+    public void deleteExpiredOrRevokedTokens() {
+        logger.info("Deleting expired tokens task started");
+
+        //Delete expired refreshToken
+        logger.info("Deleting expired or revoked refresh tokens");
+        List<RefreshToken> expiredRefreshTokens = refreshTokenRepository.findAllByExpiredOrRevoked(true, true);
+        logger.info("Found {} expired refresh tokens", expiredRefreshTokens.size());
+        for (RefreshToken refreshToken : expiredRefreshTokens) {
+            List<AccessToken> accessTokens = accessTokenRepository.findByRefreshTokenId(refreshToken.getId());
+            accessTokenRepository.deleteAll(accessTokens);
+        }
+        refreshTokenRepository.deleteAll(expiredRefreshTokens);
+        logger.info("Deleted {} expired refresh tokens", expiredRefreshTokens.size());
+
+        //Delete expired accessToken
+        logger.info("Deleting expired or revoked access tokens");
+        List<AccessToken> expiredAccessTokens = accessTokenRepository.findAllByExpiredOrRevoked(true, true);
+        logger.info("Found {} expired access tokens", expiredAccessTokens.size());
+        accessTokenRepository.deleteAll(expiredAccessTokens);
+        logger.info("Deleted {} expired access tokens", expiredAccessTokens.size());
+
+
+        logger.info("Deleting expired tokens task finished");
     }
 
-//    @Scheduled(cron = "0 0 2 * * *")
-//    public void scheduledDeleteExpiredResetPasswordToken() {
-//        resetPasswordTokenRepository.deleteTokensByRevokedTrue();
-//    }
+
 }

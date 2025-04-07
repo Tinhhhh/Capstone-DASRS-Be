@@ -47,12 +47,4 @@ public class CarLoadoutResponse {
     @JsonProperty("rear_ssd")
     private double rearSSD;
 
-    @JsonProperty("engine")
-    private double engine;
-
-    @JsonProperty("handling")
-    private double handling;
-
-    @JsonProperty("brake")
-    private double brake;
 }

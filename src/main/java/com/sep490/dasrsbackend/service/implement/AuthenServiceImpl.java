@@ -19,9 +19,11 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -31,6 +33,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -51,6 +54,7 @@ public class AuthenServiceImpl implements AuthenService {
     private final EmailService emailService;
     private final UserDetailsService userDetailsService;
     private final PasswordResetTokenRepository resetPasswordTokenRepository;
+    private final static Logger logger = org.slf4j.LoggerFactory.getLogger(AuthenServiceImpl.class);
 
     @Value("${application.email.url}")
     private String forgotPasswordUrl;
@@ -269,4 +273,29 @@ public class AuthenServiceImpl implements AuthenService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
     }
 
+
+    @Scheduled(cron = "1 * * * * ?")
+    public void revokedExpiredPasswordResetTokens() {
+        logger.info("Mark expired password reset tokens task started");
+        List<PasswordResetToken> expiredTokens = resetPasswordTokenRepository.findAllByExpiredBefore(LocalDateTime.now());
+        logger.info("Found {} expired password reset tokens", expiredTokens.size());
+        if (!expiredTokens.isEmpty()) {
+            for (PasswordResetToken token : expiredTokens) {
+                token.setRevoked(true);
+            }
+            resetPasswordTokenRepository.saveAll(expiredTokens);
+            logger.info("Marked {} expired password reset tokens as revoked", expiredTokens.size());
+        }
+
+        logger.info("Mark expired password reset tokens task finished");
+    }
+
+
+    @Scheduled(cron = "1 * * * * ?")
+    @Transactional
+    public void scheduledDeleteExpiredToken() {
+        logger.info("Deleting expired reset password tokens task started");
+        resetPasswordTokenRepository.deleteAllByRevoked(true);
+        logger.info("Deleting expired reset password tokens task finished");
+    }
 }

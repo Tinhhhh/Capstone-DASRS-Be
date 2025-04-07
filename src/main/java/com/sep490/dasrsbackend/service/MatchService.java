@@ -30,4 +30,5 @@ public interface MatchService {
 
     UnityRoomResponse isValidPlayerInMatch(UnityRoomRequest unityRoomRequest);
 
+    List<MatchResponse> getMatchByRoundIdAndPlayerId(Long roundId, UUID accountId);
 }

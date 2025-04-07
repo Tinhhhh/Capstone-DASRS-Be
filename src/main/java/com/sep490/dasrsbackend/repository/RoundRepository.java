@@ -35,4 +35,6 @@ public interface RoundRepository extends JpaRepository<Round, Long>, JpaSpecific
             "JOIN mt.account a " +
             "WHERE a.accountId = :accountId")
     List<Round> findRoundsByAccountId(@Param("accountId") UUID accountId);
+
+    Optional<Round> findByMatchTypeId(Long id);
 }

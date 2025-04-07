@@ -8,9 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface MatchRepository extends JpaRepository<Match, Long>, JpaSpecificationExecutor<Match> {
@@ -24,7 +26,11 @@ public interface MatchRepository extends JpaRepository<Match, Long>, JpaSpecific
     @Query(value = "SELECT * FROM match " +
             "WHERE date_trunc('hour', time_start) = date_trunc('hour', CAST(:time AS TIMESTAMP))",
             nativeQuery = true)
-    Match findMatchByHour(@Param("time") String time);
+    Optional<Match> findMatchByHour(@Param("time") String time);
+
+    @Query("SELECT m FROM Match m JOIN m.matchTeamList mt " +
+            "WHERE m.round.id = :roundId AND mt.account.accountId = :accountId")
+    List<Match> findMatchesByRoundIdAndAccountId(@Param("roundId") Long roundId, @Param("accountId") UUID accountId);
 
     Optional<Match> findByMatchCode(String matchCode);
 }

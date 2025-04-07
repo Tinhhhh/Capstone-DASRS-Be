@@ -12,10 +12,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @RestController
@@ -77,6 +79,22 @@ public class RoundController {
     ) {
         GetRoundsByAccountResponse roundsResponse = roundService.getRoundsByAccountId(accountId, pageNo, pageSize, sortBy, keyword);
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Rounds retrieved successfully.", roundsResponse);
+    }
+
+    @Operation(summary = "Get rounds landing page", description = "Retrieve rounds for the landing page with pagination, sorting, and optional search by round name or tournament name." +
+            "format: yyyy-MM-ddTHH:mm:ss. Example: 2025-04-02T08:01:00")
+    @GetMapping("/landing")
+    public ResponseEntity<Object> getRoundsLandingPage(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy") RoundSort sortBy,
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam("startDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate
+    ) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK, "Successfully retrieved data",
+                roundService.findAllRoundsByDate(pageNo, pageSize, sortBy, keyword, startDate, endDate));
     }
 
 }

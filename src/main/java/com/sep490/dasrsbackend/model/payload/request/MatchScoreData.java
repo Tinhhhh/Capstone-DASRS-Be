@@ -14,11 +14,8 @@ import java.util.UUID;
 @Builder
 public class MatchScoreData {
 
-    @JsonProperty("team_id")
-    private Long teamId;
-
-    @JsonProperty("match_id")
-    private Long matchId;
+    @JsonProperty("match_code")
+    private String matchCode;
 
     @JsonProperty("player_id")
     private UUID playerId;

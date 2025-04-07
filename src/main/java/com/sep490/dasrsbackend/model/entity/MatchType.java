@@ -5,9 +5,7 @@ import com.sep490.dasrsbackend.model.enums.FinishType;
 import com.sep490.dasrsbackend.model.enums.MatchTypeStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -33,6 +31,12 @@ public class MatchType {
 
     @Column(name = "match_duration")
     private double matchDuration;
+
+    @Column(name = "player_number")
+    private int playerNumber;
+
+    @Column(name = "team_number")
+    private int teamNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "finish_type")

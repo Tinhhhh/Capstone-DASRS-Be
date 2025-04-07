@@ -1,12 +1,15 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.model.entity.MatchType;
+import com.sep490.dasrsbackend.model.entity.Round;
 import com.sep490.dasrsbackend.model.enums.MatchTypeStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
+import com.sep490.dasrsbackend.model.payload.request.EditMatchType;
 import com.sep490.dasrsbackend.model.payload.request.NewMatchType;
 import com.sep490.dasrsbackend.model.payload.response.ListMatchType;
 import com.sep490.dasrsbackend.model.payload.response.MatchTypeResponse;
 import com.sep490.dasrsbackend.repository.MatchTypeRepository;
+import com.sep490.dasrsbackend.repository.RoundRepository;
 import com.sep490.dasrsbackend.service.MatchTypeService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -18,22 +21,19 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class MatchTypeServiceImpl implements MatchTypeService {
     private final MatchTypeRepository matchTypeRepository;
     private final ModelMapper modelMapper;
+    private final RoundRepository roundRepository;
 
     @Override
     public void newMatchType(NewMatchType newMatchType) {
 
-        String matchTypeCode;
-        if (newMatchType.getPlayerNumber() == 1) {
-            matchTypeCode = "SP" + newMatchType.getPlayerNumber() + "-" + newMatchType.getTeamNumber();
-        } else {
-            matchTypeCode = "MP" + newMatchType.getPlayerNumber() + "-" + newMatchType.getTeamNumber();
-        }
+        String matchTypeCode = newMatchType.getPlayerNumber() + "P" + newMatchType.getTeamNumber() + "T";
 
         MatchType matchType = MatchType.builder()
                 .matchTypeName(newMatchType.getMatchTypeName().trim())
@@ -41,6 +41,8 @@ public class MatchTypeServiceImpl implements MatchTypeService {
                 .matchDuration(newMatchType.getMatchDuration())
                 .finishType(newMatchType.getFinishType())
                 .status(MatchTypeStatus.ACTIVE)
+                .playerNumber(newMatchType.getPlayerNumber())
+                .teamNumber(newMatchType.getTeamNumber())
                 .build();
         matchTypeRepository.save(matchType);
     }
@@ -72,4 +74,42 @@ public class MatchTypeServiceImpl implements MatchTypeService {
 
         return listMatchType;
     }
+
+    @Override
+    public void updateMatchType(Long id, EditMatchType newMatchType) {
+        MatchType matchType = matchTypeRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Match type not found"));
+
+        Optional<Round> roundOtp = roundRepository.findByMatchTypeId(id);
+
+        if (roundOtp.isPresent()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Can't edit a match type has used in a round");
+        }
+
+        String matchTypeCode = newMatchType.getPlayerNumber() + "P" + newMatchType.getTeamNumber() + "T";
+
+        if (matchType.getStatus() == newMatchType.getStatus()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Can't edit a match type has same status");
+        }
+
+        matchType.setMatchTypeName(newMatchType.getMatchTypeName().trim());
+        matchType.setMatchTypeCode(matchTypeCode);
+        matchType.setMatchDuration(newMatchType.getMatchDuration());
+        matchType.setFinishType(newMatchType.getFinishType());
+        matchType.setPlayerNumber(newMatchType.getPlayerNumber());
+        matchType.setTeamNumber(newMatchType.getTeamNumber());
+        matchType.setStatus(MatchTypeStatus.ACTIVE);
+
+        matchTypeRepository.save(matchType);
+    }
+
+    @Override
+    public void deleteMatchType(Long id) {
+        MatchType matchType = matchTypeRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Match type not found"));
+
+        matchType.setStatus(MatchTypeStatus.INACTIVE);
+        matchTypeRepository.save(matchType);
+    }
+
 }

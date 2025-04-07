@@ -18,6 +18,9 @@ public class AccountCar {
     @Column(name = "car_name")
     private String carName;
 
+    @Column(name = "maximum_torque")
+    private double maxTorqueAsNM;
+
     @Column(name = "front_camper")
     private Double frontCamper;
 
@@ -41,15 +44,6 @@ public class AccountCar {
 
     @Column(name = "rear_ssd")
     private Double rearSSD;
-
-    @Column(name = "engine")
-    private Double engine;
-
-    @Column(name = "handling")
-    private Double handling;
-
-    @Column(name = "brake")
-    private Double brake;
 
     @ManyToOne
     @MapsId("accountId")

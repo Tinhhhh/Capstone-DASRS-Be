@@ -14,4 +14,8 @@ public interface AccessTokenRepository extends JpaRepository<AccessToken, Long> 
     List<AccessToken> findAllValidTokensByUser(UUID accountId);
 
     AccessToken findByToken(String AccessToken);
+
+    List<AccessToken> findAllByExpiredOrRevoked(boolean expired, boolean revoked);
+
+    List<AccessToken> findByRefreshTokenId(Long refreshToken_id);
 }
