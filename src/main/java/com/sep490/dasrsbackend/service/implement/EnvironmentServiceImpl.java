@@ -64,4 +64,61 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
         return listEnvironment;
     }
+
+    @Override
+    public void updateEnvironment(Long id, NewEnvironment request) {
+        Environment environment = environmentRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Environment not found"));
+
+        environment.setName(request.getName());
+        environment.setFriction(request.getFriction());
+        environment.setVisibility(request.getVisibility());
+        environment.setBrakeEfficiency(request.getBrakeEfficiency());
+        environment.setSlipAngle(request.getSlipAngle());
+        environment.setReactionDelay(request.getReactionDelay());
+        // Optionally update status if needed
+        environmentRepository.save(environment);
+    }
+
+    @Override
+    public void deleteEnvironment(Long id) {
+        Environment environment = environmentRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Environment not found"));
+
+        environment.setStatus(EnvironmentStatus.INACTIVE);
+        environmentRepository.save(environment);
+    }
+
+    @Override
+    public ListEnvironment getAllActiveEnvironments(int pageNo, int pageSize, String sortBy, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        Page<Environment> environments = environmentRepository.findByStatus(EnvironmentStatus.ACTIVE, pageable);
+
+        List<EnvironmentResponse> environmentResponses = environments.stream()
+                .map(env -> modelMapper.map(env, EnvironmentResponse.class))
+                .toList();
+
+        ListEnvironment listEnvironment = new ListEnvironment();
+        listEnvironment.setContent(environmentResponses);
+        listEnvironment.setTotalPages(environments.getTotalPages());
+        listEnvironment.setTotalElements(environments.getTotalElements());
+        listEnvironment.setPageSize(environments.getSize());
+        listEnvironment.setPageNo(environments.getNumber());
+        listEnvironment.setLast(environments.isLast());
+
+        return listEnvironment;
+    }
+
+    @Override
+    public EnvironmentResponse getActiveEnvironment(Long id) {
+        Environment environment = environmentRepository.findById(id)
+                .filter(env -> env.getStatus() == EnvironmentStatus.ACTIVE)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Environment not found or inactive"));
+
+        return modelMapper.map(environment, EnvironmentResponse.class);
+    }
 }

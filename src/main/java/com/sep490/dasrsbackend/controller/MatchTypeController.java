@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.NewMatchType;
 import com.sep490.dasrsbackend.service.MatchTypeService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,5 +41,22 @@ public class MatchTypeController {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved all match type",
                 matchTypeService.getAllMatchType(pageNo, pageSize, sortBy, sortDirection));
+    }
+
+    @PutMapping("/{matchTypeId}")
+    @Operation(summary = "Update match type", description = "Update an existing match type's information")
+    public ResponseEntity<Object> updateMatchType(
+            @PathVariable Long matchTypeId,
+            @RequestBody @Valid NewMatchType request
+    ) {
+        matchTypeService.updateMatchType(matchTypeId, request);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Match type updated successfully");
+    }
+
+    @DeleteMapping("/{matchTypeId}")
+    @Operation(summary = "Delete match type", description = "Soft delete a match type by setting its status to INACTIVE")
+    public ResponseEntity<Object> deleteMatchType(@PathVariable Long matchTypeId) {
+        matchTypeService.deleteMatchType(matchTypeId);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Match type marked as INACTIVE");
     }
 }
