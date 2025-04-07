@@ -12,6 +12,7 @@ import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
 import com.sep490.dasrsbackend.model.payload.response.GetPlayerRoundResponse;
 import com.sep490.dasrsbackend.model.payload.response.GetRoundsByAccountResponse;
+import com.sep490.dasrsbackend.model.payload.response.ListRoundResponse;
 import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.RoundService;
@@ -753,7 +754,7 @@ public class RoundServiceImpl implements RoundService {
     }
 
     @Override
-    public List<RoundResponse> findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword) {
+    public ListRoundResponse findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword) {
 
         Sort sort = Sort.by(sortBy.getField()).descending();
 
@@ -768,14 +769,22 @@ public class RoundServiceImpl implements RoundService {
             roundResponses.add(roundResponse);
         });
 
-        return roundResponses;
+        ListRoundResponse listRoundResponses = new ListRoundResponse();
+        listRoundResponses.setTotalPages(roundPage.getTotalPages());
+        listRoundResponses.setTotalElements(roundPage.getTotalElements());
+        listRoundResponses.setPageNo(roundPage.getNumber());
+        listRoundResponses.setPageSize(roundPage.getSize());
+        listRoundResponses.setLast(roundPage.isLast());
+        listRoundResponses.setContent(roundResponses);
+
+        return listRoundResponses;
     }
 
     //second, minute, hour, day, month, year
     //* = every
-//    @Scheduled(cron = "5 * * * * *")
+//    @Scheduled(cron = "5 * * * * ?")
     @Async
-    @Scheduled(cron = "1 0 0 * * *")
+    @Scheduled(cron = "1 0 0 * * ?")
     @Transactional
     public void checkIfRoundEnd() {
         logger.info("Round end task is running");
@@ -818,7 +827,7 @@ public class RoundServiceImpl implements RoundService {
     }
 
     @Async
-    @Scheduled(cron = "1 0 0 * * *")
+    @Scheduled(cron = "1 0 0 * * ?")
     @Transactional
     public void checkIfRoundStart() {
         logger.info("Round start task is running");
@@ -886,6 +895,34 @@ public class RoundServiceImpl implements RoundService {
                 .pageSize(roundsPage.getSize())
                 .last(roundsPage.isLast())
                 .build();
+    }
+
+    @Override
+    public ListRoundResponse findAllRoundsByDate(int pageNo, int pageSize, RoundSort sortBy, String keyword, LocalDateTime start, LocalDateTime end) {
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<Round> spec = Specification
+                .where(RoundSpecification.hasRoundName(keyword))
+                .and(RoundSpecification.betweenStartAndEndDate(start, end)
+                        .and(RoundSpecification.hasStatus(RoundStatus.ACTIVE).or(RoundSpecification.hasStatus(RoundStatus.PENDING)))
+                );
+
+        Page<Round> roundPage = roundRepository.findAll(spec, pageable);
+        List<RoundResponse> roundResponses = new ArrayList<>();
+        roundPage.getContent().forEach(round -> {
+            RoundResponse roundResponse = findRoundByRoundId(round.getId());
+            roundResponses.add(roundResponse);
+        });
+
+        ListRoundResponse listRoundResponses = new ListRoundResponse();
+        listRoundResponses.setTotalPages(roundPage.getTotalPages());
+        listRoundResponses.setTotalElements(roundPage.getTotalElements());
+        listRoundResponses.setPageNo(roundPage.getNumber());
+        listRoundResponses.setPageSize(roundPage.getSize());
+        listRoundResponses.setLast(roundPage.isLast());
+        listRoundResponses.setContent(roundResponses);
+
+        return listRoundResponses;
     }
 
 }

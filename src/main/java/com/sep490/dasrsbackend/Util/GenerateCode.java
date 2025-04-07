@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.Util;
 
 import lombok.experimental.UtilityClass;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.Random;
@@ -42,4 +43,34 @@ public class GenerateCode {
         return String.format("%03d%03d", firstPart, secondPart);
     }
 
+    public String generateRandomPassword(int length) {
+         final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+         final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+         final String DIGITS = "0123456789";
+         final String ALL_CHARACTERS = LOWERCASE + UPPERCASE + DIGITS;
+
+        SecureRandom random = new SecureRandom();
+        StringBuilder password = new StringBuilder(length);
+
+        // Đảm bảo có ít nhất một chữ cái in hoa, một chữ cái in thường và một số
+        password.append(LOWERCASE.charAt(random.nextInt(LOWERCASE.length())));
+        password.append(UPPERCASE.charAt(random.nextInt(UPPERCASE.length())));
+        password.append(DIGITS.charAt(random.nextInt(DIGITS.length())));
+
+        // Điền các ký tự ngẫu nhiên còn lại
+        for (int i = 3; i < length; i++) {
+            password.append(ALL_CHARACTERS.charAt(random.nextInt(ALL_CHARACTERS.length())));
+        }
+
+        // Xáo trộn lại các ký tự trong password để đảm bảo tính ngẫu nhiên
+        char[] passwordArray = password.toString().toCharArray();
+        for (int i = 0; i < passwordArray.length; i++) {
+            int j = random.nextInt(passwordArray.length);
+            char temp = passwordArray[i];
+            passwordArray[i] = passwordArray[j];
+            passwordArray[j] = temp;
+        }
+
+        return new String(passwordArray);
+    }
 }

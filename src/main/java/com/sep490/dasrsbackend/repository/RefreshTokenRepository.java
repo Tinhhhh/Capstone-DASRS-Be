@@ -12,4 +12,5 @@ import java.util.Optional;
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
     Optional<RefreshToken> findByToken(String refreshToken);
 
+    List<RefreshToken> findAllByExpiredOrRevoked(boolean b, boolean b1);
 }

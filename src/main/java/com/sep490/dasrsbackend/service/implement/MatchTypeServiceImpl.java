@@ -37,6 +37,8 @@ public class MatchTypeServiceImpl implements MatchTypeService {
                 .matchDuration(newMatchType.getMatchDuration())
                 .finishType(newMatchType.getFinishType())
                 .status(MatchTypeStatus.ACTIVE)
+                .playerNumber(newMatchType.getPlayerNumber())
+                .teamNumber(newMatchType.getTeamNumber())
                 .build();
         matchTypeRepository.save(matchType);
     }

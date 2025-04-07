@@ -199,7 +199,7 @@ public class MatchServiceImpl implements MatchService {
     @Override
     public void updateMatchTeamScore(MatchScoreData matchScoreData) {
 
-        Match match = matchRepository.findById(matchScoreData.getMatchId())
+        Match match = matchRepository.findByMatchCode(matchScoreData.getMatchCode())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found, please contact administrator for more information"));
 
         Account account = accountRepository.findById(matchScoreData.getPlayerId())
@@ -222,7 +222,7 @@ public class MatchServiceImpl implements MatchService {
         scoreAttribute = scoreAttributeRepository.save(scoreAttribute);
 
         //Cập nhật vào match team => tạo instance, set score attr, set car config
-        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchId(team.getId(), matchScoreData.getMatchId())
+        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchIdAndAccountAccountId(team.getId(), match.getId(), account.getAccountId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information"));
 
         if (!matchTeam.getAccount().getAccountId().equals(matchScoreData.getPlayerId())) {
@@ -268,7 +268,19 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     public void updateMatchTeamCar(MatchCarData matchCarData) {
-        matchTeamRepository.save(modelMapper.map(matchCarData, MatchTeam.class));
+        Match match = matchRepository.findByMatchCode(matchCarData.getMatchCode())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found, please contact administrator for more information"));
+
+        Account account = accountRepository.findById(matchCarData.getPlayerId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Account not found, please contact administrator for more information"));
+
+        Team team = account.getTeam();
+
+        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchIdAndAccountAccountId(team.getId(), match.getId(), account.getAccountId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information"));
+
+        modelMapper.map(matchCarData, matchTeam);
+        matchTeamRepository.save(matchTeam);
     }
 
     @Override
@@ -479,14 +491,12 @@ public class MatchServiceImpl implements MatchService {
             return unityRoomResponse;
         }
 
-        Date joinTimeICT = DateUtil.convertUTCtoICT(unityRoomRequest.getJoinTime());
-
-        if (match.getTimeStart().after(joinTimeICT)) {
+        if (match.getTimeStart().after(unityRoomRequest.getJoinTime())) {
             unityRoomResponse.setMessage("Match has not started yet");
             return unityRoomResponse;
         }
 
-        if (match.getTimeEnd().before(joinTimeICT)) {
+        if (match.getTimeEnd().before(unityRoomRequest.getJoinTime())) {
             unityRoomResponse.setMessage("Match has ended");
             return unityRoomResponse;
         }
@@ -510,7 +520,7 @@ public class MatchServiceImpl implements MatchService {
         return score <= 0 ? 0 : score;
     }
 
-    @Scheduled(cron = "1 0 * * * *")
+    @Scheduled(cron = "1 0 * * * ?")
     public void detectUnassignedMatch() {
         logger.info("Detecting unassigned match task running at {}", LocalDateTime.now());
 
@@ -556,7 +566,7 @@ public class MatchServiceImpl implements MatchService {
         logger.info("Detecting unassigned maps task finished at {}", LocalDateTime.now());
     }
 
-    @Scheduled(cron = "1 * * * * *")
+    @Scheduled(cron = "1 * * * * ?")
     public void detectUpcomingMatch() {
         logger.info("Detecting upcoming match task running at {}", LocalDateTime.now());
         logger.info("is working hours ?");
@@ -596,10 +606,12 @@ public class MatchServiceImpl implements MatchService {
                     logger.info("No match found in the current hour");
                 }
 
-                Match match = matchOtp.get();
-                match.setMatchCode(match.getMatchCode() + GenerateCode.generateMatchCode());
-                matchRepository.save(match);
-                logger.info("Match found, code generated: {}", match.getId());
+                if (matchOtp.isPresent()) {
+                    Match match = matchOtp.get();
+                    match.setMatchCode(match.getMatchCode() + GenerateCode.generateMatchCode());
+                    matchRepository.save(match);
+                    logger.info("Match found, code generated: {}", match.getId());
+                }
 
             } else {
                 logger.info("No active round found");

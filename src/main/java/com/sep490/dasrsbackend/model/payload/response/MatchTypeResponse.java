@@ -26,6 +26,12 @@ public class MatchTypeResponse {
     @JsonProperty("match_duration")
     private double matchDuration;
 
+    @JsonProperty("player_number")
+    private int playerNumber;
+
+    @JsonProperty("team_number")
+    private int teamNumber;
+
     @JsonProperty("finish_type")
     private FinishType finishType;
 

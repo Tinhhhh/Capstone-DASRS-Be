@@ -1,8 +1,11 @@
 package com.sep490.dasrsbackend.Util;
 
 import com.sep490.dasrsbackend.model.entity.Round;
+import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.jpa.domain.Specification;
+
+import java.time.LocalDateTime;
 
 @UtilityClass
 public class RoundSpecification {
@@ -31,6 +34,24 @@ public class RoundSpecification {
             String likeRoundName = "%" + roundName.toLowerCase() + "%";
 
             return cb.like(cb.lower(root.get("roundName")), likeRoundName);
+        };
+    }
+
+    public Specification<Round> betweenStartAndEndDate(LocalDateTime start, LocalDateTime end) {
+        return (root, query, cb) -> {
+            if (start == null || end == null) {
+                return null;
+            }
+            return cb.between(root.get("startDate"), start, end);
+        };
+    }
+
+    public Specification<Round> hasStatus(RoundStatus status) {
+        return (root, query, cb) -> {
+            if (status == null) {
+                return null;
+            }
+            return cb.equal(root.get("status"), status);
         };
     }
 }
