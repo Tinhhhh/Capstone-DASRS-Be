@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
+import com.sep490.dasrsbackend.model.payload.request.EditMatchType;
 import com.sep490.dasrsbackend.model.payload.request.NewMatchType;
 import com.sep490.dasrsbackend.service.MatchTypeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,7 +48,7 @@ public class MatchTypeController {
     @Operation(summary = "Update match type", description = "Update an existing match type's information")
     public ResponseEntity<Object> updateMatchType(
             @PathVariable Long matchTypeId,
-            @RequestBody @Valid NewMatchType request
+            @RequestBody @Valid EditMatchType request
     ) {
         matchTypeService.updateMatchType(matchTypeId, request);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Match type updated successfully");
