@@ -6,9 +6,11 @@ import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.Role;
 import com.sep490.dasrsbackend.model.entity.Team;
 import com.sep490.dasrsbackend.model.entity.Tournament;
+import com.sep490.dasrsbackend.model.enums.RoleEnum;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.repository.AccountRepository;
+import com.sep490.dasrsbackend.repository.RoleRepository;
 import com.sep490.dasrsbackend.repository.TeamRepository;
 import com.sep490.dasrsbackend.repository.TournamentRepository;
 import com.sep490.dasrsbackend.service.EmailService;
@@ -36,6 +38,7 @@ public class ExcelImportService {
     private final TournamentRepository tournamentRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
 
     public List<AccountDTO> importAccountsFromExcel(InputStream inputStream, List<String> errorMessages) throws IOException {
         List<AccountDTO> accountDTOs = new ArrayList<>();
@@ -103,7 +106,6 @@ public class ExcelImportService {
         AccountDTO accountDTO = new AccountDTO();
 
         try {
-            // Validate and set fields
             String email = getCellValueAsString(row.getCell(0));
             if (email == null || email.trim().isEmpty()) {
                 throw new IllegalArgumentException("Email cannot be null or empty.");
@@ -116,11 +118,9 @@ public class ExcelImportService {
             accountDTO.setDob(validateDate(row.getCell(5)));
             accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6))));
 
-            // Validate student identifier and school (New Fields)
             accountDTO.setStudentIdentifier(validateNonEmpty(getCellValueAsString(row.getCell(7)), "Student Identifier"));
             accountDTO.setSchool(validateNonEmpty(getCellValueAsString(row.getCell(8)), "School"));
 
-            // Automatically assign the tournament with ACTIVE status
             Tournament tournament = tournamentRepository.findByStatus(TournamentStatus.ACTIVE)
                     .orElseThrow(() -> new IllegalArgumentException("No active tournament found. Please activate a tournament."));
 
@@ -141,9 +141,8 @@ public class ExcelImportService {
             String plainPassword = generateRandomPassword(8);
             accountDTO.setPassword(plainPassword);
 
-            Role defaultRole = new Role();
-            defaultRole.setId(1L);
-            defaultRole.setRoleName("PLAYER");
+            Role defaultRole = roleRepository.findByRoleName(RoleEnum.PLAYER.name())
+                    .orElseThrow(() -> new IllegalArgumentException("Default role 'PLAYER' not found in the database."));
             accountDTO.setRoleId(defaultRole);
 
         } catch (IllegalArgumentException e) {
@@ -176,7 +175,6 @@ public class ExcelImportService {
 
             team = teamRepository.save(team);
 
-            // Verify the team is saved properly
             if (team.getId() == null) {
                 throw new IllegalArgumentException("Failed to create or retrieve team: " + teamName);
             }
@@ -214,7 +212,6 @@ public class ExcelImportService {
             throw new IllegalArgumentException("Email cannot be null or empty");
         }
 
-        // Enhanced email regex to cover a wide range of valid email addresses
         String emailRegex = "^(?=.{1,254}$)(?=.{1,64}@.{1,255}$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
 
         if (!email.matches(emailRegex)) {
