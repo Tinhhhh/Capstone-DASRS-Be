@@ -12,8 +12,10 @@ import lombok.*;
 @Table(name = "match_team")
 public class MatchTeam {
 
-    @EmbeddedId
-    private MatchTeamId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "match_team_id")
+    private Long id;
 
     @Column(name = "team_tag")
     private String teamTag;
@@ -45,20 +47,10 @@ public class MatchTeam {
     @Column(name = "rear_ssd")
     private Double rearSSD;
 
-    @Column(name = "engine")
-    private Double engine;
-
-    @Column(name = "handling")
-    private Double handling;
-
-    @Column(name = "brake")
-    private Double brake;
-
     @Column(name = "attempt")
     private int attempt;
 
     @ManyToOne
-    @MapsId("matchId")
     @JoinColumn(name = "match_Id")
     Match match;
 
@@ -71,7 +63,6 @@ public class MatchTeam {
     private ScoreAttribute scoreAttribute;
 
     @ManyToOne
-    @MapsId("teamId")
     @JoinColumn(name = "team_Id")
     Team team;
 

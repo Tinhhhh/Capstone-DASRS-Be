@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface LeaderboardRepository extends JpaRepository<Leaderboard, Long> {
@@ -28,4 +29,6 @@ public interface LeaderboardRepository extends JpaRepository<Leaderboard, Long> 
     List<Leaderboard> findByRoundIdNotDisqualified(@Param("id") Long id);
 
     List<Leaderboard> findByRoundId(Long roundId);
+
+    Optional<Leaderboard> findByRoundIdAndTeamId(Long roundId, Long teamId);
 }

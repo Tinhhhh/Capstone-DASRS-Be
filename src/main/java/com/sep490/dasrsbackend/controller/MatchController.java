@@ -21,7 +21,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,9 +39,9 @@ public class MatchController {
                 matchService.getMatches(teamId));
     }
 
-    @PutMapping("/assign/{teamId}/{matchId}")
-    public ResponseEntity<Object> assignMemberToMatch(@PathVariable Long teamId, @PathVariable Long matchId, @RequestParam UUID assigner, @RequestParam UUID assignee) {
-        matchService.assignMemberToMatch(teamId, matchId, assigner, assignee);
+    @PutMapping("/assign/{matchTeamId}")
+    public ResponseEntity<Object> assignMemberToMatch(@PathVariable Long matchTeamId, @RequestParam UUID assigner, @RequestParam UUID assignee) {
+        matchService.assignMemberToMatch(matchTeamId, assigner, assignee);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully assigned member to match");
     }
 
@@ -117,5 +116,11 @@ public class MatchController {
                 matchService.isValidPlayerInMatch(unityRoomRequest));
     }
 
+    @GetMapping("/score-details/{matchId}/{teamId}")
+    public ResponseEntity<Object> getMatchScoreDetails(@PathVariable Long matchId, @PathVariable Long teamId) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK, "Successfully retrieved match score details",
+                matchService.getMatchScoreDetails(matchId, teamId));
+    }
 
 }

@@ -65,28 +65,36 @@ public class MatchServiceImpl implements MatchService {
         List<Match> matches = new ArrayList<>();
         List<MatchResponseForTeam> matchesResponse = new ArrayList<>();
 
+        for (MatchTeam matchTeam : matchTeams) {
+            matches.add(matchTeam.getMatch());
+        }
+
         modelMapper.getConfiguration().setFieldMatchingEnabled(true)
                 .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
                 .setAmbiguityIgnored(true)
                 .setSkipNullEnabled(false)
                 .setMatchingStrategy(MatchingStrategies.STRICT);
 
-        for (MatchTeam matchTeam : matchTeams) {
-            matches.add(matchTeam.getMatch());
-        }
-
         for (Match match : matches) {
             MatchResponseForTeam matchResponse = modelMapper.map(match, MatchResponseForTeam.class);
+            matchResponse.setMatchId(match.getId());
+            matchResponse.setTeamId(teamId);
             matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
             matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
 
-            for (MatchTeam matchTeam : matchTeams) {
-                if (matchTeam.getMatch().getId() == match.getId()) {
-                    if (matchTeam.getAccount() != null) {
-                        matchResponse.setAccountId(matchTeam.getAccount().getAccountId());
-                    }
+            List<MatchTeam> mt = matchTeamRepository.findByTeamIdAndMatchId(team.getId(), match.getId());
+            List<MatchTeamResponse> matchTeamResponses = new ArrayList<>();
+            for (MatchTeam matchTeam : mt) {
+                MatchTeamResponse matchTeamResponse = new MatchTeamResponse();
+                if (matchTeam.getAccount() == null) {
+                    matchTeamResponse.setPlayerId(null);
+                } else {
+                    matchTeamResponse.setPlayerId(matchTeam.getAccount().getAccountId());
                 }
+                matchTeamResponse.setMatchTeamId(matchTeam.getId());
+                matchTeamResponses.add(matchTeamResponse);
             }
+            matchResponse.setMatchTeam(matchTeamResponses);
             matchesResponse.add(matchResponse);
         }
 
@@ -95,15 +103,9 @@ public class MatchServiceImpl implements MatchService {
 
 
     @Override
-    public void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee) {
+    public void assignMemberToMatch(Long matchTeamId, UUID assigner, UUID assignee) {
 
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found, please contact administrator for more information"));
-
-        Match match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found, please contact administrator for more information"));
-
-        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchId(team.getId(), match.getId())
+        MatchTeam matchTeam = matchTeamRepository.findById(matchTeamId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found, please contact administrator for more information"));
 
         Account leader = accountRepository.findById(assigner)
@@ -111,6 +113,9 @@ public class MatchServiceImpl implements MatchService {
 
         Account member = accountRepository.findById(assignee)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Account not found, please contact administrator for more information"));
+
+        Team team = matchTeam.getTeam();
+        Match match = matchTeam.getMatch();
 
         if (!leader.isLeader()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assigner is not a leader");
@@ -256,11 +261,16 @@ public class MatchServiceImpl implements MatchService {
         matchRepository.save(match);
 
         //cập nhật bảng xếp hạng leaderboard
-        Leaderboard lb = Leaderboard.builder()
-                .team(matchTeam.getTeam())
-                .round(round)
-                .teamScore(score)
-                .build();
+        Optional<Leaderboard> lbOtp = leaderboardRepository.findByRoundIdAndTeamId(round.getId(), team.getId());
+        Leaderboard lb = new Leaderboard();
+        if (lbOtp.isPresent()) {
+            lb = lbOtp.get();
+            lb.setTeamScore(lb.getTeamScore() + score);
+        } else {
+            lb.setTeam(team);
+            lb.setRound(round);
+            lb.setTeamScore(score);
+        }
 
         leaderboardRepository.save(lb);
         leaderboardService.updateLeaderboard(round.getId());
@@ -354,7 +364,6 @@ public class MatchServiceImpl implements MatchService {
         }
 
     }
-
 
     @Override
     public List<MatchResponse> getMatchesByTournamentId(Long tournamentId) {
@@ -582,6 +591,68 @@ public class MatchServiceImpl implements MatchService {
         return matchResponses;
     }
 
+    @Override
+    public List<LeaderboardDetails> getMatchScoreDetails(Long matchId, Long teamId) {
+
+        List<MatchTeam> matchTeams = matchTeamRepository.findByTeamIdAndMatchId(teamId, matchId);
+
+        Match match = matchRepository.findById(matchId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found"));
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
+
+
+        if (matchTeams.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information");
+        }
+
+        List<LeaderboardDetails> leaderboardDetails = new ArrayList<>();
+
+        for (MatchTeam mt : matchTeams) {
+            LeaderboardDetails details = new LeaderboardDetails();
+
+            Optional<Leaderboard> lb = leaderboardRepository.findByRoundIdAndTeamId(match.getRound().getId(), team.getId());
+            if (lb.isEmpty()) {
+                if (match.getTimeEnd().after(DateUtil.convertToDate(LocalDateTime.now()))) {
+                    throw new DasrsException(HttpStatus.BAD_REQUEST, "No data found !, Match not finished yet");
+                } else {
+                    throw new DasrsException(HttpStatus.BAD_REQUEST, "No data found !, Please wait for the leaderboard to be updated");
+                }
+            }
+
+            Leaderboard leaderboard = lb.get();
+
+            ScoreAttribute sa = mt.getScoreAttribute();
+
+            Round round = roundRepository.findById(match.getRound().getId())
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
+
+            ScoredMethod sm = round.getScoredMethod();
+
+            details.setPlayerId(mt.getAccount().getAccountId());
+            details.setTeamId(mt.getTeam().getId());
+            details.setPlayerName(mt.getAccount().fullName());
+            details.setTeamName(mt.getTeam().getTeamName());
+            details.setRanking(leaderboard.getRanking());
+            details.setScore(match.getMatchScore());
+            details.setLap(sa.getLap() * sm.getLap());
+            details.setFastestLapTime(sa.getFastestLapTime());
+            details.setCollision(sa.getCollision() * sm.getCollision());
+            details.setTotalRaceTime(sa.getTotalRaceTime() * sm.getTotalRaceTime());
+            details.setOffTrack(sa.getOffTrack() * sm.getOffTrack());
+            details.setAssistUsageCount(sa.getAssistUsageCount() * sm.getAssistUsageCount());
+            details.setTopSpeed(sa.getTopSpeed());
+            details.setAverageSpeed(sa.getAverageSpeed() * sm.getAverageSpeed());
+            details.setTotalDistance(sa.getTotalDistance() * sm.getTotalDistance());
+
+            leaderboardDetails.add(details);
+
+        }
+
+        return leaderboardDetails;
+    }
+
     @Scheduled(cron = "1 * * * * ?")
     public void detectUpcomingMatch() {
         logger.info("Detecting upcoming match task running at {}", LocalDateTime.now());
@@ -624,7 +695,17 @@ public class MatchServiceImpl implements MatchService {
 
                 if (matchOtp.isPresent()) {
                     Match match = matchOtp.get();
-                    match.setMatchCode(match.getMatchCode() + GenerateCode.generateMatchCode());
+                    String matchCode;
+                    Optional<Match> isDuplicate;
+                    do {
+                        logger.info("Generating match code...");
+                        String randomCode = match.getMatchCode() + GenerateCode.generateMatchCode();
+                        matchCode = match.getMatchCode() + randomCode;
+                        isDuplicate = matchRepository.findByMatchCode(matchCode);
+                        logger.info("Checking for duplicate match code: {}", matchCode);
+                    } while (isDuplicate.isPresent());
+
+                    match.setMatchCode(matchCode);
                     matchRepository.save(match);
                     logger.info("Match found, code generated: {}", match.getId());
                 }

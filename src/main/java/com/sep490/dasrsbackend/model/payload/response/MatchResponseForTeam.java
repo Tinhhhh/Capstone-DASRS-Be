@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import lombok.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -14,7 +15,10 @@ import java.util.UUID;
 public class MatchResponseForTeam {
 
     @JsonProperty("match_id")
-    private Long id;
+    private Long matchId;
+
+    @JsonProperty("team_id")
+    private Long teamId;
 
     @JsonProperty("match_name")
     private String matchName;
@@ -31,7 +35,7 @@ public class MatchResponseForTeam {
     @JsonProperty("status")
     private MatchStatus status;
 
-    @JsonProperty("account_id")
-    private UUID accountId;
+    @JsonProperty("match_team")
+    private List<MatchTeamResponse> matchTeam;
 
 }

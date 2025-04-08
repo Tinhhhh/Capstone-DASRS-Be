@@ -82,24 +82,6 @@ public class CarServiceImpl implements CarService {
         car.setEnabled(true);
         carRepository.save(car);
 
-        List<Team> team = teamRepository.findByStatus(TeamStatus.ACTIVE);
-        for (Team t : team) {
-            List<Account> accountList = accountRepository.findByTeamId(t.getId());
-
-            // Hết test thì bỏ dòng này
-            if (!accountList.isEmpty()) {
-                for (Account account : accountList) {
-
-                    AccountCar accountCar = modelMapper.map(car, AccountCar.class);
-                    AccountCarId accountCarId = new AccountCarId(account.getAccountId(), car.getId());
-                    accountCar.setAccount(account);
-                    accountCar.setCar(car);
-                    accountCar.setId(accountCarId);
-
-                    accountCarRepository.save(accountCar);
-                }
-            }
-        }
     }
 
     @Override

@@ -102,17 +102,17 @@ public class EditCar {
     @JsonProperty("rear_ssd")
     private double rearSSD;
 
-    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
-    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
-    private double engine;
-
-    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
-    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
-    private double handling;
-
-    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
-    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
-    private double brake;
+//    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
+//    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
+//    private double engine;
+//
+//    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
+//    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
+//    private double handling;
+//
+//    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
+//    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
+//    private double brake;
 
     @JsonProperty("is_enabled")
     private boolean isEnabled;

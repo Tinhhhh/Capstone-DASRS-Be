@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.response.TeamMemberResponse;
+import com.sep490.dasrsbackend.service.MatchService;
 import com.sep490.dasrsbackend.service.TeamService;
 import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.service.TeamService;
@@ -56,18 +57,18 @@ public class TeamController {
 //        return ResponseEntity.ok().build();
 //    }
 
-    @GetMapping("/get-matches")
-    public ResponseEntity<Object> getMatches(@RequestParam Long teamId) {
-        return ResponseBuilder.responseBuilderWithData(
-                HttpStatus.OK, "Successfully retrieved matches",
-                teamService.getMatches(teamId));
-    }
+//    @GetMapping("/get-matches")
+//    public ResponseEntity<Object> getMatches(@RequestParam Long teamId) {
+//        return ResponseBuilder.responseBuilderWithData(
+//                HttpStatus.OK, "Successfully retrieved matches",
+//                teamService.getMatches(teamId));
+//    }
 
-    @PutMapping("/assign-member")
-    public ResponseEntity<Object> assignMemberToMatch(@RequestParam Long teamId, @RequestParam Long matchId, @RequestParam UUID assigner, @RequestParam UUID assignee) {
-        teamService.assignMemberToMatch(teamId, matchId, assigner, assignee);
-        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully assigned member to match");
-    }
+//    @PutMapping("/assign-member")
+//    public ResponseEntity<Object> assignMemberToMatch(@RequestParam Long teamId, @RequestParam Long matchId, @RequestParam UUID assigner, @RequestParam UUID assignee) {
+//        teamService.assignMemberToMatch(teamId, matchId, assigner, assignee);
+//        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully assigned member to match");
+//    }
 
     @GetMapping("/members/{teamId}")
     public ResponseEntity<List<TeamMemberResponse>> getTeamMembers(@PathVariable Long teamId) {
@@ -79,4 +80,6 @@ public class TeamController {
         teamService.transferLeadership(teamId, newLeaderId);
         return ResponseEntity.ok().build();
     }
+
+
 }

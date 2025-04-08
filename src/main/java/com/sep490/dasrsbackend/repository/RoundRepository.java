@@ -37,4 +37,6 @@ public interface RoundRepository extends JpaRepository<Round, Long>, JpaSpecific
     List<Round> findRoundsByAccountId(@Param("accountId") UUID accountId);
 
     Optional<Round> findByMatchTypeId(Long id);
+
+    Optional<Round> findByScoredMethodId(Long scoredMethodId);
 }

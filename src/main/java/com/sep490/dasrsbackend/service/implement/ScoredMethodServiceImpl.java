@@ -1,7 +1,8 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
-import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.entity.Round;
+import com.sep490.dasrsbackend.model.entity.ScoredMethod;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.enums.ScoredMethodStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
@@ -63,7 +64,14 @@ public class ScoredMethodServiceImpl implements ScoredMethodService {
 
         ScoredMethod scoredMethod = scoredMethodRepository.findById(scoredMethodId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Scored Method not found"));
-        scoredMethod = modelMapper.map(newScoreMethod, ScoredMethod.class);
+
+        Optional<Round> round = roundRepository.findByScoredMethodId(scoredMethodId);
+
+        if (round.isPresent()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Scored Method can't be updated when has used in a round");
+        }
+
+        modelMapper.map(newScoreMethod, scoredMethod);
         scoredMethodRepository.save(scoredMethod);
     }
 
@@ -89,7 +97,6 @@ public class ScoredMethodServiceImpl implements ScoredMethodService {
 
         return listScoredMethod;
     }
-
 
 
     @Override
