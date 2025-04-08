@@ -14,7 +14,7 @@ import java.util.UUID;
 public interface MatchService {
     List<MatchResponseForTeam> getMatches(Long teamId);
 
-    void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee);
+    void assignMemberToMatch(Long matchTeamId, UUID assigner, UUID assignee);
 
     ListMatchResponse getMatchByRoundId(int pageNo, int pageSize, MatchSort sortBy, Long roundId, String keyword);
 
@@ -31,4 +31,7 @@ public interface MatchService {
     UnityRoomResponse isValidPlayerInMatch(UnityRoomRequest unityRoomRequest);
 
     List<MatchResponse> getMatchByRoundIdAndPlayerId(Long roundId, UUID accountId);
+
+    //get match score details
+    List<LeaderboardDetails> getMatchScoreDetails(Long matchId, Long teamId);
 }

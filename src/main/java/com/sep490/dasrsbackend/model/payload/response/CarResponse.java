@@ -1,6 +1,8 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,6 +48,30 @@ public class CarResponse {
 
     @JsonProperty("traction_helper_strength")
     private double tractionHelperStrength;
+
+    @JsonProperty("front_camper")
+    private double frontCamper;
+
+    @JsonProperty("rear_camper")
+    private double rearCamper;
+
+    @JsonProperty("front_ssr")
+    private double frontSSR;
+
+    @JsonProperty("rear_ssr")
+    private double rearSSR;
+
+    @JsonProperty("front_suspension")
+    private double frontSuspension;
+
+    @JsonProperty("rear_suspension")
+    private double rearSuspension;
+
+    @JsonProperty("front_ssd")
+    private double frontSSD;
+
+    @JsonProperty("rear_ssd")
+    private double rearSSD;
 
     @JsonProperty("is_enabled")
     private boolean isEnabled;

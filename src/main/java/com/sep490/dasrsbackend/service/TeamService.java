@@ -14,6 +14,6 @@ public interface TeamService {
 //    void selectMatchParticipants(Long teamId, List<Long> memberIds);
     List<TeamMemberResponse> getTeamMembers(Long teamId);
     void transferLeadership(Long teamId, Long newLeaderId);
-    void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee);
+//    void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee);
     void unlockMember(Long teamId, Long memberId);
 }

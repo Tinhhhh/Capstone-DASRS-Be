@@ -698,7 +698,6 @@ public class RoundServiceImpl implements RoundService {
         for (Team team : currentTeams) {
             for (int i = 0; i < playersPerTeam; i++) {
                 MatchTeam matchTeam = new MatchTeam();
-                matchTeam.setId(new MatchTeamId(match.getId(), team.getId()));
                 matchTeam.setMatch(match);
                 matchTeam.setTeam(team);
                 matchTeam.setTeamTag(team.getTeamTag());

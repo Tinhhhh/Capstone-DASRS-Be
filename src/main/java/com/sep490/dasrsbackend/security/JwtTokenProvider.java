@@ -93,6 +93,7 @@ public class JwtTokenProvider {
                 .setExpiration(expirationDate)
                 .claim("id", account.getAccountId().toString())
                 .claim("role", authentication.getAuthorities().toArray()[0].toString())
+                .claim("isLeader", account.isLeader())
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
         return token;

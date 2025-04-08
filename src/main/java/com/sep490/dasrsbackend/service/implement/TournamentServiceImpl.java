@@ -7,18 +7,12 @@ import com.sep490.dasrsbackend.Util.TournamentSpecification;
 import com.sep490.dasrsbackend.converter.TeamConverter;
 import com.sep490.dasrsbackend.dto.ParticipantDTO;
 import com.sep490.dasrsbackend.model.entity.*;
-import com.sep490.dasrsbackend.model.enums.MatchStatus;
-import com.sep490.dasrsbackend.model.enums.RoundStatus;
-import com.sep490.dasrsbackend.model.enums.TournamentSort;
-import com.sep490.dasrsbackend.model.enums.TournamentStatus;
+import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.*;
-import com.sep490.dasrsbackend.repository.MatchRepository;
-import com.sep490.dasrsbackend.repository.RoundRepository;
-import com.sep490.dasrsbackend.repository.TeamRepository;
-import com.sep490.dasrsbackend.repository.TournamentRepository;
+import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -49,6 +43,9 @@ public class TournamentServiceImpl implements TournamentService {
     private final TeamRepository teamRepository;
     private static final Logger logger = org.slf4j.LoggerFactory.getLogger(TournamentServiceImpl.class);
     private final TeamConverter teamConverter;
+    private final CarRepository carRepository;
+    private final AccountRepository accountRepository;
+    private final AccountCarRepository accountCarRepository;
 
 
     @Override
@@ -90,6 +87,29 @@ public class TournamentServiceImpl implements TournamentService {
                 .build();
 
         tournamentRepository.save(tournament);
+        generateAccountCar(tournament);
+    }
+
+    private void generateAccountCar(Tournament tournament) {
+        List<Car> cars = carRepository.findCarsByEnabled();
+        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.getId(), TeamStatus.ACTIVE);
+        for (Team team : teams) {
+            List<Account> accounts = accountRepository.findByTeamIdAndIsLocked(team.getId(), false);
+            if (!accounts.isEmpty()) {
+                for (Account account : accounts) {
+                    for (Car car : cars) {
+                        AccountCar accountCar = AccountCar.builder()
+                                .account(account)
+                                .car(car)
+                                .build();
+                        modelMapper.map(car, accountCar);
+                        accountCarRepository.save(accountCar);
+                    }
+                }
+            } else {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Team " + team.getTeamName() + " has no members.");
+            }
+        }
     }
 
     private static void tournamentValidation(Date begin, Date end, int teamNumber) {
@@ -473,6 +493,17 @@ public class TournamentServiceImpl implements TournamentService {
                 tournament.get().setStatus(TournamentStatus.COMPLETED);
                 tournamentRepository.save(tournament.get());
                 logger.info("Tournament completed successfully. Tournament Id: {}", tournament.get().getId());
+
+                // Update for all team
+                logger.info("Update status for all teams in tournament.");
+                List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.get().getId(), TeamStatus.ACTIVE);
+                for (Team team : teams) {
+                    team.setStatus(TeamStatus.COMPLETED);
+                    teamRepository.save(team);
+                    logger.info("Team {} status updated to COMPLETED.", team.getTeamName());
+                }
+                logger.info("Update status for all teams in tournament successfully.");
+
             } else {
                 logger.error("There is no last round completed in tournament but tournament end date is reached. Tournament Id: {}", tournament.get().getId());
             }

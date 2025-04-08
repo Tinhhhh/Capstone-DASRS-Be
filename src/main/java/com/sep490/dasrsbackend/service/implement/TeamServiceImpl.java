@@ -152,58 +152,55 @@ public class TeamServiceImpl implements TeamService {
         teamRepository.save(team);
     }
 
-    @Override
-    public void assignMemberToMatch(Long teamId, Long matchId, UUID assigner, UUID assignee) {
-
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Team not found, please contact administrator for more information"));
-
-        Match match = matchRepository.findById(matchId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Match not found, please contact administrator for more information"));
-
-        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchId(team.getId(), match.getId())
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Match not found, please contact administrator for more information"));
-
-        Account leader = accountRepository.findById(assigner)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Account not found, please contact administrator for more information"));
-
-        Account member = accountRepository.findById(assignee)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Account not found, please contact administrator for more information"));
-
-        if (match.getStatus() == MatchStatus.UNASSIGNED) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Match has already started");
-        }
-
-//        if (match.getTimeStart().before(DateUtil.getCurrentTimestamp())) {
+//    @Override
+//    public void assignMemberToMatch(Long MatchTeamId, UUID assigner, UUID assignee) {
+//
+//        MatchTeam matchTeam = matchTeamRepository.findById(MatchTeamId)
+//                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Match not found, please contact administrator for more information"));
+//
+//        Match match = matchTeam.getMatch();
+//        Team team = matchTeam.getTeam();
+//
+//        Account leader = accountRepository.findById(assigner)
+//                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Account not found, please contact administrator for more information"));
+//
+//        Account member = accountRepository.findById(assignee)
+//                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Account not found, please contact administrator for more information"));
+//
+//        if (match.getStatus() == MatchStatus.UNASSIGNED) {
 //            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Match has already started");
 //        }
-
-        if (!leader.isLeader()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assigner is not a leader");
-        }
-
-        if (leader.getTeam().getId() != member.getTeam().getId()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assignee is not in the same team");
-        }
-
-        // Đảm bảo tất cả thành viên đều tham gia trận đấu
-        List<Account> participatedMember = new ArrayList<>();
-
-        List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(team.getId());
-
-        for (MatchTeam eachMatchTeam : matchTeams) {
-            if (eachMatchTeam.getAccount() != null) {
-                participatedMember.add(eachMatchTeam.getAccount());
-            }
-        }
-
-        if (!participatedMember.isEmpty()) {
-            validateMemberParticipation(member, participatedMember);
-        }
-
-        matchTeam.setAccount(member);
-        matchTeamRepository.save(matchTeam);
-    }
+//
+////        if (match.getTimeStart().before(DateUtil.getCurrentTimestamp())) {
+////            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Match has already started");
+////        }
+//
+//        if (!leader.isLeader()) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assigner is not a leader");
+//        }
+//
+//        if (leader.getTeam().getId() != member.getTeam().getId()) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assignee is not in the same team");
+//        }
+//
+//        // Đảm bảo tất cả thành viên đều tham gia trận đấu
+//        List<Account> participatedMember = new ArrayList<>();
+//
+//        List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(team.getId());
+//
+//        for (MatchTeam eachMatchTeam : matchTeams) {
+//            if (eachMatchTeam.getAccount() != null) {
+//                participatedMember.add(eachMatchTeam.getAccount());
+//            }
+//        }
+//
+//        if (!participatedMember.isEmpty()) {
+//            validateMemberParticipation(member, participatedMember);
+//        }
+//
+//        matchTeam.setAccount(member);
+//        matchTeamRepository.save(matchTeam);
+//    }
 
     public void validateMemberParticipation(Account assignee, List<Account> teamMatches) {
 

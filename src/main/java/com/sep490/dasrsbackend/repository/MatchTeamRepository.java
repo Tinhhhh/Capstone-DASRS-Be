@@ -13,7 +13,7 @@ public interface MatchTeamRepository extends JpaRepository<MatchTeam, Long> {
 
     List<MatchTeam> findByTeamId(Long id);
 
-    Optional<MatchTeam> findByTeamIdAndMatchId(Long teamId, Long matchId);
+    List<MatchTeam> findByTeamIdAndMatchId(Long teamId, Long matchId);
 
     List<MatchTeam> findByMatchId(Long matchId);
 
