@@ -36,9 +36,6 @@ public class Match {
     @Column(name = "match_code")
     private String matchCode;
 
-    @Column(name = "match_score")
-    private double matchScore;
-
     @Column(name = "time_start")
     private Date timeStart;
 

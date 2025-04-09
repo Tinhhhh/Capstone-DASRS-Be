@@ -164,6 +164,7 @@ public class MatchServiceImpl implements MatchService {
                     response);
         }
         matchTeam.setAccount(member);
+        matchTeam.setStatus(MatchTeamStatus.ASSIGNED);
         matchTeamRepository.save(matchTeam);
     }
 
@@ -234,10 +235,7 @@ public class MatchServiceImpl implements MatchService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal server error, registered player with participated player not match, please contact administrator for more information");
         }
 
-        matchTeam.setScoreAttribute(scoreAttribute);
-        matchTeamRepository.save(matchTeam);
-
-        //Cập nhật điểm match => match score, status
+        //Cập nhật điểm matchTeam => matchTeam score, status
         Round round = roundRepository.findById(match.getRound().getId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Round not found"));
 
@@ -255,8 +253,10 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Score Attribute not found"));
 
         score += calculateScore(sm, sa);
+        matchTeam.setScoreAttribute(scoreAttribute);
+        matchTeam.setScore(score);
+        matchTeamRepository.save(matchTeam);
 
-        match.setMatchScore(score);
         match.setStatus(MatchStatus.FINISHED);
         matchRepository.save(match);
 
@@ -532,45 +532,96 @@ public class MatchServiceImpl implements MatchService {
     @Scheduled(cron = "1 0 * * * ?")
     public void detectUnassignedMatch() {
         logger.info("Detecting unassigned match task running at {}", LocalDateTime.now());
+        logger.info("is working hours ?");
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 1);
-        calendar.set(Calendar.MILLISECOND, 0);
+        LocalDateTime now = LocalDateTime.now();
 
-        Date date = calendar.getTime();
-        Optional<Tournament> t = tournamentRepository.findByStatusAndStartDateBefore(TournamentStatus.ACTIVE, date);
+        // Khoảng thời gian diễn ra trận đấu
+        LocalTime morningStart = LocalTime.of(8, 00);  // 8:00 sáng
+        LocalTime morningEnd = LocalTime.of(12, 10);   // 12:10 sáng
+        LocalTime afternoonStart = LocalTime.of(13, 00); // 13:00 chiều
+        LocalTime afternoonEnd = LocalTime.of(17, 10);  // 17:10 chiều
 
-        if (t.isPresent()) {
-            Tournament tournament = t.get();
-            List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE);
+        LocalTime currentHrs = now.toLocalTime();
+
+        // Kiểm tra nếu thời gian hiện tại nằm trong khoảng thời gian diễn ra trận đấu
+        if ((currentHrs.isAfter(morningStart) && currentHrs.isBefore(morningEnd)) ||
+                (currentHrs.isAfter(afternoonStart) && currentHrs.isBefore(afternoonEnd))) {
+            logger.info("Working hours");
+            logger.info("Checking for upcoming matches...");
+
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.HOUR_OF_DAY, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 1);
+            calendar.set(Calendar.MILLISECOND, 0);
+
+            Date date = calendar.getTime();
+            Optional<Tournament> t = tournamentRepository.findByStatusAndStartDateBefore(TournamentStatus.ACTIVE, date);
+
+            if (t.isPresent()) {
+                Tournament tournament = t.get();
+                List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE);
 //            List<Round> rounds = roundRepository.findByTournamentId(tournament.getId());
 
-            if (!rounds.isEmpty()) {
-                List<Match> matches = matchRepository.findByRoundId(rounds.get(0).getId());
+                if (!rounds.isEmpty()) {
+                    List<Match> matches = matchRepository.findByRoundId(rounds.get(0).getId());
 
-                for (Match match : matches) {
-                    if (match.getTimeEnd().before(DateUtil.convertToDate(LocalDateTime.now()))) {
+                    for (Match match : matches) {
+                        if (match.getTimeEnd().before(DateUtil.convertToDate(LocalDateTime.now()))) {
 
-                        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+                            List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+                            Round round = roundRepository.findById(match.getRound().getId())
+                                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
 
-                        for (MatchTeam matchTeam : matchTeams) {
-                            if (matchTeam.getAccount() == null && match.getStatus() == MatchStatus.PENDING) {
-                                match.setStatus(MatchStatus.UNASSIGNED);
-                                matchRepository.save(match);
-                                logger.info("Match {} is unassigned", match.getId());
+                            MatchType matchType = round.getMatchType();
+                            int playerNumber = matchType.getPlayerNumber();
+
+                            //Map<Team, Số matchTeam = unassigned>, Nếu 1 team có số matchTeam unassigned == playerNumber
+                            // thì team đó sẽ đc xem như là unassign, bỏ cuộc
+                            Map<Long, Integer> teamCountMap = new HashMap<>();
+
+                            for (MatchTeam matchTeam : matchTeams) {
+                                if (!teamCountMap.containsKey(matchTeam.getTeam().getId())) {
+                                    teamCountMap.put(matchTeam.getTeam().getId(), 0);
+                                }
+                            }
+
+                            for (Map.Entry<Long, Integer> entry : teamCountMap.entrySet()) {
+                                Long teamId = entry.getKey();
+                                Integer count = entry.getValue();
+
+                                //Kiểm tra xem 1 team có bao nhiêu matchTeam = unassigned
+                                for (MatchTeam matchTeam : matchTeams) {
+                                    if (matchTeam.getTeam().getId().equals(teamId)) {
+                                        if (matchTeam.getStatus() == MatchTeamStatus.UNASSIGNED) {
+                                            count++;
+                                        }
+                                    }
+                                }
+
+                                teamCountMap.put(teamId, count);
+                            }
+
+                            for (Map.Entry<Long, Integer> entry : teamCountMap.entrySet()) {
+                                Long teamId = entry.getKey();
+                                Integer count = entry.getValue();
+
+                                if (count == playerNumber) {
+                                    //Team này đã bỏ cuộc
+                                    match.setStatus(MatchStatus.FINISHED);
+                                    matchRepository.save(match);
+                                }
                             }
 
                         }
-
                     }
+                } else {
+                    logger.info("No active round found");
                 }
             } else {
-                logger.info("No active round found");
+                logger.info("No active tournament found");
             }
-        } else {
-            logger.info("No active tournament found");
         }
         logger.info("Detecting unassigned maps task finished at {}", LocalDateTime.now());
     }
@@ -635,7 +686,7 @@ public class MatchServiceImpl implements MatchService {
             details.setPlayerName(mt.getAccount().fullName());
             details.setTeamName(mt.getTeam().getTeamName());
             details.setRanking(leaderboard.getRanking());
-            details.setScore(match.getMatchScore());
+            details.setScore(mt.getScore());
             details.setLap(sa.getLap() * sm.getLap());
             details.setFastestLapTime(sa.getFastestLapTime());
             details.setCollision(sa.getCollision() * sm.getCollision());
@@ -653,7 +704,7 @@ public class MatchServiceImpl implements MatchService {
         return leaderboardDetails;
     }
 
-    @Scheduled(cron = "1 * * * * ?")
+    @Scheduled(cron = "1 30 * * * ?")
     public void detectUpcomingMatch() {
         logger.info("Detecting upcoming match task running at {}", LocalDateTime.now());
         logger.info("is working hours ?");
@@ -661,10 +712,10 @@ public class MatchServiceImpl implements MatchService {
         LocalDateTime now = LocalDateTime.now();
 
         // Khoảng thời gian diễn ra trận đấu
-        LocalTime morningStart = LocalTime.of(7, 45);  // 7:45 sáng
-        LocalTime morningEnd = LocalTime.of(10, 45);   // 10:45 sáng
-        LocalTime afternoonStart = LocalTime.of(12, 45); // 12:45 chiều
-        LocalTime afternoonEnd = LocalTime.of(16, 45);  // 16:45 chiều
+        LocalTime morningStart = LocalTime.of(7, 30);  // 7:30 sáng
+        LocalTime morningEnd = LocalTime.of(10, 30);   // 10:30 sáng
+        LocalTime afternoonStart = LocalTime.of(12, 30); // 12:30 chiều
+        LocalTime afternoonEnd = LocalTime.of(16, 30);  // 16:30 chiều
 
         LocalTime currentHrs = now.toLocalTime();
 

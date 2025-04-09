@@ -17,6 +17,21 @@ import java.util.UUID;
 @NoArgsConstructor
 public class UpdateCarCustomization {
 
+    @JsonProperty("maximum_torque")
+    @DecimalMax(value = "1000.0", message = "maximum_torque must be less than or equal to 1000")
+    @DecimalMin(value = "100.0", message = "maximum_torque must be greater than or equal to 100")
+    private double maxTorqueAsNM;
+
+    @JsonProperty("traction_helper_strength")
+    @DecimalMin(value = "0.0", message = "traction_helper_strength must be greater than or equal to 0")
+    @DecimalMax(value = "1.0", message = "traction_helper_strength must be less than or equal to 1")
+    private double tractionHelperStrength;
+
+    @JsonProperty("max_brake_torque")
+    @DecimalMax(value = "10000.0", message = "max_brake_torque must be less than or equal to 10000")
+    @DecimalMin(value = "2500.0", message = "max_brake_torque must be greater than or equal to 2500")
+    private double maxBrakeTorque;
+
     @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
     @DecimalMax(value = "10.0", message = "Team number must be at most 10.0")
     @JsonProperty("front_camper")

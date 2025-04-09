@@ -21,6 +21,12 @@ public class AccountCar {
     @Column(name = "maximum_torque")
     private double maxTorqueAsNM;
 
+    @Column(name = "traction_helper_strength")
+    private double tractionHelperStrength;
+
+    @Column(name = "max_brake_torque")
+    private double maxBrakeTorque;
+
     @Column(name = "front_camper")
     private Double frontCamper;
 
