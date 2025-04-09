@@ -465,7 +465,7 @@ public class TournamentServiceImpl implements TournamentService {
 
     @Scheduled(cron = "1 0 0 * * ?")
     public void endTournament() {
-        logger.info("End tournament task is running.");
+        logger.info("Detecting end tournament task is running.");
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -509,7 +509,7 @@ public class TournamentServiceImpl implements TournamentService {
             }
         }
 
-        logger.info("End tournament task is completed.");
+        logger.info("Detecting end tournament task is completed.");
     }
 
     public List<TeamResponse> getTeamsByTournamentId(Long tournamentId) {

@@ -23,6 +23,15 @@ public class CarLoadoutResponse {
     @JsonProperty("car_name")
     private String carName;
 
+    @JsonProperty("maximum_torque")
+    private double maxTorqueAsNM;
+
+    @JsonProperty("traction_helper_strength")
+    private double tractionHelperStrength;
+
+    @JsonProperty("max_brake_torque")
+    private double maxBrakeTorque;
+
     @JsonProperty("front_camper")
     private double frontCamper;
 

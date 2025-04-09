@@ -54,6 +54,9 @@ public class Car {
     @Column(name = "traction_helper_strength")
     private double tractionHelperStrength;
 
+    @Column(name = "max_brake_torque")
+    private double maxBrakeTorque;
+
     @Column(name = "front_camper")
     private double frontCamper;
 

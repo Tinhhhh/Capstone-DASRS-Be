@@ -159,6 +159,11 @@ public class AccountServiceImpl implements AccountService {
         if (request.getRoleId() == 1) {
             if (request.getTeamId() == null) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "Account need to be assigned to a team");
+            } else {
+                List<Account> accounts = accountRepository.findByTeamIdAndIsLocked(request.getTeamId(), false);
+                if (accounts.size() >= 5) {
+                    throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is full");
+                }
             }
         }
 

@@ -33,6 +33,10 @@ public class MatchTypeServiceImpl implements MatchTypeService {
     @Override
     public void newMatchType(NewMatchType newMatchType) {
 
+        if (newMatchType.getPlayerNumber() > 5) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Player number must be less than 6");
+        }
+
         String matchTypeCode = newMatchType.getPlayerNumber() + "P" + newMatchType.getTeamNumber() + "T";
 
         MatchType matchType = MatchType.builder()

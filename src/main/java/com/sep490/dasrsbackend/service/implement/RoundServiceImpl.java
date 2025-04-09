@@ -36,8 +36,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -585,28 +583,8 @@ public class RoundServiceImpl implements RoundService {
             // Nếu trong khung giờ làm việc (8:00 - 17:00), tăng biến đếm
             if (!currentTime.isBefore(workStart) && currentTime.isBefore(workEnd) && currentTime.getHour() != Schedule.LUNCH_BREAK_START) {
 
-                //Bóc tách match type code để lấy số đội mỗi trận đấu và số ng tham gia mỗi đội
-
-                //MatchTypeCode = SP/MP + số người mỗi đội + số đội tham gia
-                //Ví dụ match type code: "11P2T"
-                String[] parts = matchTypePrefix.split("P"); // [2P, 11T]
-
-
-                if (parts.length != 2) {
-                    throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Match type code is invalid, please contact the administrator");
-                }
-
-                String prefix = parts[0]; // 2P
-                String teamCountStr = parts[1]; // 11T
-
-                // Tách số người mỗi đội từ chuỗi prefix (vd: 2P11T)
-                Matcher matcher = Pattern.compile("(\\d+)P(\\d+)T").matcher(prefix);
-                if (!matcher.matches()) {
-                    throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Match type code is invalid, please contact the administrator");
-                }
-
-                int playersPerTeam = Integer.parseInt(matcher.group(1)); // số người mỗi team
-                int teamCount = Integer.parseInt(matcher.group(2)); // số team
+                int playersPerTeam = matchType.getPlayerNumber(); // số người mỗi team
+                int teamCount = matchType.getTeamNumber(); // số team
 
                 isPlayersPerTeamValid(round.getTournament().getId(), playersPerTeam);
 
@@ -649,7 +627,6 @@ public class RoundServiceImpl implements RoundService {
                 Match match = Match.builder()
                         .matchName(name)
                         .matchCode(matchCode)
-                        .matchScore(0)
                         .timeStart(DateUtil.convertToDate(startTime))
                         .timeEnd(DateUtil.convertToDate(startTime.plusMinutes((long) matchDuration)))
                         .status(MatchStatus.PENDING)
@@ -701,6 +678,8 @@ public class RoundServiceImpl implements RoundService {
                 matchTeam.setMatch(match);
                 matchTeam.setTeam(team);
                 matchTeam.setTeamTag(team.getTeamTag());
+                matchTeam.setStatus(MatchTeamStatus.UNASSIGNED);
+                matchTeam.setScore(0);
                 matchTeam.setAttempt(0);
                 matchTeamRepository.save(matchTeam);
             }
@@ -786,7 +765,7 @@ public class RoundServiceImpl implements RoundService {
     @Scheduled(cron = "1 0 0 * * ?")
     @Transactional
     public void checkIfRoundEnd() {
-        logger.info("Round end task is running");
+        logger.info("Detecting round end task is running");
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -822,14 +801,14 @@ public class RoundServiceImpl implements RoundService {
         }
 
 
-        logger.info("Round end task is completed");
+        logger.info("Detecting round end task is completed");
     }
 
     @Async
     @Scheduled(cron = "1 0 0 * * ?")
     @Transactional
     public void checkIfRoundStart() {
-        logger.info("Round start task is running");
+        logger.info("Detecting round start task is running");
 
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
@@ -851,7 +830,7 @@ public class RoundServiceImpl implements RoundService {
             }
         }
 
-        logger.info("Round start task is completed");
+        logger.info("Detecting rAound start task is completed");
     }
 
     @Override
@@ -901,7 +880,7 @@ public class RoundServiceImpl implements RoundService {
         Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
         Specification<Round> spec = Specification
-                .where(RoundSpecification.hasRoundName(keyword))
+                .where(RoundSpecification.hasKeyword(keyword))
                 .and(RoundSpecification.betweenStartAndEndDate(start, end)
                         .and(RoundSpecification.hasStatus(RoundStatus.ACTIVE).or(RoundSpecification.hasStatus(RoundStatus.PENDING)))
                 );

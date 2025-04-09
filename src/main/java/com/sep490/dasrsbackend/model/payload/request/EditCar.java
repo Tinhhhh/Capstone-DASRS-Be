@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.model.payload.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import lombok.AllArgsConstructor;
@@ -101,6 +102,11 @@ public class EditCar {
     @DecimalMax(value = "10000.0", message = "Team number must be at most 10000.0")
     @JsonProperty("rear_ssd")
     private double rearSSD;
+
+    @JsonProperty("max_brake_torque")
+    @DecimalMax(value = "10000.0", message = "max_brake_torque must be less than or equal to 10000")
+    @DecimalMin(value = "2500.0", message = "max_brake_torque must be greater than or equal to 2500")
+    private double maxBrakeTorque;
 
 //    @DecimalMin(value = "200.0", message = "Team number must be at least 200.0")
 //    @DecimalMax(value = "1000.0", message = "Team number must be at most 1000.0")
