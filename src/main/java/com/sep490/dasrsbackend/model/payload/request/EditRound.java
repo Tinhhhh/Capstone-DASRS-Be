@@ -19,7 +19,7 @@ public class EditRound {
 
     @JsonProperty("round_name")
     @Size(max = 200, message = "Tournament name no more than 200 characters")
-    @Pattern(regexp = "^[a-zA-ZÀ-ỹ\\s-_]+$", message = "Tournament context contains invalid characters")
+    @Pattern(regexp = "^[a-zA-ZÀ-ỹ0-9\\s-_!,.]+$", message = "Tournament context contains invalid characters")
     private String roundName;
 
     @JsonProperty("team_limit")
@@ -33,7 +33,7 @@ public class EditRound {
 
     @NotBlank(message = "Tournament context is required")
     @Size(max = 5000, message = "Tournament name no more than 5000 characters")
-    @Pattern(regexp = "^[a-zA-ZÀ-ỹ\\s-_!,]+$", message = "Tournament context contains invalid characters")
+    @Pattern(regexp = "^[a-zA-ZÀ-ỹ0-9\\s-_!,.]+$", message = "Tournament context contains invalid characters")
     private String description;
 
     @Future(message = "Start date must be in the future")

@@ -112,16 +112,18 @@ public class RoundServiceImpl implements RoundService {
     }
 
     private void updateLatestRound(Tournament tournament) {
-        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId()).stream()
+                .sorted((r1, r2) -> Integer.compare(r2.getTeamLimit(), r1.getTeamLimit()))
+                .toList();
+
         if (!rounds.isEmpty()) {
             for (Round round : rounds) {
                 round.setLatest(false);
-                roundRepository.save(round);
             }
 
             Round round = rounds.get(rounds.size() - 1);
             round.setLatest(true);
-            roundRepository.save(round);
+            roundRepository.saveAll(rounds);
         }
     }
 
@@ -420,10 +422,11 @@ public class RoundServiceImpl implements RoundService {
     private void terminatedAllMatch(Long id) {
         List<Match> matches = matchRepository.findByRoundId(id);
         for (Match match : matches) {
-            if (match.getStatus() == MatchStatus.PENDING) {
+            if (match.getStatus() == MatchStatus.PENDING || match.getStatus() == MatchStatus.FINISHED) {
                 match.setStatus(MatchStatus.CANCELLED);
                 matchRepository.save(match);
             }
+
         }
     }
 
@@ -499,6 +502,7 @@ public class RoundServiceImpl implements RoundService {
         validateTime(editRound.getStartDate(), editRound.getEndDate(), tStart, currMatches, tEnd);
     }
 
+    @Transactional
     @Override
     public void changeRoundStatus(Long id, RoundStatus status) {
 
@@ -507,11 +511,23 @@ public class RoundServiceImpl implements RoundService {
 
         if (status != RoundStatus.TERMINATED) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, this method can only terminate a round");
-        } else {
+        }
+
+        if (round.getStatus() == RoundStatus.COMPLETED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, this round has been completed");
+        }
+
+        if (round.getStatus() == RoundStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, this round has been terminated");
+        }
+
+        if (round.getStatus() == RoundStatus.PENDING || round.getStatus() == RoundStatus.ACTIVE) {
             terminatedAllMatch(id);
         }
         round.setStatus(status);
+        round.setLatest(false);
         roundRepository.save(round);
+        updateLatestRound(round.getTournament());
     }
 
     private void generateMatch(Round round, Tournament tournament) {

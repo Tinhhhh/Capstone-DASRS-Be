@@ -61,6 +61,7 @@ public class MatchTeam {
     private double score;
 
     @Column(name = "status")
+    @Enumerated(EnumType.STRING)
     private MatchTeamStatus status;
 
     @Column(name = "attempt")
