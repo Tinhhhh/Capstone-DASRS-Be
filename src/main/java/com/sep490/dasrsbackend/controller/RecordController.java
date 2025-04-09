@@ -5,6 +5,7 @@ import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.entity.Record;
 import com.sep490.dasrsbackend.service.RecordService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/v1/records")
 @RequiredArgsConstructor
+@Tag(name = "Record", description = "APIs for managing records")
 public class RecordController {
 
     private final RecordService recordService;

@@ -35,6 +35,10 @@ public interface AccountRepository extends JpaRepository<Account, UUID>, JpaSpec
     int countByTeamId(Long teamId);
 
     boolean existsByTeamIdAndIsLeaderTrue(Long teamId);
+
+    @Query("SELECT a FROM Account a JOIN a.matchTeams mt JOIN mt.match m WHERE m.review IS NOT NULL AND a.accountId = :uuid")
+    Optional<Account> findAccountWithReview(@Param("uuid") UUID uuid);
+
 }
 
 
