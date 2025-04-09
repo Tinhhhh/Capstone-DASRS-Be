@@ -32,6 +32,9 @@ public interface AccountRepository extends JpaRepository<Account, UUID>, JpaSpec
 
     boolean existsByEmail(String email);
 
+    int countByTeamId(Long teamId);
+
+    boolean existsByTeamIdAndIsLeaderTrue(Long teamId);
 }
 
 

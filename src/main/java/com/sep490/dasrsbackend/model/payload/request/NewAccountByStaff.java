@@ -58,4 +58,8 @@ public class NewAccountByStaff {
     @NotEmpty(message = "Gender is mandatory")
     @Pattern(regexp = "^(Male|Female|Other)$", message = "Gender must be Male, Female, or Other")
     private String gender;
+
+    @Schema(description = "Indicates if the user is a team leader", example = "false")
+    @JsonProperty("is_leader")
+    private boolean isLeader;
 }

@@ -222,38 +222,44 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public void newAccountByStaff(NewAccountByStaff request) throws MessagingException {
-        // Ensure the role is set to "PLAYER"
+
         Role role = roleRepository.findByRoleName(RoleEnum.PLAYER.getRole())
                 .orElseThrow(() -> new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Registration fails, role not found!"));
 
-        // Check if the team exists
         Team team = teamRepository.findById(request.getTeamId())
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found!"));
 
-        // Check for duplicate email
+        long teamMemberCount = accountRepository.countByTeamId(team.getId());
+        if (teamMemberCount >= 5) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team has reached the maximum limit of 5 members.");
+        }
+
+        boolean hasLeader = accountRepository.existsByTeamIdAndIsLeaderTrue(team.getId());
+        if (!hasLeader && !request.isLeader()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team must have at least one leader.");
+        }
+
         if (accountRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RegisterAccountExistedException("Account already exists");
         }
 
-        // Build the new account
         Account account = Account.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())
                 .address(request.getAddress())
                 .phone(request.getPhone())
-                .gender("") // Default or leave null
-                .dob(null)  // Default or leave null
+                .gender("")
+                .dob(null)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .isLocked(false)
-                .isLeader(false)
-                .role(role) // Always PLAYER role
-                .team(team) // Assign to the provided team
+                .isLeader(request.isLeader())
+                .role(role)
+                .team(team)
                 .build();
 
         accountRepository.save(account);
 
-        // Send registration email
         sendRegistrationEmail(account, request.getPassword());
     }
 
@@ -277,11 +283,10 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public List<PlayerResponse> getPlayerByTeamName(String teamName) {
-        // Validate teamName
+
         if (teamName == null || teamName.isBlank()) {
             throw new IllegalArgumentException("Team name must not be null or empty.");
         }
-        // Fetch players by team name
         List<Account> players = accountRepository.findPlayersByTeamName(teamName);
         return players.stream()
                 .map(account -> new PlayerResponse(
