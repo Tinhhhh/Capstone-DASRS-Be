@@ -44,40 +44,47 @@ public class ReviewServiceImpl implements ReviewService {
 
         return reviewRepository.save(review);
     }
+
     @Override
-    public List<Review> getAllReviews() {
+    public List<ReviewResponse> getAllReviews() {
         List<Review> reviews = reviewRepository.findAll();
         if (reviews.isEmpty()) {
             throw new DasrsException(HttpStatus.NOT_FOUND, "No reviews found");
         }
-        return reviews;
+        return reviews.stream().map(this::mapToResponse).toList();
     }
 
     @Override
-    public Review getReviewById(Long reviewId) {
-        return reviewRepository.findById(reviewId)
+    public ReviewResponse getReviewById(Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Review not found"));
+        return mapToResponse(review);
     }
 
     @Override
-    public List<Review> getReviewsByMatchId(Long matchId) {
+    public List<ReviewResponse> getReviewsByMatchId(Long matchId) {
         List<Review> reviews = reviewRepository.findByMatchId(matchId);
         if (reviews.isEmpty()) {
             throw new DasrsException(HttpStatus.NOT_FOUND, "No reviews found for the given match ID");
         }
-        return reviews;
+        return reviews.stream().map(this::mapToResponse).toList();
     }
+
     @Override
-    public Review updateReviewStatus(Long reviewId, ReviewStatus status) {
-        Review review = getReviewById(reviewId);
+    public ReviewResponse updateReviewStatus(Long reviewId, ReviewStatus status) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Review not found"));
 
         review.setStatus(status);
-        return reviewRepository.save(review);
+        review = reviewRepository.save(review);
+
+        return mapToResponse(review);
     }
 
     @Override
     public void deleteReview(Long reviewId) {
-        Review review = getReviewById(reviewId);
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Review not found"));
         reviewRepository.delete(review);
     }
 
@@ -101,9 +108,9 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public ReviewResponse replyReview(ReplyReviewRequest replyReviewRequest) {
-        Review review = reviewRepository.findById(replyReviewRequest.getReviewId())
-                .orElseThrow(() -> new EntityNotFoundException("Review not found with ID: " + replyReviewRequest.getReviewId()));
+    public ReviewResponse replyReview(Long id, ReplyReviewRequest replyReviewRequest) {
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Review not found with ID: " + id));
 
         review.setReply(replyReviewRequest.getReply());
         review.setStatus(replyReviewRequest.getStatus());
@@ -111,6 +118,19 @@ public class ReviewServiceImpl implements ReviewService {
 
         review = reviewRepository.save(review);
         return modelMapper.map(review, ReviewResponse.class);
+    }
+
+    private ReviewResponse mapToResponse(Review review) {
+        return ReviewResponse.builder()
+                .id(review.getId())
+                .title(review.getTitle())
+                .description(review.getDescription())
+                .reply(review.getReply())
+                .status(review.getStatus())
+                .createdDate(review.getCreatedDate())
+                .lastModifiedDate(review.getLastModifiedDate())
+                .matchId(review.getMatch().getId())
+                .build();
     }
 }
 

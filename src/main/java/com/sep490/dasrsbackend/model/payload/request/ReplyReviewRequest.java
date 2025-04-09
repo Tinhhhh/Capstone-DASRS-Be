@@ -7,9 +7,6 @@ import lombok.Data;
 @Data
 public class ReplyReviewRequest {
 
-    @JsonProperty("review_id")
-    private Long reviewId;
-
     private String reply;
 
     private ReviewStatus status;

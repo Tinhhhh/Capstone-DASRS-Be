@@ -37,31 +37,31 @@ public class ReviewController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Review updated successfully.", review);
     }
 
-    @Operation(summary = "Retrieve all reviews", description = "Fetch all available reviews.")
+    @Operation(summary = "Get all reviews", description = "Retrieve a list of all reviews.")
     @GetMapping
     public ResponseEntity<Object> getAllReviews() {
-        List<Review> reviews = reviewService.getAllReviews();
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "All reviews fetched successfully.", reviews);
+        List<ReviewResponse> reviews = reviewService.getAllReviews();
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Reviews retrieved successfully.", reviews);
     }
 
-    @Operation(summary = "Retrieve a review by ID", description = "Fetch a review using its ID.")
-    @GetMapping("/by-id")
-    public ResponseEntity<Object> getReviewById(@RequestParam Long reviewId) {
-        Review review = reviewService.getReviewById(reviewId);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Review fetched successfully.", review);
+    @Operation(summary = "Get review by ID", description = "Retrieve a specific review by its ID.")
+    @GetMapping("/{id}")
+    public ResponseEntity<Object> getReviewById(@PathVariable Long id) {
+        ReviewResponse review = reviewService.getReviewById(id);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Review retrieved successfully.", review);
     }
 
-    @Operation(summary = "Retrieve reviews by match ID", description = "Fetch reviews associated with a specific match.")
-    @GetMapping("/by-match")
-    public ResponseEntity<Object> getReviewsByMatchId(@RequestParam Long matchId) {
-        List<Review> reviews = reviewService.getReviewsByMatchId(matchId);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Reviews for the match fetched successfully.", reviews);
+    @Operation(summary = "Get reviews by Match ID", description = "Retrieve reviews for a specific match.")
+    @GetMapping("/match/{matchId}")
+    public ResponseEntity<Object> getReviewsByMatchId(@PathVariable Long matchId) {
+        List<ReviewResponse> reviews = reviewService.getReviewsByMatchId(matchId);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Reviews retrieved successfully.", reviews);
     }
 
     @Operation(summary = "Update review status", description = "Change the status of a review by its ID.")
     @PatchMapping("/update-status")
     public ResponseEntity<Object> updateReviewStatus(@RequestParam Long reviewId, @RequestParam ReviewStatus status) {
-        Review updatedReview = reviewService.updateReviewStatus(reviewId, status);
+        ReviewResponse updatedReview = reviewService.updateReviewStatus(reviewId, status);
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Review status updated successfully.", updatedReview);
     }
 
@@ -89,8 +89,7 @@ public class ReviewController {
             @PathVariable Long id,
             @Validated @RequestBody ReplyReviewRequest replyReviewRequest) {
 
-        replyReviewRequest.setReviewId(id);
-        ReviewResponse response = reviewService.replyReview(replyReviewRequest);
+        ReviewResponse response = reviewService.replyReview(id, replyReviewRequest);
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Reply added successfully.", response);
     }
 }

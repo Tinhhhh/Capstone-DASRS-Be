@@ -12,17 +12,17 @@ import java.util.UUID;
 public interface ReviewService {
     Review reviewRecord(Long reviewId, String reply, ReviewStatus status);
 
-    List<Review> getAllReviews();
+    List<ReviewResponse> getAllReviews();
 
-    Review getReviewById(Long reviewId);
+    ReviewResponse getReviewById(Long reviewId);
 
-    List<Review> getReviewsByMatchId(Long matchId);
+    List<ReviewResponse> getReviewsByMatchId(Long matchId);
 
-    Review updateReviewStatus(Long reviewId, ReviewStatus status);
+    ReviewResponse updateReviewStatus(Long reviewId, ReviewStatus status);
 
     void deleteReview(Long reviewId);
 
     ReviewResponse createReview(UUID accountId, Long matchId, CreateReviewRequest createReviewRequest);
 
-    ReviewResponse replyReview(ReplyReviewRequest replyReviewRequest);
+    ReviewResponse replyReview(Long id, ReplyReviewRequest replyReviewRequest);
 }
