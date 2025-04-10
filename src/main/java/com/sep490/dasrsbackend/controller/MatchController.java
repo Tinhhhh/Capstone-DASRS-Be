@@ -33,7 +33,8 @@ public class MatchController {
     private final MatchService matchService;
 
     @GetMapping("/team/{teamId}")
-    public ResponseEntity<Object> getMatchesByTeam(@PathVariable Long teamId) {
+    public ResponseEntity<Object> getMatchesByTeam(
+            @PathVariable Long teamId) {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved matches",
                 matchService.getMatches(teamId));

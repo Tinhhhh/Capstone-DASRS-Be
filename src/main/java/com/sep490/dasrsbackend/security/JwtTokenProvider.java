@@ -94,6 +94,7 @@ public class JwtTokenProvider {
                 .claim("id", account.getAccountId().toString())
                 .claim("role", authentication.getAuthorities().toArray()[0].toString())
                 .claim("isLeader", account.isLeader())
+                .claim("teamId", account.getTeam().getId())
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
         return token;

@@ -27,7 +27,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -109,6 +108,7 @@ public class RoundServiceImpl implements RoundService {
 
         updateLatestRound(tournament);
         generateMatch(round, tournament);
+        generateLeaderboard(round);
     }
 
     private void updateLatestRound(Tournament tournament) {
@@ -538,12 +538,16 @@ public class RoundServiceImpl implements RoundService {
         double matchDuration = matchType.getMatchDuration() * 60;
         Map<Integer, Team> randomTeam = new HashMap<>();
 
+        // Lấy danh sách team từ Map và trộn ngẫu nhiên
+        List<Team> teamList;
+
         //Tạo biến đại diện cho số đội sẽ tham gia round
         //Truường hợp round đang tạo là round đầu tiên
         List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.getId(), TeamStatus.ACTIVE);
         int teamRemains = teams.size();
 
-        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId()).stream()
+                .sorted(Comparator.comparingInt(Round::getTeamLimit).reversed()).toList();
 
         //Trường hợp round đang tạo không phải là round đầu tiên
 
@@ -553,21 +557,21 @@ public class RoundServiceImpl implements RoundService {
             for (Team team : teams) {
                 randomTeam.put(flag--, team);
             }
+
         } else { //Trường hợp round đang tạo không phải là round đầu tiên
             Round previousRound = rounds.get(rounds.size() - 2);
 
             //Trường hợp round trước đó chưa hoàn thành
             //Chưa generate match đc
-            if (!previousRound.isLatest() || previousRound.getStatus() != RoundStatus.COMPLETED) {
+            if (previousRound.getStatus() != RoundStatus.COMPLETED) {
                 return;
             }
 
             teamRemains = previousRound.getTeamLimit();
 
-            List<Leaderboard> leaderboards = leaderboardRepository
-                    .findTopNLeaderboard(previousRound.getId()).stream()
-                    .filter(leaderboard -> leaderboard.getTeam().getStatus() == TeamStatus.ACTIVE && !leaderboard.getTeam().isDisqualified())
-                    .limit(teamRemains)
+            List<Leaderboard> leaderboards = leaderboardRepository.findByRoundId(previousRound.getId()).stream()
+                    .sorted(Comparator.comparingInt(Leaderboard::getRanking)) // sắp xếp tăng dần theo ranking
+                    .limit(6) // chỉ lấy top 6
                     .toList();
 
             //leaderboards empty nghĩa là round 1 chưa hoàn thành, chưa có dữ liệu leaderboard
@@ -584,6 +588,10 @@ public class RoundServiceImpl implements RoundService {
             throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error. Please check the team list");
         }
 
+        //Trộn danh sách team
+        teamList = new ArrayList<>(randomTeam.values());
+        Collections.shuffle(teamList);
+
         LocalDateTime startTime = DateUtil.convertToLocalDateTime(round.getStartDate()).withHour(Schedule.WORKING_HOURS_START);
         LocalDateTime endTime = DateUtil.convertToLocalDateTime(round.getEndDate()).withHour(Schedule.WORKING_HOURS_END);
 
@@ -594,7 +602,7 @@ public class RoundServiceImpl implements RoundService {
         String seasonPrefix = GenerateCode.seasonPrefix(DateUtil.convertToLocalDateTime(tournament.getStartDate()));
         String matchTypePrefix = matchType.getMatchTypeCode();
 
-        while (startTime.isBefore(endTime) && !randomTeam.isEmpty()) {
+        while (startTime.isBefore(endTime) && !teamList.isEmpty()) {
             LocalTime currentTime = startTime.toLocalTime();
             // Nếu trong khung giờ làm việc (8:00 - 17:00), tăng biến đếm
             if (!currentTime.isBefore(workStart) && currentTime.isBefore(workEnd) && currentTime.getHour() != Schedule.LUNCH_BREAK_START) {
@@ -611,34 +619,44 @@ public class RoundServiceImpl implements RoundService {
                 //Tạo match name
                 //prefix 1
                 stringBuilder.setLength(0);
-                String name = stringBuilder
+                stringBuilder
                         .append(matchType.getMatchTypeName())
                         .append(" - ")
                         .toString();
 
                 //tạo biến lưu lại team danh sách team đã duùng để tạo trận đấu
-                List<Team> hasAssigned = new ArrayList<>();
+                Set<Team> hasAssigned = new HashSet<>();
 
-                //Chọn đội tham gia trận đấu ngẫu nhiên
+                // Chọn đội tham gia
                 //prefix 2
                 for (int i = 0; i < teamCount; i++) {
-                    Team team = randomTeam.get(teamRemains);
-                    randomTeam.remove(teamRemains--);
-                    if (i >= 1) {
-                        name = stringBuilder.append(", ").toString();
+                    Team team = teamList.get(0);
+                    if (i > 0) {
+                        stringBuilder.append(", ");
                     }
-                    name = stringBuilder.append(team.getTeamName()).toString();
+                    stringBuilder.append(team.getTeamName());
                     hasAssigned.add(team);
+                    teamList.remove(team);
                 }
 
-                //Ghép lại thành match code
-                stringBuilder.setLength(0);
-                String matchCode = stringBuilder
-                        .append(seasonPrefix)
-                        .append("_")
-                        .append(matchTypePrefix)
-                        .append("_")
-                        .toString();
+                String name = stringBuilder.toString();
+
+                //generate match code
+                String matchCode;
+                Optional<Match> isDuplicate;
+                do {
+                    //Ghép lại thành match code
+                    stringBuilder.setLength(0);
+                    matchCode = stringBuilder
+                            .append(seasonPrefix)
+                            .append("_")
+                            .append(matchTypePrefix)
+                            .append("_")
+                            .append(GenerateCode.generateMatchCode())
+                            .toString();
+
+                    isDuplicate = matchRepository.findByMatchCode(matchCode);
+                } while (isDuplicate.isPresent());
 
                 Match match = Match.builder()
                         .matchName(name)
@@ -686,7 +704,7 @@ public class RoundServiceImpl implements RoundService {
 
     }
 
-    private void generateMatchTeam(Match match, List<Team> currentTeams, int playersPerTeam) {
+    private void generateMatchTeam(Match match, Set<Team> currentTeams, int playersPerTeam) {
 
         for (Team team : currentTeams) {
             for (int i = 0; i < playersPerTeam; i++) {
@@ -777,7 +795,6 @@ public class RoundServiceImpl implements RoundService {
     //second, minute, hour, day, month, year
     //* = every
 //    @Scheduled(cron = "5 * * * * ?")
-    @Async
     @Scheduled(cron = "1 0 0 * * ?")
     @Transactional
     public void checkIfRoundEnd() {
@@ -816,12 +833,10 @@ public class RoundServiceImpl implements RoundService {
 
         }
 
-
         logger.info("Detecting round end task is completed");
     }
 
-    @Async
-    @Scheduled(cron = "1 0 0 * * ?")
+    @Scheduled(cron = "2 0 0 * * ?")
     @Transactional
     public void checkIfRoundStart() {
         logger.info("Detecting round start task is running");
@@ -846,7 +861,7 @@ public class RoundServiceImpl implements RoundService {
             }
         }
 
-        logger.info("Detecting rAound start task is completed");
+        logger.info("Detecting round start task is completed");
     }
 
     @Override
@@ -917,6 +932,56 @@ public class RoundServiceImpl implements RoundService {
         listRoundResponses.setContent(roundResponses);
 
         return listRoundResponses;
+    }
+
+    public void generateLeaderboard(Round round) {
+
+        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(round.getTournament().getId(), TeamStatus.ACTIVE);
+
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(round.getTournament().getId()).stream()
+                .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
+        //Trường hợp round đang tạo là round đầu tiên
+        if (rounds.size() == 1) {
+            //Tạo leaderboard cho tất cả các team tham gia tournament
+            for (Team team : teams) {
+                Leaderboard leaderboard = new Leaderboard();
+                leaderboard.setRound(round);
+                leaderboard.setTeam(team);
+                leaderboard.setTeamScore(0);
+                leaderboard.setRanking(0);
+                leaderboardRepository.save(leaderboard);
+            }
+        }
+        //Trường hợp round đang tạo không phải là round đầu tiên
+        else {
+            Round previousRound = rounds.get(rounds.size() - 2);
+            //Trường hợp round trước đó chưa hoàn thành
+            if (previousRound.getStatus() != RoundStatus.COMPLETED) {
+                return;
+            }
+
+            List<Leaderboard> leaderboards = leaderboardRepository.findByRoundId(previousRound.getId()).stream()
+                    .filter(leaderboard -> leaderboard.getTeam().getStatus() == TeamStatus.ACTIVE && !leaderboard.getTeam().isDisqualified())
+                    .sorted(Comparator.comparingInt(Leaderboard::getRanking)) // sắp xếp tăng dần theo ranking
+                    .limit(6) // chỉ lấy top 6
+                    .toList();
+
+            //leaderboards empty nghĩa là round 1 chưa hoàn thành, chưa có dữ liệu leaderboard
+            if (leaderboards.isEmpty()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The round is not completed yet, please check the leaderboard");
+            }
+
+            for (Leaderboard leaderboard : leaderboards) {
+                Leaderboard newLeaderboard = new Leaderboard();
+                newLeaderboard.setRound(round);
+                newLeaderboard.setTeam(leaderboard.getTeam());
+                newLeaderboard.setTeamScore(0);
+                newLeaderboard.setRanking(0);
+                leaderboardRepository.save(newLeaderboard);
+            }
+        }
+
+
     }
 
 }
