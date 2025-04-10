@@ -38,7 +38,6 @@ public class ScoredMethodServiceImpl implements ScoredMethodService {
         ScoredMethod scoredMethod = modelMapper.map(newScoreMethod, ScoredMethod.class);
         scoredMethod.setStatus(ScoredMethodStatus.ACTIVE);
         scoredMethodRepository.save(scoredMethod);
-
         return modelMapper.map(scoredMethod, ScoredMethodResponse.class);
     }
 

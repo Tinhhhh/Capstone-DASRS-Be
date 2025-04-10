@@ -94,6 +94,7 @@ public class JwtTokenProvider {
                 .claim("id", account.getAccountId().toString())
                 .claim("role", authentication.getAuthorities().toArray()[0].toString())
                 .claim("isLeader", account.isLeader())
+                .claim("teamId", account.getTeam().getId())
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
         return token;
@@ -127,7 +128,7 @@ public class JwtTokenProvider {
     @Scheduled(cron = "0 0 2 * * ?")
     @Transactional
     public void deleteExpiredOrRevokedTokens() {
-        logger.info("Deleting expired tokens task started");
+        logger.info("Detecting deleting expired tokens task started");
 
         //Delete expired refreshToken
         logger.info("Deleting expired or revoked refresh tokens");
@@ -147,8 +148,7 @@ public class JwtTokenProvider {
         accessTokenRepository.deleteAll(expiredAccessTokens);
         logger.info("Deleted {} expired access tokens", expiredAccessTokens.size());
 
-
-        logger.info("Deleting expired tokens task finished");
+        logger.info("Detecting deleting expired tokens task finished");
     }
 
 

@@ -276,7 +276,7 @@ public class AuthenServiceImpl implements AuthenService {
 
     @Scheduled(cron = "1 * * * * ?")
     public void revokedExpiredPasswordResetTokens() {
-        logger.info("Mark expired password reset tokens task started");
+        logger.info("Detecting mark expired password reset tokens task started");
         List<PasswordResetToken> expiredTokens = resetPasswordTokenRepository.findAllByExpiredBefore(LocalDateTime.now());
         logger.info("Found {} expired password reset tokens", expiredTokens.size());
         if (!expiredTokens.isEmpty()) {
@@ -287,15 +287,15 @@ public class AuthenServiceImpl implements AuthenService {
             logger.info("Marked {} expired password reset tokens as revoked", expiredTokens.size());
         }
 
-        logger.info("Mark expired password reset tokens task finished");
+        logger.info("Detecting mark expired password reset tokens task finished");
     }
 
 
     @Scheduled(cron = "1 * * * * ?")
     @Transactional
     public void scheduledDeleteExpiredToken() {
-        logger.info("Deleting expired reset password tokens task started");
+        logger.info("Detecting deleting expired reset password tokens task started");
         resetPasswordTokenRepository.deleteAllByRevoked(true);
-        logger.info("Deleting expired reset password tokens task finished");
+        logger.info("Detecting deleting expired reset password tokens task finished");
     }
 }

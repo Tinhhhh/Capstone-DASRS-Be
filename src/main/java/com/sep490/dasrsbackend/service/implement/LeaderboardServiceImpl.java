@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
@@ -53,6 +54,10 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         Round round = roundRepository.findById(roundId).orElseThrow(
                 () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round not found")
         );
+
+        if (round.getStatus() == RoundStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round is terminated");
+        }
 
         Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
         Page<Leaderboard> leaderboards = leaderboardRepository.findByRoundId(round.getId(), pageable);
