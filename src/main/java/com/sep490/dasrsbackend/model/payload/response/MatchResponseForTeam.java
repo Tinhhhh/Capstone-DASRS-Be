@@ -20,6 +20,12 @@ public class MatchResponseForTeam {
     @JsonProperty("team_id")
     private Long teamId;
 
+    @JsonProperty("team_name")
+    private String teamName;
+
+    @JsonProperty("team_tag")
+    private String teamTag;
+
     @JsonProperty("match_name")
     private String matchName;
 

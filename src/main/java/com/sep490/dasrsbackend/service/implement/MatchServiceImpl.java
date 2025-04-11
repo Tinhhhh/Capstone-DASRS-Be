@@ -79,6 +79,8 @@ public class MatchServiceImpl implements MatchService {
             MatchResponseForTeam matchResponse = modelMapper.map(match, MatchResponseForTeam.class);
             matchResponse.setMatchId(match.getId());
             matchResponse.setTeamId(teamId);
+            matchResponse.setTeamName(team.getTeamName());
+            matchResponse.setTeamTag(team.getTeamTag());
             matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
             matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
 

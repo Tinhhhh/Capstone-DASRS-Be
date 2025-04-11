@@ -180,7 +180,9 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     private void isRoundValid(Tournament tournament) {
-        List<Round> roundList = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.PENDING);
+        List<Round> roundList = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.PENDING).stream()
+                .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
+
         if (!roundList.isEmpty()) {
             Date start = roundList.get(0).getStartDate();
             Date end = roundList.get(roundList.size() - 1).getEndDate();
@@ -299,16 +301,16 @@ public class TournamentServiceImpl implements TournamentService {
         //Kiểm tra có đáp ứng số ngày ko
         tournamentValidation(tournament.getStartDate(), tournament.getEndDate(), tournament.getTeamNumber());
 
-        List<Round> roundList = roundRepository.findByTournamentIdAndStatus(id, RoundStatus.PENDING);
+//        List<Round> roundList = roundRepository.findByTournamentIdAndStatus(id, RoundStatus.PENDING);
+//
+//        if (roundList.isEmpty()) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start fails, cannot start tournament without rounds.");
+//        }
 
-        if (roundList.isEmpty()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start fails, cannot start tournament without rounds.");
-        }
-
-        List<Team> teamList = teamRepository.getTeamByTournamentId(id);
-        if (teamList.size() != tournament.getTeamNumber()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start fails, cannot start tournament without enough teams.");
-        }
+//        List<Team> teamList = teamRepository.getTeamByTournamentId(id);
+//        if (teamList.size() != tournament.getTeamNumber()) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start fails, cannot start tournament without enough teams.");
+//        }
 
         tournament.setStatus(TournamentStatus.ACTIVE);
         tournamentRepository.save(tournament);
@@ -352,25 +354,51 @@ public class TournamentServiceImpl implements TournamentService {
         //Nếu là active thì chỉ có thể thành pending, hoặc finish
         if (tournament.getStatus() == TournamentStatus.ACTIVE) {
             if (status == TournamentStatus.PENDING) {
-                List<Round> roundList = roundRepository.findByTournamentIdAndStatus(id, RoundStatus.ACTIVE);
+                List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(id);
 
                 for (Round round : roundList) {
-                    List<Match> mathList = matchRepository.findByRoundId(round.getId()).stream()
-                            .filter(match -> match.getTimeStart().before(new Date())).toList();
-                    if (!mathList.isEmpty()) {
-                        throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot change status to PENDING while there are active matches.");
+                    //Kiểm tra xem có round nào đã hoàn thành không
+                    if (round.getStatus() == RoundStatus.COMPLETED) {
+                        throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot change status to PENDING while there are completed rounds.");
+                    }
+
+                    //Kiểm tra xem có match nào đã khởi động không
+                    if (round.getStatus() == RoundStatus.ACTIVE) {
+                        List<Match> mathList = matchRepository.findByRoundId(round.getId()).stream()
+                                .filter(match -> match.getTimeStart().before(new Date())).toList();
+                        if (!mathList.isEmpty()) {
+                            throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot change status to PENDING while there are active matches.");
+                        }
                     }
                 }
                 tournament.setStatus(TournamentStatus.PENDING);
             }
 
             if (status == TournamentStatus.TERMINATED) {
-                //Kiểm tra xem có match nào đã khởi động không
-                changeToTerminated(id);
+                //Terminate các round, match chưa hoàn thành
+                terminateTournament(id);
                 tournament.setStatus(TournamentStatus.TERMINATED);
-
             }
             tournamentRepository.save(tournament);
+        }
+
+    }
+
+    private void terminateTournament(Long id) {
+
+        List<Round> roundList = roundRepository.findValidRoundByTournamentId(id);
+
+        for (Round round : roundList) {
+            round.setStatus(RoundStatus.TERMINATED);
+
+            List<Match> matchList = matchRepository.findByRoundId(round.getId());
+            for (Match match : matchList) {
+                if (match.getStatus() != MatchStatus.FINISHED) {
+                    match.setStatus(MatchStatus.CANCELLED);
+                    matchRepository.save(match);
+                }
+            }
+            roundRepository.save(round);
         }
 
     }

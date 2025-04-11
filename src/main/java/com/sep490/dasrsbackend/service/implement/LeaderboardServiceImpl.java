@@ -3,6 +3,7 @@ package com.sep490.dasrsbackend.service.implement;
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
+import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
@@ -28,6 +29,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     private final TeamRepository teamRepository;
     private final MatchRepository matchRepository;
     private final MatchTeamRepository matchTeamRepository;
+    private final TournamentRepository tournamentRepository;
 
     @Override
     public void updateLeaderboard(Long roundId) {
@@ -57,6 +59,10 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
         if (round.getStatus() == RoundStatus.TERMINATED) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round is terminated");
+        }
+
+        if (round.getStatus() == RoundStatus.PENDING) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round is pending, please wait for the round to active or completed");
         }
 
         Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
@@ -125,9 +131,23 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     @Override
     public ListLeaderboardResponse getLeaderboardByTournamentId(Long tournamentId, int pageNo, int pageSize, String sortBy, String sortDir) {
 
+
+        Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow(
+                () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, tournament not found")
+        );
+
+        if (tournament.getStatus() == TournamentStatus.PENDING) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, tournament is pending, please wait for the tournament to active or completed");
+        }
+
+        if (tournament.getStatus() == TournamentStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, tournament is terminated");
+        }
+
         List<LeaderboardResponse> leaderboardResponseList = new ArrayList<>();
 
         List<Round> rounds = roundRepository.findByTournamentId(tournamentId);
+
 
         for (Round round : rounds) {
             List<Leaderboard> leaderboardPage = leaderboardRepository.findByRoundId(round.getId());
