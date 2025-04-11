@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.dto.ParticipantDTO;
-import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
@@ -21,9 +20,7 @@ public interface TournamentService {
 
     TournamentResponse getTournament(Long id);
 
-    void startTournament(Long id);
-
-    void changeStatus(Long id, TournamentStatus status);
+    void terminateTournament(Long id);
 
     void editTournamentSchedule(Long id, int day);
 

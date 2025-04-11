@@ -55,6 +55,6 @@ public class Tournament {
     private List<Round> roundList;
 
     @OneToMany(mappedBy = "tournament")
-    private List<Team> teamList;
+    private List<TournamentTeam> tournamentTeamList;
 
 }

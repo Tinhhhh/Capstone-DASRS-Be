@@ -2,9 +2,7 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.dto.ParticipantDTO;
-import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
-import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
@@ -50,15 +48,10 @@ public class TournamentController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Tournament retrieved successfully", tournamentService.getTournament(tournamentId));
     }
 
-    @PutMapping("/active/{tournamentId}")
-    public ResponseEntity<Object> startATournament(@PathVariable Long tournamentId) {
-        tournamentService.startTournament(tournamentId);
-        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament started successfully");
-    }
-
-    @PutMapping("/status/{tournamentId}")
-    public ResponseEntity<Object> changeTournamentStatus(@PathVariable Long tournamentId, @RequestParam TournamentStatus status) {
-        tournamentService.changeStatus(tournamentId, status);
+    @Operation(summary = "Terminate a tournament, this api will force delete tournament if needed", description = "Terminate a tournament by its ID.")
+    @PutMapping("/terminate/{tournamentId}")
+    public ResponseEntity<Object> changeTournamentStatus(@PathVariable Long tournamentId) {
+        tournamentService.terminateTournament(tournamentId);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament status updated successfully");
     }
 

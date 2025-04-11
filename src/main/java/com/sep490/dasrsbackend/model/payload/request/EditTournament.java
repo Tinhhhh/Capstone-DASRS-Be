@@ -21,6 +21,7 @@ public class EditTournament {
     private String tournamentName;
 
     @JsonProperty("tournament_context")
+    @NotBlank(message = "Tournament context is required")
     @Size(max = 5000, message = "Tournament name no more than 5000 characters")
     @Pattern(regexp = "^[a-zA-ZÀ-ỹ0-9\\s-_!,.:\"']+$", message = "Tournament context contains invalid characters")
     private String tournamentContext;

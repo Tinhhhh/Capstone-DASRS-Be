@@ -4,7 +4,6 @@ import lombok.Getter;
 
 @Getter
 public enum RoundStatus {
-    PENDING("PENDING"),
     ACTIVE("ACTIVE"),
     TERMINATED("TERMINATED"),
     COMPLETED("COMPLETED");

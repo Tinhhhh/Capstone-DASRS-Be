@@ -61,9 +61,9 @@ public class LeaderboardServiceImpl implements LeaderboardService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round is terminated");
         }
 
-        if (round.getStatus() == RoundStatus.PENDING) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round is pending, please wait for the round to active or completed");
-        }
+//        if (round.getStatus() == RoundStatus.PENDING) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round is pending, please wait for the round to active or completed");
+//        }
 
         Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
         Page<Leaderboard> leaderboards = leaderboardRepository.findByRoundId(round.getId(), pageable);
@@ -136,9 +136,9 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, tournament not found")
         );
 
-        if (tournament.getStatus() == TournamentStatus.PENDING) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, tournament is pending, please wait for the tournament to active or completed");
-        }
+//        if (tournament.getStatus() == TournamentStatus.PENDING) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, tournament is pending, please wait for the tournament to active or completed");
+//        }
 
         if (tournament.getStatus() == TournamentStatus.TERMINATED) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, tournament is terminated");

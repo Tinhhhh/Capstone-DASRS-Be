@@ -1,22 +1,18 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
-import java.security.Principal;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -25,7 +21,7 @@ import java.util.*;
 @Entity
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "account", indexes = {
-    @Index(name = "idx_email", columnList = "email"),
+        @Index(name = "idx_email", columnList = "email"),
 })
 public class Account {
 
@@ -94,7 +90,7 @@ public class Account {
     private Role role;
 
     @ManyToOne
-    @JoinColumn(name = "team_id", nullable = true)
+    @JoinColumn(name = "team_id")
     private Team team;
 
     @JsonIgnore
