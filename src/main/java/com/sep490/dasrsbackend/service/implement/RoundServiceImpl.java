@@ -129,7 +129,8 @@ public class RoundServiceImpl implements RoundService {
 
     private void newRoundValidation(NewRound newRound, Tournament tournament) {
 
-        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId()).stream()
+                .sorted(Comparator.comparingInt(Round::getTeamLimit).reversed()).toList();
 
         //Kiểm tra xem đã tạo round cuối cùng chưa
         for (Round round : rounds) {
@@ -433,7 +434,8 @@ public class RoundServiceImpl implements RoundService {
     private void editRoundValidation(EditRound editRound, Tournament tournament) {
 
         //Find round dđể update thì chỉ tìm round status = pending và active
-        List<Round> rounds = roundRepository.findValidRoundByTournamentId(tournament.getId());
+        List<Round> rounds = roundRepository.findValidRoundByTournamentId(tournament.getId()).stream()
+                .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
 
         //Nếu round đang tạo là round cuối cùng thì team limit phải bằng 0
         if (editRound.isLast() && editRound.getTeamLimit() != 0) {
@@ -919,8 +921,10 @@ public class RoundServiceImpl implements RoundService {
         Page<Round> roundPage = roundRepository.findAll(spec, pageable);
         List<RoundResponse> roundResponses = new ArrayList<>();
         roundPage.getContent().forEach(round -> {
-            RoundResponse roundResponse = findRoundByRoundId(round.getId());
-            roundResponses.add(roundResponse);
+            if (round.getTournament().getStatus() == TournamentStatus.ACTIVE) {
+                RoundResponse roundResponse = findRoundByRoundId(round.getId());
+                roundResponses.add(roundResponse);
+            }
         });
 
         ListRoundResponse listRoundResponses = new ListRoundResponse();

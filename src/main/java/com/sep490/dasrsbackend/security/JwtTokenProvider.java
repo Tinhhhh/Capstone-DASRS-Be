@@ -86,6 +86,9 @@ public class JwtTokenProvider {
         header.put("alg", "HS256");
         header.put("typ", "JWT");
 
+        String teamId = account.getTeam() != null ? account.getTeam().getId().toString() : null;
+        boolean isLeader = account.isLeader();
+
         String token = Jwts.builder()
                 .setHeader(header)
                 .setSubject(username)
@@ -93,8 +96,8 @@ public class JwtTokenProvider {
                 .setExpiration(expirationDate)
                 .claim("id", account.getAccountId().toString())
                 .claim("role", authentication.getAuthorities().toArray()[0].toString())
-                .claim("isLeader", account.isLeader())
-                .claim("teamId", account.getTeam().getId())
+                .claim("isLeader", isLeader)
+                .claim("teamId", teamId)
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
         return token;
