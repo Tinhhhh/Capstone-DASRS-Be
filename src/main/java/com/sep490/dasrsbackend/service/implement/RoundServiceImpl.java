@@ -93,7 +93,7 @@ public class RoundServiceImpl implements RoundService {
                 .roundName(newRound.getRoundName())
                 .teamLimit(newRound.getTeamLimit())
                 .description(newRound.getDescription())
-                .status(RoundStatus.PENDING)
+                .status(RoundStatus.ACTIVE)
                 .isLast(newRound.isLast())
                 .isLatest(true)
                 .startDate(newRound.getStartDate())
@@ -382,9 +382,9 @@ public class RoundServiceImpl implements RoundService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament is not available, can't create round");
         }
 
-        if (round.getStatus() != RoundStatus.PENDING) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, can only update a pending round");
-        }
+//        if (round.getStatus() != RoundStatus.PENDING) {
+//            throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, can only update a pending round");
+//        }
 
         if (!round.isLatest()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, can only update the latest round");
@@ -523,9 +523,9 @@ public class RoundServiceImpl implements RoundService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, this round has been terminated");
         }
 
-        if (round.getStatus() == RoundStatus.PENDING || round.getStatus() == RoundStatus.ACTIVE) {
-            terminatedAllMatch(id);
-        }
+//        if (round.getStatus() == RoundStatus.PENDING || round.getStatus() == RoundStatus.ACTIVE) {
+//            terminatedAllMatch(id);
+//        }
         round.setStatus(status);
         round.setLatest(false);
         roundRepository.save(round);
@@ -545,7 +545,8 @@ public class RoundServiceImpl implements RoundService {
 
         //Tạo biến đại diện cho số đội sẽ tham gia round
         //Truường hợp round đang tạo là round đầu tiên
-        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.getId(), TeamStatus.ACTIVE);
+//        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.getId(), TeamStatus.ACTIVE);
+        List<Team> teams = null;
         int teamRemains = teams.size();
 
         List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId()).stream()
@@ -685,7 +686,8 @@ public class RoundServiceImpl implements RoundService {
     }
 
     private void isPlayersPerTeamValid(Long id, int playersPerTeam) {
-        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(id, TeamStatus.ACTIVE);
+//        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(id, TeamStatus.ACTIVE);
+        List<Team> teams = null;
         List<Team> invalidTeams = new ArrayList<>();
         for (Team team : teams) {
             List<Account> accounts = accountRepository.findByTeamIdAndIsLocked(team.getId(), false);
@@ -823,15 +825,15 @@ public class RoundServiceImpl implements RoundService {
 
             List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
 
-            for (Round round : rounds) {
-                if ((round.getStatus() == RoundStatus.PENDING || round.getStatus() == RoundStatus.ACTIVE) && round.getId() != roundEnd.get().getId()) {
-                    List<Match> matches = matchRepository.findByRoundId(round.getId());
-                    if (matches.isEmpty()) {
-                        generateMatch(round, tournament);
-                    }
-                    return;
-                }
-            }
+//            for (Round round : rounds) {
+//                if ((round.getStatus() == RoundStatus.PENDING || round.getStatus() == RoundStatus.ACTIVE) && round.getId() != roundEnd.get().getId()) {
+//                    List<Match> matches = matchRepository.findByRoundId(round.getId());
+//                    if (matches.isEmpty()) {
+//                        generateMatch(round, tournament);
+//                    }
+//                    return;
+//                }
+//            }
 
         }
 
@@ -852,16 +854,16 @@ public class RoundServiceImpl implements RoundService {
         Date date = calendar.getTime();
 
         //Kiểm tra xem có vòng sẽ bắt đầu ko
-        Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.PENDING, date);
-        if (round.isPresent()) {
-            logger.info("Found a round that reach start date");
-            Tournament tournament = round.get().getTournament();
-            if (tournament.getStatus() == TournamentStatus.ACTIVE) {
-                round.get().setStatus(RoundStatus.ACTIVE);
-                roundRepository.save(round.get());
-                logger.info("Change round status to active. Round id: {}", round.get().getId());
-            }
-        }
+//        Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.PENDING, date);
+//        if (round.isPresent()) {
+//            logger.info("Found a round that reach start date");
+//            Tournament tournament = round.get().getTournament();
+//            if (tournament.getStatus() == TournamentStatus.ACTIVE) {
+//                round.get().setStatus(RoundStatus.ACTIVE);
+//                roundRepository.save(round.get());
+//                logger.info("Change round status to active. Round id: {}", round.get().getId());
+//            }
+//        }
 
         logger.info("Detecting round start task is completed");
     }
@@ -915,7 +917,7 @@ public class RoundServiceImpl implements RoundService {
         Specification<Round> spec = Specification
                 .where(RoundSpecification.hasKeyword(keyword))
                 .and(RoundSpecification.betweenStartAndEndDate(start, end)
-                        .and(RoundSpecification.hasStatus(RoundStatus.ACTIVE).or(RoundSpecification.hasStatus(RoundStatus.PENDING)))
+                        .and(RoundSpecification.hasStatus(RoundStatus.ACTIVE))
                 );
 
         Page<Round> roundPage = roundRepository.findAll(spec, pageable);
@@ -940,8 +942,8 @@ public class RoundServiceImpl implements RoundService {
 
     public void generateLeaderboard(Round round) {
 
-        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(round.getTournament().getId(), TeamStatus.ACTIVE);
-
+//        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(round.getTournament().getId(), TeamStatus.ACTIVE);
+        List<Team> teams = null;
         List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(round.getTournament().getId()).stream()
                 .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
         //Trường hợp round đang tạo là round đầu tiên

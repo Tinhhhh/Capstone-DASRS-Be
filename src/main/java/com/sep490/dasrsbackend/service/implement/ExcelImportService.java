@@ -171,7 +171,7 @@ public class ExcelImportService {
             team.setTeamTag(teamTag);
             team.setStatus(TeamStatus.ACTIVE);
             team.setDisqualified(false);
-            team.setTournament(tournament);
+//            team.setTournament(tournament);
 
             team = teamRepository.save(team);
 

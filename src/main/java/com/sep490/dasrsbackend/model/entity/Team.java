@@ -10,8 +10,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.util.Date;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -42,9 +41,8 @@ public class Team {
     @Column(name = "created_date", nullable = false, updatable = false)
     private Date createdDate;
 
-    @ManyToOne
-    @JoinColumn(name = "tournament_id", nullable = false)
-    private Tournament tournament;
+    @OneToMany(mappedBy = "team")
+    private List<TournamentTeam> tournamentTeamList;
 
     @OneToMany(mappedBy = "team")
     private List<Account> accountList;
