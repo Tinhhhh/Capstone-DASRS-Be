@@ -26,5 +26,5 @@ public class ParticipantDTO {
 
     private String gender;
 
-    private LocalDate dob;
+    private String dob;
 }

@@ -1,6 +1,5 @@
 package com.sep490.dasrsbackend.model.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -34,5 +33,9 @@ public class TournamentTeam {
     @ManyToOne
     @JoinColumn(name = "tournament_id")
     Tournament tournament;
+
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    Account account;
 
 }
