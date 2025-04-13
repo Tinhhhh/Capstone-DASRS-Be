@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.model.entity;
 
+import com.sep490.dasrsbackend.model.enums.FinishType;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,6 +28,16 @@ public class Round {
 
     @Column(name = "round_name")
     private String roundName;
+
+    @Column(name = "round_duration")
+    private int roundDuration;
+
+    @Column(name = "lap_number")
+    private int lapNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "finish_type")
+    private FinishType finishType;
 
     @Column(name = "team_limit")
     private int teamLimit;
@@ -81,7 +92,7 @@ public class Round {
     private MatchType matchType;
 
     @ManyToOne
-    @JoinColumn(name = "resource_id", nullable = true)
+    @JoinColumn(name = "resource_id")
     private Resource resource;
 
 }

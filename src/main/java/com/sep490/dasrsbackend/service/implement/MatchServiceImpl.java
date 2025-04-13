@@ -327,7 +327,7 @@ public class MatchServiceImpl implements MatchService {
 
         if (match2 == null) {
             match.setTimeStart(changeMatchSlot.getStartDate());
-            match.setTimeEnd(DateUtil.convertToDate(DateUtil.convertToLocalDateTime(changeMatchSlot.getStartDate()).plusMinutes((long) matchType.getMatchDuration())));
+            match.setTimeEnd(DateUtil.convertToDate(DateUtil.convertToLocalDateTime(changeMatchSlot.getStartDate()).plusMinutes(round.getRoundDuration())));
             matchRepository.save(match);
         }
 //        Case 2: Trùng thì swap giờ với match đó

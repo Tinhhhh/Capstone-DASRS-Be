@@ -56,8 +56,8 @@ public class TournamentServiceImpl implements TournamentService {
         }
 
         //Đưa start date về 0h, end date về 23h59
-        Date begin = DateUtil.convertToDate(DateUtil.convertToLocalDateTime(newTournament.getStartDate()).withHour(0).withMinute(0).withSecond(0));
-        Date end = DateUtil.convertToDate(DateUtil.convertToLocalDateTime(newTournament.getEndDate()).withHour(23).withMinute(59).withSecond(59));
+        Date begin = DateUtil.convertToStartOfTheDay(newTournament.getStartDate());
+        Date end = DateUtil.convertToEndOfTheDay(newTournament.getEndDate());
 
         tournamentValidation(begin, end, newTournament.getTeamNumber());
 
@@ -101,12 +101,12 @@ public class TournamentServiceImpl implements TournamentService {
         Calendar calendar = Calendar.getInstance();
 
         if (begin.after(end)) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "End date must be after start date.");
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "start date must be after end date.");
         }
 
         // Tournament bắt đầu sau ít nhất sau ngày hôm nay
-        if (begin.before(calendar.getTime())) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start date must be after today.");
+        if (begin.before(calendar.getTime()) || end.before(calendar.getTime())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Start date and end date must be after today: " + DateUtil.formatTimestamp(calendar.getTime()));
         }
 
         // Kiểm tra begin phải cách hiện tại ít không quá 12 tuần
@@ -144,6 +144,8 @@ public class TournamentServiceImpl implements TournamentService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, tournament has been completed or terminated.");
         }
 
+        editTournament.setStartDate(DateUtil.convertToStartOfTheDay(editTournament.getStartDate()));
+        editTournament.setEndDate(DateUtil.convertToEndOfTheDay(editTournament.getEndDate()));
         tournamentValidation(editTournament.getStartDate(), editTournament.getEndDate(), editTournament.getTeamNumber());
         roundCheck(tournament);
 
@@ -269,7 +271,7 @@ public class TournamentServiceImpl implements TournamentService {
             roundResponse.setStartDate(DateUtil.formatTimestamp(round.getStartDate()));
             roundResponse.setEndDate(DateUtil.formatTimestamp(round.getEndDate()));
             roundResponse.setCreateDate(DateUtil.formatTimestamp(round.getCreatedDate()));
-            roundResponse.setFinishType(round.getMatchType().getFinishType());
+            roundResponse.setFinishType(round.getFinishType());
             roundResponse.setMatchTypeName(round.getMatchType().getMatchTypeName());
             roundResponse.setTournamentId(round.getTournament().getId());
             roundResponse.setScoredMethodId(round.getScoredMethod().getId());
@@ -322,17 +324,17 @@ public class TournamentServiceImpl implements TournamentService {
 
         tournament.setStatus(TournamentStatus.TERMINATED);
 
-        //Nếu có 1 round đã khởi động thì ép huỷ tournament
+        //Nếu có 1 round đã khởi động thì
         if (isMatchStarted(id)) {
             //Terminate các round, match chưa hoàn thành
-            forceTerminateTournament(id);
+            terminateRoundByTournamentId(id);
         }
         tournament.setStatus(TournamentStatus.TERMINATED);
         tournamentRepository.save(tournament);
 
     }
 
-    private boolean isMatchStarted(Long id) {
+    public boolean isMatchStarted(Long id) {
         List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(id);
         for (Round round : roundList) {
             //Kiểm tra xem có match nào đã khởi động không
@@ -346,7 +348,7 @@ public class TournamentServiceImpl implements TournamentService {
         return false;
     }
 
-    private void forceTerminateTournament(Long id) {
+    public void terminateRoundByTournamentId(Long id) {
 
         List<Round> roundList = roundRepository.findValidRoundByTournamentId(id);
 
@@ -355,8 +357,8 @@ public class TournamentServiceImpl implements TournamentService {
 
             List<Match> matchList = matchRepository.findByRoundId(round.getId());
             for (Match match : matchList) {
-                if (match.getStatus() != MatchStatus.FINISHED) {
-                    match.setStatus(MatchStatus.CANCELLED);
+                if (match.getStatus() == MatchStatus.PENDING) {
+                    match.setStatus(MatchStatus.TERMINATED);
                     matchRepository.save(match);
                 }
             }
@@ -368,6 +370,8 @@ public class TournamentServiceImpl implements TournamentService {
     @Override
     public void extendTournamentEndDate(Long id, LocalDateTime day) {
 
+        day = DateUtil.convertToLocalDateTime(DateUtil.convertToEndOfTheDay(DateUtil.convertToDate(day)));
+
         Tournament tournament = tournamentRepository.findById(id)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Tournament not found."));
 
@@ -378,44 +382,15 @@ public class TournamentServiceImpl implements TournamentService {
         LocalDateTime oldEndDate = DateUtil.convertToLocalDateTime(tournament.getEndDate());
 
         if (day.isBefore(oldEndDate)) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Tournament endDate cannot change to before current end date.");
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Tournament endDate cannot change to before current end date: " + DateUtil.formatTimestamp(tournament.getEndDate()));
         }
 
-        if (!day.isAfter(oldEndDate.plusDays(14))) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Tournament endDate cannot change > 14 days at once.");
+        if (day.isAfter(oldEndDate.plusDays(14))) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Tournament extend endDate cannot change > 14 days at once.");
         }
 
         tournament.setEndDate(DateUtil.convertToDate(day));
         tournamentRepository.save(tournament);
-    }
-
-    private void changeToTerminated(Long id) {
-        List<Round> roundList = roundRepository.findByTournamentIdAndStatus(id, RoundStatus.ACTIVE);
-
-        for (Round round : roundList) {
-            List<Match> mathList = matchRepository.findByRoundId(round.getId()).stream()
-                    .filter(match -> match.getTimeStart().before(new Date())).toList();
-            if (!mathList.isEmpty()) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot change status to TERMINATED while there are active matches.");
-            }
-        }
-
-        //Đổi status của round, match thành terminated, huỷ bỏ
-        roundList = roundRepository.findByTournamentId(id);
-
-        for (Round round : roundList) {
-            round.setStatus(RoundStatus.TERMINATED);
-            roundRepository.save(round);
-        }
-
-        for (Round round : roundList) {
-            List<Match> matchList = matchRepository.findByRoundId(round.getId());
-            for (Match match : matchList) {
-                match.setStatus(MatchStatus.CANCELLED);
-                matchRepository.save(match);
-            }
-
-        }
     }
 
     @Scheduled(cron = "1 0 0 * * ?")
@@ -462,12 +437,14 @@ public class TournamentServiceImpl implements TournamentService {
 
             } else {
                 logger.error("There is no last round completed in tournament but tournament end date is reached. Tournament Id: {}", tournament.get().getId());
+                terminateRoundByTournamentId(tournament.get().getId());
             }
         }
 
         logger.info("Detecting end tournament task is completed.");
     }
 
+    @Override
     public List<TeamTournamentDetails> getTeamsByTournamentId(Long tournamentId) {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Tournament not found"));

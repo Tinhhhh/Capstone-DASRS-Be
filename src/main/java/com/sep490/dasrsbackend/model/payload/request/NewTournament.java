@@ -30,11 +30,9 @@ public class NewTournament {
     @JsonProperty("team_number")
     private int teamNumber;
 
-    @Future(message = "Start date must be in the future")
     @JsonProperty("start_date")
     private Date startDate;
 
-    @Future(message = "End date must be in the future")
     @JsonProperty("end_date")
     private Date endDate;
 

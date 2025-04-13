@@ -5,7 +5,8 @@ import lombok.Getter;
 @Getter
 public enum MatchTeamStatus {
     ASSIGNED("ASSIGNED"),
-    UNASSIGNED("UNASSIGNED");
+    UNASSIGNED("UNASSIGNED"),
+    TERMINATED("TERMINATED");
 
     private final String status;
 

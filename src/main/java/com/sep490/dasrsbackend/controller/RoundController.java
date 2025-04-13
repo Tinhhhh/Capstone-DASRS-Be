@@ -2,7 +2,6 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.enums.RoundSort;
-import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
@@ -37,7 +36,7 @@ public class RoundController {
     @PutMapping
     public ResponseEntity<Object> editRound(@RequestBody @Valid EditRound request) {
         roundService.editRound(request);
-        return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "Round edited successfully");
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Round edited successfully");
     }
 
     @GetMapping("/{roundId}")
@@ -62,10 +61,11 @@ public class RoundController {
                 roundService.findAllRounds(pageNo, pageSize, sortBy, keyword));
     }
 
-    @PutMapping("/status/{roundId}")
-    public ResponseEntity<Object> changeRoundStatus(@PathVariable Long roundId, @RequestParam(name = "status") RoundStatus status) {
-        roundService.changeRoundStatus(roundId, status);
-        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Round status changed successfully");
+    @Operation(summary = "Terminate round", description = "Terminate the round with the specified ID and update its status.")
+    @PutMapping("/terminate/{roundId}")
+    public ResponseEntity<Object> terminateRound(@PathVariable Long roundId) {
+        roundService.terminateRound(roundId);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Round terminated successfully");
     }
 
     @Operation(summary = "Get rounds by account ID", description = "Retrieve rounds for the specified account with pagination, sorting, and optional search by round name or tournament name")
@@ -95,6 +95,13 @@ public class RoundController {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved data",
                 roundService.findAllRoundsByDate(pageNo, pageSize, sortBy, keyword, startDate, endDate));
+    }
+
+    @Operation(summary = "This API is a test case when new team join in tournament", description = "A team join in a tournament, and the team will be injected to the round of tournament")
+    @PutMapping("/join/{tournamentId}/{teamId}")
+    public ResponseEntity<Object> injectTeamToRound(@PathVariable Long tournamentId, @PathVariable Long teamId) {
+        roundService.injectTeamToTournament(tournamentId, teamId);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Team injected successfully");
     }
 
 }

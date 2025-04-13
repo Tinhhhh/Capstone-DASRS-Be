@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.model.payload.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sep490.dasrsbackend.model.enums.FinishType;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -21,6 +22,20 @@ public class EditRound {
     @Size(max = 200, message = "Tournament name no more than 200 characters")
     @Pattern(regexp = "^[a-zA-ZÀ-ỹ0-9\\s-_!,.]+$", message = "Tournament context contains invalid characters")
     private String roundName;
+
+    @JsonProperty("round_duration")
+    @Min(value = 0, message = "Round duration must be equal or greater than 0")
+    @Max(value = 300, message = "Round duration must be less than 300")
+    private int roundDuration;
+
+    @JsonProperty("lap_number")
+    @Min(value = 0, message = "Lap number must be equal or greater than 0")
+    @Max(value = 3, message = "Lap number must be less than 3")
+    private int lapNumber;
+
+    @JsonProperty("finish_type")
+    @NotNull(message = "Finish type is required")
+    private FinishType finishType;
 
     @JsonProperty("team_limit")
     @Min(value = 0, message = "Team limit must be equal or greater than 0")
