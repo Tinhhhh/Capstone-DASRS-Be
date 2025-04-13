@@ -283,6 +283,7 @@ public class TeamServiceImpl implements TeamService {
                 .tag(team.getTeamTag())
                 .disqualified(team.isDisqualified())
                 .status(team.getStatus())
+                .memberCount(team.getAccountList() != null ? team.getAccountList().size() : 0)
                 .build();
     }
     @Override
