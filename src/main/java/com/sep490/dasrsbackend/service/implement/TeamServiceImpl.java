@@ -128,12 +128,12 @@ public class TeamServiceImpl implements TeamService {
 
         return team.getAccountList().stream()
                 .map(member -> TeamMemberResponse.builder()
-                        .id(member.getAccountId()) // UUID field
-                        .fullName(member.fullName()) // Combines firstName + lastName
+                        .id(member.getAccountId())
+                        .fullName(member.fullName())
+                        .isLeader(member.isLeader())
                         .build())
                 .collect(Collectors.toList());
     }
-
 
     @Override
     public void transferLeadership(Long teamId, UUID newLeaderId) {
