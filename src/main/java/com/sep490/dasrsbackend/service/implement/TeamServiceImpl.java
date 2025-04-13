@@ -360,17 +360,24 @@ public class TeamServiceImpl implements TeamService {
         Account player = accountRepository.findById(playerId)
                 .orElseThrow(() -> new PlayerNotFoundException("Player not found"));
 
-        if (player.getTeam() == null || !player.getTeam().getId().equals(teamId)) {
+        Team team = player.getTeam();
+
+        if (team == null || !team.getId().equals(teamId)) {
             throw new InvalidOperationException("Player is not part of the specified team");
         }
 
-        if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(player.getTeam()).isEmpty()) {
+        if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(team).isEmpty()) {
             throw new InvalidOperationException("Cannot leave a team currently in a tournament");
+        }
+
+        if (player.isLeader() && team.getAccountList().size() > 1) {
+            throw new InvalidOperationException("Leader cannot leave a team with more than one other member");
         }
 
         player.setTeam(null);
         accountRepository.save(player);
     }
+
 
     @Override
     public void deleteTeam(Long teamId, UUID leaderId) {
