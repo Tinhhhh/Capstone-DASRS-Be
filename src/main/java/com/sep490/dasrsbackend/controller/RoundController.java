@@ -33,6 +33,7 @@ public class RoundController {
         return ResponseBuilder.responseBuilder(HttpStatus.CREATED, "New round created successfully");
     }
 
+    @Operation(summary = "Edit round, can be edit if the round is latest", description = "Edit the round with the specified ID and update its details.")
     @PutMapping
     public ResponseEntity<Object> editRound(@RequestBody @Valid EditRound request) {
         roundService.editRound(request);

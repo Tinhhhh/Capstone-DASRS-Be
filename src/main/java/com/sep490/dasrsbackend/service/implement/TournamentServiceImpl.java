@@ -12,6 +12,7 @@ import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
+import com.sep490.dasrsbackend.service.RoundUtilityService;
 import com.sep490.dasrsbackend.service.TournamentService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -26,6 +27,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -46,6 +48,7 @@ public class TournamentServiceImpl implements TournamentService {
     private final AccountRepository accountRepository;
     private final AccountCarRepository accountCarRepository;
     private final TournamentTeamRepository tournamentTeamRepository;
+    private final RoundUtilityService roundUtilityService;
 
 
     @Override
@@ -134,6 +137,7 @@ public class TournamentServiceImpl implements TournamentService {
         }
     }
 
+    @Transactional
     @Override
     public void editTournament(Long tournamentId, EditTournament editTournament) {
 
@@ -144,30 +148,49 @@ public class TournamentServiceImpl implements TournamentService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, tournament has been completed or terminated.");
         }
 
+        if (roundUtilityService.isMatchStarted(tournamentId)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, tournament has started.");
+        }
+
         editTournament.setStartDate(DateUtil.convertToStartOfTheDay(editTournament.getStartDate()));
         editTournament.setEndDate(DateUtil.convertToEndOfTheDay(editTournament.getEndDate()));
         tournamentValidation(editTournament.getStartDate(), editTournament.getEndDate(), editTournament.getTeamNumber());
+        int currentTeamNumber = tournament.getTeamNumber();
+        int newTeamNumber = editTournament.getTeamNumber();
+        modelMapper.map(editTournament, tournament);
         roundCheck(tournament);
-
-        if (isMatchStarted(tournamentId)) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, started tournament cannot be edit.");
-        }
 
         List<Team> teams = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
                 .map(TournamentTeam::getTeam)
                 .distinct()
                 .toList();
 
-        if (editTournament.getTeamNumber() < teams.size()) {
+        if (newTeamNumber < teams.size()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, team number must be greater than current team number.");
         }
 
-        modelMapper.map(editTournament, tournament);
         tournamentRepository.save(tournament);
+
+        if (newTeamNumber != currentTeamNumber) {
+            List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournamentId).stream()
+                    .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
+            Round round = rounds.get(0);
+
+            if (round.getTeamLimit() >= newTeamNumber) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, team number must be greater than current team number.");
+            }
+
+            //regenerate matches
+            roundUtilityService.terminateMatchesToRegenerate(round.getId());
+            roundUtilityService.generateMatch(round, tournament);
+
+        }
+
+
     }
 
     private void roundCheck(Tournament tournament) {
-        List<Round> roundList = roundRepository.findByTournamentIdAndStatus(tournament.getId(), RoundStatus.ACTIVE).stream()
+        List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(tournament.getId()).stream()
                 .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
 
         if (!roundList.isEmpty()) {
@@ -325,7 +348,7 @@ public class TournamentServiceImpl implements TournamentService {
         tournament.setStatus(TournamentStatus.TERMINATED);
 
         //Nếu có 1 round đã khởi động thì
-        if (isMatchStarted(id)) {
+        if (roundUtilityService.isMatchStarted(id)) {
             //Terminate các round, match chưa hoàn thành
             terminateRoundByTournamentId(id);
         }
@@ -334,19 +357,6 @@ public class TournamentServiceImpl implements TournamentService {
 
     }
 
-    public boolean isMatchStarted(Long id) {
-        List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(id);
-        for (Round round : roundList) {
-            //Kiểm tra xem có match nào đã khởi động không
-            //Kiểm tra getTimeStart before new Date() => match đã khởi động
-            List<Match> mathList = matchRepository.findByRoundId(round.getId()).stream()
-                    .filter(match -> match.getTimeStart().before(new Date())).toList();
-            if (!mathList.isEmpty()) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public void terminateRoundByTournamentId(Long id) {
 

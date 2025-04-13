@@ -51,11 +51,9 @@ public class EditRound {
     @Pattern(regexp = "^[a-zA-ZÀ-ỹ0-9\\s-_!,.]+$", message = "Tournament context contains invalid characters")
     private String description;
 
-    @Future(message = "Start date must be in the future")
     @JsonProperty("start_date")
     private Date startDate;
 
-    @Future(message = "End date must be in the future")
     @JsonProperty("end_date")
     private Date endDate;
 
