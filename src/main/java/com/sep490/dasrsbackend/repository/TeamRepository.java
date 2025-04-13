@@ -16,4 +16,6 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 //    List<Team> getTeamByTournamentId(Long id);
 
     List<Team> findByStatus(TeamStatus teamStatus);
+
+    boolean existsByTeamTag(String teamTag);
 }

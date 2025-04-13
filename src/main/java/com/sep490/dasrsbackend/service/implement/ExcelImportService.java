@@ -60,7 +60,7 @@ public class ExcelImportService {
                 }
 
                 try {
-                    AccountDTO accountDTO = parseRowToAccountDTO(row, teamLeaderMap);
+                    AccountDTO accountDTO = parseRowToAccountDTO(row);
                     if (accountDTO == null) {
                         continue;
                     }
@@ -102,7 +102,7 @@ public class ExcelImportService {
     }
 
 
-    private AccountDTO parseRowToAccountDTO(Row row, Map<Long, Boolean> teamLeaderMap) {
+    private AccountDTO parseRowToAccountDTO(Row row) {
         AccountDTO accountDTO = new AccountDTO();
 
         try {
@@ -117,26 +117,8 @@ public class ExcelImportService {
             accountDTO.setGender(validateGender(getCellValueAsString(row.getCell(4))));
             accountDTO.setDob(validateDate(row.getCell(5)));
             accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6))));
-
             accountDTO.setStudentIdentifier(validateNonEmpty(getCellValueAsString(row.getCell(7)), "Student Identifier"));
             accountDTO.setSchool(validateNonEmpty(getCellValueAsString(row.getCell(8)), "School"));
-
-            Tournament tournament = tournamentRepository.findByStatus(TournamentStatus.ACTIVE)
-                    .orElseThrow(() -> new IllegalArgumentException("No active tournament found. Please activate a tournament."));
-
-            String teamName = getCellValueAsString(row.getCell(10));
-            String teamTag = getCellValueAsString(row.getCell(11));
-            Team team = validateOrCreateTeam(teamName, teamTag, tournament);
-
-            if (team == null || team.getId() == null) {
-                throw new IllegalArgumentException("Team could not be created or found.");
-            }
-
-            accountDTO.setTeamId(team);
-
-            boolean isLeader = getCellValueAsBoolean(row.getCell(9));
-            validateTeamSizeAndLeader(team, isLeader, teamLeaderMap);
-            accountDTO.setLeader(isLeader);
 
             String plainPassword = generateRandomPassword(8);
             accountDTO.setPassword(plainPassword);
@@ -151,7 +133,6 @@ public class ExcelImportService {
 
         return accountDTO;
     }
-
 
     private void validateTeamLeader(Team team, boolean isLeader, Map<Long, Boolean> teamLeaderMap) {
         if (isLeader) {

@@ -13,10 +13,13 @@ import java.util.UUID;
 public class TeamMemberResponse {
 
     @JsonProperty("id")
-    private UUID id; // Account ID
+    private UUID id;
 
     @JsonProperty("full_name")
-    private String fullName; // Full name of the member
+    private String fullName;
+
+    @JsonProperty("is_leader")
+    private boolean isLeader;
 }
 
 

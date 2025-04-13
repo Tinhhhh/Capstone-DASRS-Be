@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.service.MatchService;
 import com.sep490.dasrsbackend.service.TeamService;
 import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.service.TeamService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,11 +36,11 @@ public class TeamController {
     }
 
     @DeleteMapping("/remove-members")
-    public ResponseEntity<Object> removeMember(@RequestParam Long teamId, @RequestParam Long memberId) {
+    public ResponseEntity<Object> removeMember(@RequestParam Long teamId, @RequestParam UUID memberId) {
         teamService.removeMember(teamId, memberId);
         return ResponseBuilder.responseBuilder(
                 HttpStatus.OK,
-                "Member successfully removed (locked)"
+                "Member successfully removed from the team"
         );
     }
     @PutMapping("/unlock-members")
@@ -71,15 +72,87 @@ public class TeamController {
 //    }
 
     @GetMapping("/members/{teamId}")
-    public ResponseEntity<List<TeamMemberResponse>> getTeamMembers(@PathVariable Long teamId) {
-        return ResponseEntity.ok(teamService.getTeamMembers(teamId));
+    public ResponseEntity<Object> getTeamMembers(@PathVariable Long teamId) {
+        List<TeamMemberResponse> teamMembers = teamService.getTeamMembers(teamId);
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Team members retrieved successfully",
+                teamMembers
+        );
     }
 
     @PutMapping("/leadership/{teamId}/{newLeaderId}")
-    public ResponseEntity<Void> transferLeadership(@PathVariable Long teamId, @PathVariable Long newLeaderId) {
+    public ResponseEntity<Object> transferLeadership(
+            @PathVariable Long teamId,
+            @PathVariable UUID newLeaderId) {
         teamService.transferLeadership(teamId, newLeaderId);
-        return ResponseEntity.ok().build();
+        return ResponseBuilder.responseBuilder(
+                HttpStatus.OK,
+                "Leadership transferred successfully"
+        );
     }
 
+    @GetMapping("/{teamId}")
+    public ResponseEntity<Object> getTeamDetails(@PathVariable Long teamId) {
+        TeamResponse teamDetails = teamService.getTeamDetails(teamId);
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Team details retrieved successfully",
+                teamDetails
+        );
+    }
 
+    @GetMapping
+    public ResponseEntity<Object> getAllTeams() {
+        List<TeamResponse> teams = teamService.getAllTeams();
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "All teams retrieved successfully",
+                teams
+        );
+    }
+
+    @PostMapping("/create")
+    @Operation(summary = "Create a team", description = "Allows a player to create a new team. The player automatically becomes the team leader.")
+    public ResponseEntity<Object> createTeam(
+            @RequestParam UUID playerId,
+            @RequestParam String teamName,
+            @RequestParam String teamTag) {
+        teamService.createTeam(playerId, teamName, teamTag);
+        return ResponseBuilder.responseBuilder(
+                HttpStatus.CREATED,
+                "Team successfully created"
+        );
+    }
+
+    @Operation(summary = "Player joins a team", description = "Allows a player to join a team, provided the team is not currently in a tournament and the player is not already part of another team.")
+    @PostMapping("/{teamId}/join")
+    public ResponseEntity<Object> joinTeam(@PathVariable Long teamId, @RequestParam UUID playerId) {
+        teamService.joinTeam(teamId, playerId);
+        return ResponseEntity.ok("Player successfully joined the team");
+    }
+
+    @Operation(summary = "Player changes team", description = "Allows a player (except the leader) to change to another team, provided the new team is not currently in a tournament.")
+    @PostMapping("/{teamId}/change")
+    public ResponseEntity<Object> changeTeam(@PathVariable Long teamId, @RequestParam UUID playerId) {
+        teamService.changeTeam(teamId, playerId);
+        return ResponseEntity.ok("Player successfully changed teams");
+    }
+
+    @Operation(summary = "Player leaves a team", description = "Allows a player to leave their current team, provided the team is not currently in a tournament.")
+    @DeleteMapping("/{teamId}/leave")
+    public ResponseEntity<Object> leaveTeam(@PathVariable Long teamId, @RequestParam UUID playerId) {
+        teamService.leaveTeam(teamId, playerId);
+        return ResponseEntity.ok("Player successfully left the team");
+    }
+
+    @DeleteMapping("/delete-team/{teamId}")
+    @Operation(summary = "Delete team", description = "Allows the leader to delete the team. The team will be marked as TERMINATED, and the team will no longer participate in any tournaments.")
+    public ResponseEntity<Object> deleteTeam(@PathVariable Long teamId, @RequestParam UUID leaderId) {
+        teamService.deleteTeam(teamId, leaderId);
+        return ResponseBuilder.responseBuilder(
+                HttpStatus.OK,
+                "Team successfully deleted and status set to TERMINATED"
+        );
+    }
 }
