@@ -259,11 +259,9 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public TeamResponse getTeamDetails(Long teamId) {
-        // Validate and fetch the team
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Team not found"));
 
-        // Prepare leader information
         Optional<Account> leader = team.getAccountList().stream()
                 .filter(Account::isLeader)
                 .findFirst();
@@ -312,6 +310,7 @@ public class TeamServiceImpl implements TeamService {
                             .tag(team.getTeamTag() != null ? team.getTeamTag() : "N/A")
                             .disqualified(team.isDisqualified())
                             .status(team.getStatus())
+                            .memberCount(team.getAccountList() != null ? team.getAccountList().size() : 0)
                             .build();
                 })
                 .collect(Collectors.toList());
