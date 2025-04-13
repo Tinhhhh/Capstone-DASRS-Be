@@ -67,9 +67,9 @@ public class TournamentController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament updated successfully");
     }
 
-    @Operation(summary = "Extend a tournament end date when needed", description = "Extend the schedule of an existing tournament.")
+    @Operation(summary = "Extend a tournament end date when needed", description = "Extend the schedule of an existing tournament. Example: 2025-04-02T08:01:00")
     @PutMapping("/extend/{tournamentId}")
-    public ResponseEntity<Object> extendTournament(@PathVariable Long tournamentId, @RequestParam("joinTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime newEndDate) {
+    public ResponseEntity<Object> extendTournament(@PathVariable Long tournamentId, @RequestParam("newEndDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime newEndDate) {
         tournamentService.extendTournamentEndDate(tournamentId, newEndDate);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament schedule updated successfully");
     }

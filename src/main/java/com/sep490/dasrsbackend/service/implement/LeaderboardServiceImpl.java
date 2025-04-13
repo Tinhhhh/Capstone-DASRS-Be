@@ -84,7 +84,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 .toList();
 
         leaderboardList.setRoundId(round.getId());
-        leaderboardList.setFinishType(round.getMatchType().getFinishType());
+        leaderboardList.setFinishType(round.getFinishType());
 
         leaderboardList.setContent(leaderboardData);
         leaderboardList.setPageNo(leaderboards.getNumber());
@@ -156,7 +156,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 LeaderboardResponse leaderboardResponse = modelMapper.map(leaderboard, LeaderboardResponse.class);
                 leaderboardResponse.setLeaderboardId(leaderboard.getId());
                 leaderboardResponse.setRoundId(round.getId());
-                leaderboardResponse.setFinishType(round.getMatchType().getFinishType());
+                leaderboardResponse.setFinishType(round.getFinishType());
                 leaderboardResponse.setTeamId(leaderboard.getTeam().getId());
 
                 if (leaderboardResponse.getTopSpeed() == null && leaderboardResponse.getFastestLapTime() == null) {

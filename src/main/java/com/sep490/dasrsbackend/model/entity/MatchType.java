@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.FinishType;
 import com.sep490.dasrsbackend.model.enums.MatchTypeStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -37,10 +36,6 @@ public class MatchType {
 
     @Column(name = "team_number")
     private int teamNumber;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "finish_type")
-    private FinishType finishType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")

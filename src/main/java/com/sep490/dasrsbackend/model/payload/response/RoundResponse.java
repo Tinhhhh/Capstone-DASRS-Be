@@ -27,6 +27,15 @@ public class RoundResponse {
     @JsonProperty("round_name")
     private String roundName;
 
+    @JsonProperty("round_duration")
+    private int roundDuration;
+
+    @JsonProperty("lap_number")
+    private int lapNumber;
+
+    @JsonProperty("finish_type")
+    private FinishType finishType;
+
     @JsonProperty("team_limit")
     private int teamLimit;
 
@@ -64,6 +73,4 @@ public class RoundResponse {
     @JsonProperty("map_id")
     private Long mapId;
 
-    @JsonProperty("finish_type")
-    private FinishType finishType;
 }

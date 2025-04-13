@@ -42,8 +42,6 @@ public class MatchTypeServiceImpl implements MatchTypeService {
         MatchType matchType = MatchType.builder()
                 .matchTypeName(newMatchType.getMatchTypeName().trim())
                 .matchTypeCode(matchTypeCode)
-                .matchDuration(newMatchType.getMatchDuration())
-                .finishType(newMatchType.getFinishType())
                 .status(MatchTypeStatus.ACTIVE)
                 .playerNumber(newMatchType.getPlayerNumber())
                 .teamNumber(newMatchType.getTeamNumber())
@@ -98,8 +96,6 @@ public class MatchTypeServiceImpl implements MatchTypeService {
 
         matchType.setMatchTypeName(newMatchType.getMatchTypeName().trim());
         matchType.setMatchTypeCode(matchTypeCode);
-        matchType.setMatchDuration(newMatchType.getMatchDuration());
-        matchType.setFinishType(newMatchType.getFinishType());
         matchType.setPlayerNumber(newMatchType.getPlayerNumber());
         matchType.setTeamNumber(newMatchType.getTeamNumber());
         matchType.setStatus(MatchTypeStatus.ACTIVE);

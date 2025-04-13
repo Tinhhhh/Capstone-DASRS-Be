@@ -6,7 +6,7 @@ import lombok.Getter;
 public enum MatchStatus {
     PENDING("PENDING"),
     FINISHED("FINISHED"),
-    CANCELLED("CANCELLED");
+    TERMINATED("TERMINATED");
 
     private final String status;
 
