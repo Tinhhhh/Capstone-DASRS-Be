@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.model.enums.MatchSort;
-import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
 import com.sep490.dasrsbackend.model.payload.request.UnityRoomRequest;
@@ -22,11 +21,11 @@ public interface MatchService {
 
     void updateMatchTeamCar(MatchCarData matchCarData);
 
-    void changeMatchSlot(Long MatchId, ChangeMatchSlot changeMatchSlot);
+    void changeMatchSlot(Long MatchId, LocalDateTime changeMatchSlot);
 
     List<MatchResponse> getMatchesByTournamentId(Long tournamentId);
 
-    UnityMatchResponse getAvailableMatch(LocalDateTime date);
+    UnityMatchResponse getAvailableMatch(Long tournamentId, LocalDateTime date);
 
     UnityRoomResponse isValidPlayerInMatch(UnityRoomRequest unityRoomRequest);
 

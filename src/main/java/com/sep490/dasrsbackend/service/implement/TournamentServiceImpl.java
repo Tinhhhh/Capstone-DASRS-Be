@@ -12,7 +12,6 @@ import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
-import com.sep490.dasrsbackend.service.RoundService;
 import com.sep490.dasrsbackend.service.RoundUtilityService;
 import com.sep490.dasrsbackend.service.TournamentService;
 import lombok.RequiredArgsConstructor;
@@ -209,12 +208,19 @@ public class TournamentServiceImpl implements TournamentService {
     }
 
     @Override
-    public ListTournament getAllTournaments(int pageNo, int pageSize, TournamentSort sortBy, String keyword) {
+    public ListTournament getAllTournaments(int pageNo, int pageSize, TournamentSort sortBy, String keyword, TournamentStatusFilter status) {
 
         Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Specification<Tournament> spec = Specification.where(TournamentSpecification.hasTournamentName(keyword));
+        Specification<Tournament> spec;
+        if (status == TournamentStatusFilter.ALL) {
+            spec = Specification.where(TournamentSpecification.hasTournamentName(keyword));
+        } else {
+            TournamentStatus statusFilter = TournamentStatus.valueOf(status.getStatus());
+            spec = Specification.where(TournamentSpecification.hasTournamentName(keyword))
+                    .and(TournamentSpecification.hasTournamentStatus(statusFilter));
+        }
 
         Page<Tournament> tournamentContents = tournamentRepository.findAll(spec, pageable);
         List<Tournament> tournaments = tournamentContents.getContent();
@@ -487,6 +493,7 @@ public class TournamentServiceImpl implements TournamentService {
                     return result;
                 }).toList();
     }
+
     @Override
     public void registerTeamToTournament(Long tournamentId, Long teamId) {
         Tournament tournament = tournamentRepository.findById(tournamentId)

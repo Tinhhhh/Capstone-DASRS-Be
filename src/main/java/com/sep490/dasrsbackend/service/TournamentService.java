@@ -1,11 +1,10 @@
 package com.sep490.dasrsbackend.service;
 
-import com.sep490.dasrsbackend.dto.ParticipantDTO;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
+import com.sep490.dasrsbackend.model.enums.TournamentStatusFilter;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.ListTournament;
-import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamTournamentDetails;
 import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
 
@@ -17,7 +16,7 @@ public interface TournamentService {
 
     void editTournament(Long tournamentId, EditTournament editTournament);
 
-    ListTournament getAllTournaments(int pageNo, int pageSize, TournamentSort sortBy, String keyword);
+    ListTournament getAllTournaments(int pageNo, int pageSize, TournamentSort sortBy, String keyword, TournamentStatusFilter status);
 
     TournamentResponse getTournament(Long id);
 

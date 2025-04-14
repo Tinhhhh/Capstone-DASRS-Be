@@ -9,6 +9,7 @@ import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.LeaderboardService;
+import com.sep490.dasrsbackend.service.RoundUtilityService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.*;
@@ -31,6 +32,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     private final MatchRepository matchRepository;
     private final MatchTeamRepository matchTeamRepository;
     private final TournamentRepository tournamentRepository;
+    private final RoundUtilityService roundUtilityService;
 
     @Override
     public void updateLeaderboard(Long roundId) {
@@ -41,7 +43,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
         List<Leaderboard> lbs = leaderboardRepository.findByRoundId(round.getId());
 
-        lbs.sort(Comparator.comparing(Leaderboard::getTeamScore));
+        lbs.sort(Comparator.comparing(Leaderboard::getTeamScore).reversed());
 
         int rank = 1;
         for (Leaderboard leaderboard : lbs) {
@@ -61,9 +63,9 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
         if (isCompleted) {
             round.setStatus(RoundStatus.COMPLETED);
+            roundUtilityService.injectTeamToMatchTeam(round.getTournament().getId());
             roundRepository.save(round);
         }
-
     }
 
     @Override
