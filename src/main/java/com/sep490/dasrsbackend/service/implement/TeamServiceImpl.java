@@ -381,24 +381,24 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public void deleteTeam(Long teamId, UUID leaderId) {
-//        Team team = teamRepository.findById(teamId)
-//                .orElseThrow(() -> new IllegalArgumentException("Team not found"));
-//
-//        Account leader = team.getAccountList().stream()
-//                .filter(account -> account.getAccountId().equals(leaderId) && account.isLeader())
-//                .findFirst()
-//                .orElseThrow(() -> new IllegalArgumentException("Leader not found"));
-//
-//        if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(team).isEmpty()) {
-//            throw new IllegalArgumentException("Cannot delete a team currently involved in a tournament");
-//        }
-//        if (team.getAccountList().size() > 1) {
-//            throw new IllegalArgumentException("Team has more than one member. Cannot delete a team with more than just the leader.");
-//        }
-//
-//        team.setStatus(TeamStatus.TERMINATED);
-//
-//        teamRepository.save(team);
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new IllegalArgumentException("Team not found"));
+
+        Account leader = team.getAccountList().stream()
+                .filter(account -> account.getAccountId().equals(leaderId) && account.isLeader())
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Leader not found"));
+
+        if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(team).isEmpty()) {
+            throw new IllegalArgumentException("Cannot delete a team currently involved in a tournament");
+        }
+        if (team.getAccountList().size() > 1) {
+            throw new IllegalArgumentException("Team has more than one member. Cannot delete a team with more than just the leader.");
+        }
+
+        team.setStatus(TeamStatus.TERMINATED);
+
+        teamRepository.save(team);
     }
 
     @Override

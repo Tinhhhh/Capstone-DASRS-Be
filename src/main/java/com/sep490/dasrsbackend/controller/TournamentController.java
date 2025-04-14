@@ -79,4 +79,11 @@ public class TournamentController {
     public ResponseEntity<?> getTeamsByTournamentId(@PathVariable Long tournamentId) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Teams retrieved successfully", tournamentService.getTeamsByTournamentId(tournamentId));
     }
+
+    @Operation(summary = "Register a team to a tournament", description = "Registers a team and its members to a specific tournament. Ensures team is active and the tournament can accept more teams.")
+    @PostMapping("/register-team/{tournamentId}/{teamId}")
+    public ResponseEntity<Object> registerTeamToTournament(@PathVariable Long tournamentId, @PathVariable Long teamId) {
+            tournamentService.registerTeamToTournament(tournamentId, teamId);
+            return ResponseBuilder.responseBuilder(HttpStatus.OK, "Team successfully registered to the tournament.");
+    }
 }

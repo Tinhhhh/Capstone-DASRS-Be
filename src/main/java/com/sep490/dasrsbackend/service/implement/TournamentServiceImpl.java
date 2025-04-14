@@ -12,6 +12,7 @@ import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
+import com.sep490.dasrsbackend.service.RoundService;
 import com.sep490.dasrsbackend.service.RoundUtilityService;
 import com.sep490.dasrsbackend.service.TournamentService;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class TournamentServiceImpl implements TournamentService {
     private final AccountCarRepository accountCarRepository;
     private final TournamentTeamRepository tournamentTeamRepository;
     private final RoundUtilityService roundUtilityService;
+    private final RoundServiceImpl roundService;
 
 
     @Override
@@ -484,6 +486,42 @@ public class TournamentServiceImpl implements TournamentService {
                     result.setTeamMembers(members);
                     return result;
                 }).toList();
+    }
+    @Override
+    public void registerTeamToTournament(Long tournamentId, Long teamId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
+
+        if (team.getStatus() != TeamStatus.ACTIVE) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
+        }
+
+        List<Team> teamsInTournament = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
+                .map(TournamentTeam::getTeam)
+                .distinct()
+                .toList();
+
+        if (tournament.getTeamNumber() <= teamsInTournament.size()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
+        }
+
+        List<Account> teamMembers = team.getAccountList();
+        if (teamMembers.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team has no members");
+        }
+
+        teamMembers.forEach(member -> {
+            TournamentTeam tournamentTeam = new TournamentTeam();
+            tournamentTeam.setTournament(tournament);
+            tournamentTeam.setTeam(team);
+            tournamentTeam.setAccount(member);
+            tournamentTeamRepository.save(tournamentTeam);
+        });
+
+        roundService.injectTeamToTournament(tournamentId, teamId);
     }
 
 }

@@ -26,4 +26,6 @@ public interface TournamentService {
     void extendTournamentEndDate(Long id, LocalDateTime endDate);
 
     List<TeamTournamentDetails> getTeamsByTournamentId(Long tournamentId);
+
+    void registerTeamToTournament(Long tournamentId, Long teamId);
 }
