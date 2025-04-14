@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
@@ -40,7 +41,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
         List<Leaderboard> lbs = leaderboardRepository.findByRoundId(round.getId());
 
-        lbs.sort(Comparator.comparing(Leaderboard::getTeamScore).reversed());
+        lbs.sort(Comparator.comparing(Leaderboard::getTeamScore));
 
         int rank = 1;
         for (Leaderboard leaderboard : lbs) {
@@ -48,6 +49,21 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         }
 
         leaderboardRepository.saveAll(lbs);
+
+        List<Match> matches = matchRepository.findByRoundId(round.getId()).stream().filter(match -> match.getStatus() != MatchStatus.TERMINATED).toList();
+        boolean isCompleted = true;
+        for (Match match : matches) {
+            if (match.getStatus() == MatchStatus.PENDING) {
+                isCompleted = false;
+                break;
+            }
+        }
+
+        if (isCompleted) {
+            round.setStatus(RoundStatus.COMPLETED);
+            roundRepository.save(round);
+        }
+
     }
 
     @Override

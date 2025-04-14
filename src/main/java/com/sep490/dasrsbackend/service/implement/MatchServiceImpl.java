@@ -60,14 +60,11 @@ public class MatchServiceImpl implements MatchService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Server internal error. Team not found, please contact administrator for more information"));
 
-        List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(team.getId());
+        List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(team.getId()).stream()
+                .filter(matchTeam -> matchTeam.getMatch().getStatus() != MatchStatus.TERMINATED).toList();
 
-        List<Match> matches = new ArrayList<>();
+        List<Match> matches = matchTeams.stream().map(MatchTeam::getMatch).distinct().toList();
         List<MatchResponseForTeam> matchesResponse = new ArrayList<>();
-
-        for (MatchTeam matchTeam : matchTeams) {
-            matches.add(matchTeam.getMatch());
-        }
 
         modelMapper.getConfiguration().setFieldMatchingEnabled(true)
                 .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
@@ -81,8 +78,8 @@ public class MatchServiceImpl implements MatchService {
             matchResponse.setTeamId(teamId);
             matchResponse.setTeamName(team.getTeamName());
             matchResponse.setTeamTag(team.getTeamTag());
-            matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
-            matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
+            matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart(), DateUtil.DATE_TIME_FORMAT));
+            matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd(), DateUtil.DATE_TIME_FORMAT));
 
             List<MatchTeam> mt = matchTeamRepository.findByTeamIdAndMatchId(team.getId(), match.getId());
             List<MatchTeamResponse> matchTeamResponses = new ArrayList<>();
@@ -102,7 +99,6 @@ public class MatchServiceImpl implements MatchService {
 
         return matchesResponse;
     }
-
 
     @Override
     public void assignMemberToMatch(Long matchTeamId, UUID assigner, UUID assignee) {
@@ -315,10 +311,6 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found, please contact administrator for more information"));
 
         Round round = match.getRound();
-
-        MatchType matchType = matchTypeRepository.findById(round.getMatchType().getId())
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "MatchType not found, please contact administrator for more information"));
-
         isValidTimeRange(changeMatchSlot.getStartDate(), match);
 
         //Kiểm tra  xem có trùng với match nào không
@@ -396,8 +388,8 @@ public class MatchServiceImpl implements MatchService {
 
     private MatchResponse getMatchResponse(Match match) {
         MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
-        matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart()));
-        matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd()));
+        matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart(), DateUtil.DATE_TIME_FORMAT));
+        matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd(), DateUtil.DATE_TIME_FORMAT));
 
         List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
 
@@ -414,18 +406,23 @@ public class MatchServiceImpl implements MatchService {
         List<TeamTournamentResponse> teams = new ArrayList<>();
 
         matchTeams.forEach(matchTeam -> {
-            Team team = matchTeam.getTeam();
-            TeamTournamentResponse teamTournamentResponse = modelMapper.map(team, TeamTournamentResponse.class);
+            if (matchTeam.getTeam() != null) {
+                Team team = matchTeam.getTeam();
+                TeamTournamentResponse teamTournamentResponse = modelMapper.map(team, TeamTournamentResponse.class);
 
-            if (matchTeam.getMatch().getId() == match.getId()) {
-                if (matchTeam.getAccount() != null) {
-                    teamTournamentResponse.setAccountId(matchTeam.getAccount().getAccountId());
+                if (matchTeam.getMatch().getId() == match.getId()) {
+                    if (matchTeam.getAccount() != null) {
+                        teamTournamentResponse.setAccountId(matchTeam.getAccount().getAccountId());
+                    }
                 }
+                teams.add(teamTournamentResponse);
             }
-            teams.add(teamTournamentResponse);
         });
 
-        matchResponse.setTeams(teams);
+        if (!teams.isEmpty()) {
+            matchResponse.setTeams(teams);
+        }
+
         return matchResponse;
     }
 
@@ -694,15 +691,22 @@ public class MatchServiceImpl implements MatchService {
             details.setTeamName(mt.getTeam().getTeamName());
             details.setRanking(leaderboard.getRanking());
             details.setScore(mt.getScore());
-            details.setLap(sa.getLap() * sm.getLap());
+            details.setLapScore(sa.getLap() * sm.getLap());
+            details.setLap(sa.getLap());
             details.setFastestLapTime(sa.getFastestLapTime());
-            details.setCollision(sa.getCollision() * sm.getCollision());
-            details.setTotalRaceTime(sa.getTotalRaceTime() * sm.getTotalRaceTime());
-            details.setOffTrack(sa.getOffTrack() * sm.getOffTrack());
-            details.setAssistUsageCount(sa.getAssistUsageCount() * sm.getAssistUsageCount());
+            details.setCollisionScore(sa.getCollision() * sm.getCollision());
+            details.setCollision(sa.getCollision());
+            details.setTotalRaceTimeScore(sa.getTotalRaceTime() * sm.getTotalRaceTime());
+            details.setTotalRaceTime(sa.getTotalRaceTime());
+            details.setOffTrackScore(sa.getOffTrack() * sm.getOffTrack());
+            details.setOffTrack(sa.getOffTrack());
+            details.setAssistUsageScore(sa.getAssistUsageCount() * sm.getAssistUsageCount());
+            details.setAssistUsageCount(sa.getAssistUsageCount());
             details.setTopSpeed(sa.getTopSpeed());
-            details.setAverageSpeed(sa.getAverageSpeed() * sm.getAverageSpeed());
-            details.setTotalDistance(sa.getTotalDistance() * sm.getTotalDistance());
+            details.setAverageSpeedScore(sa.getAverageSpeed() * sm.getAverageSpeed());
+            details.setAverageSpeed(sa.getAverageSpeed());
+            details.setTotalDistanceScore(sa.getTotalDistance() * sm.getTotalDistance());
+            details.setTotalDistance(sa.getTotalDistance());
 
             leaderboardDetails.add(details);
 
