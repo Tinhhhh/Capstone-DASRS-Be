@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.Util;
 
 import com.sep490.dasrsbackend.model.entity.Tournament;
+import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -14,6 +15,14 @@ public class TournamentSpecification {
             return cb.like(cb.lower(root.get("tournamentName")),
                     "%" + tournamentName.toLowerCase() + "%"
             );
+        };
+    }
+
+    public Specification<Tournament> hasTournamentStatus(TournamentStatus tournamentStatus) {
+        return (root, query, cb) -> {
+            if (tournamentStatus == null) return null;
+
+            return cb.equal(root.get("status"), tournamentStatus);
         };
     }
 

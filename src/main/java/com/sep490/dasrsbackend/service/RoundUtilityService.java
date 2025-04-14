@@ -198,7 +198,6 @@ public class RoundUtilityService {
         for (int i = 0; i < rounds.size(); i++) {
             if (rounds.get(i).getStatus() == RoundStatus.ACTIVE) {
                 round = rounds.get(i);
-                break;
             }
 
             //Nếu round đang được inject không phải là round đầu tiên
@@ -207,7 +206,7 @@ public class RoundUtilityService {
                     //Nếu round trước đó đã hoàn thành thì lấy leaderboard của round trước đó
                     leaderboards = leaderboardRepository.findByRoundId(rounds.get(i - 1).getId()).stream()
                             .sorted(Comparator.comparing(Leaderboard::getRanking))
-                            .limit(round.getTeamLimit())
+                            .limit(rounds.get(i - 1).getTeamLimit())
                             .toList();
                 }
             }
@@ -240,7 +239,7 @@ public class RoundUtilityService {
 
         //Lấy danh sách matchTeam chưa được gán team
         List<MatchTeam> unassignedMatchTeams = matchTeams.stream()
-                .filter(matchTeam -> matchTeam.getStatus() == MatchTeamStatus.UNASSIGNED)
+                .filter(matchTeam -> matchTeam.getTeam() == null)
                 .sorted(Comparator.comparingLong(mt -> mt.getMatch().getId()))
                 .toList();
 
@@ -295,7 +294,6 @@ public class RoundUtilityService {
                 }
 
                 unassignedMatchTeams.get(i).setTeam(team);
-                unassignedMatchTeams.get(i).setStatus(MatchTeamStatus.ASSIGNED);
                 index++;
                 i++;
             } while (i < unassignedMatchTeams.size());

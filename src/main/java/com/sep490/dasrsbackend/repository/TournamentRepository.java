@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -26,5 +27,5 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long>, J
 
     Optional<Tournament> findByStatusAndEndDateBefore(TournamentStatus tournamentStatus, Date date);
 
-    Optional<Tournament> findByStatusAndStartDateBefore(TournamentStatus tournamentStatus, Date date);
+    List<Tournament> findByStatusAndStartDateBefore(TournamentStatus tournamentStatus, Date date);
 }

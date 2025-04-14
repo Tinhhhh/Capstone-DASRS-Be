@@ -633,10 +633,18 @@ public class RoundServiceImpl implements RoundService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
         }
 
-        TournamentTeam tournamentTeam = new TournamentTeam();
-        tournamentTeam.setTournament(tournament);
-        tournamentTeam.setTeam(team);
-        tournamentTeamRepository.save(tournamentTeam);
+        List<Account> accounts = accountRepository.findByTeamId(teamId);
+
+        for (Account account : accounts) {
+            if (!account.isLocked()) {
+                TournamentTeam tournamentTeam = new TournamentTeam();
+                tournamentTeam.setTournament(tournament);
+                tournamentTeam.setTeam(team);
+                tournamentTeam.setAccount(account);
+                tournamentTeamRepository.save(tournamentTeam);
+            }
+
+        }
         roundUtilityService.injectTeamToMatchTeam(tournamentId);
     }
 

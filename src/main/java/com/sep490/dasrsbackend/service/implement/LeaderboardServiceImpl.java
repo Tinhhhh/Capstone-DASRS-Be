@@ -2,12 +2,14 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.LeaderboardService;
+import com.sep490.dasrsbackend.service.RoundUtilityService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.*;
@@ -30,6 +32,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     private final MatchRepository matchRepository;
     private final MatchTeamRepository matchTeamRepository;
     private final TournamentRepository tournamentRepository;
+    private final RoundUtilityService roundUtilityService;
 
     @Override
     public void updateLeaderboard(Long roundId) {
@@ -48,6 +51,21 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         }
 
         leaderboardRepository.saveAll(lbs);
+
+        List<Match> matches = matchRepository.findByRoundId(round.getId()).stream().filter(match -> match.getStatus() != MatchStatus.TERMINATED).toList();
+        boolean isCompleted = true;
+        for (Match match : matches) {
+            if (match.getStatus() == MatchStatus.PENDING) {
+                isCompleted = false;
+                break;
+            }
+        }
+
+        if (isCompleted) {
+            round.setStatus(RoundStatus.COMPLETED);
+            roundUtilityService.injectTeamToMatchTeam(round.getTournament().getId());
+            roundRepository.save(round);
+        }
     }
 
     @Override

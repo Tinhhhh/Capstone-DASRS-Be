@@ -1,12 +1,11 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
-import com.sep490.dasrsbackend.dto.ParticipantDTO;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
+import com.sep490.dasrsbackend.model.enums.TournamentStatusFilter;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
-import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.service.TournamentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tournaments")
@@ -40,11 +38,12 @@ public class TournamentController {
     public ResponseEntity<Object> getAllTournaments(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "status") TournamentStatusFilter status,
             @RequestParam(name = "sortBy") TournamentSort sortBy,
             @RequestParam(name = "keyword", required = false) String keyword
     ) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "All tournaments retrieved successfully",
-                tournamentService.getAllTournaments(pageNo, pageSize, sortBy, keyword));
+                tournamentService.getAllTournaments(pageNo, pageSize, sortBy, keyword, status));
     }
 
     @Operation(summary = "Get tournaments by id including all status", description = "Retrieve a paginated list of tournaments by their status.")
@@ -83,7 +82,7 @@ public class TournamentController {
     @Operation(summary = "Register a team to a tournament", description = "Registers a team and its members to a specific tournament. Ensures team is active and the tournament can accept more teams.")
     @PostMapping("/register-team/{tournamentId}/{teamId}")
     public ResponseEntity<Object> registerTeamToTournament(@PathVariable Long tournamentId, @PathVariable Long teamId) {
-            tournamentService.registerTeamToTournament(tournamentId, teamId);
-            return ResponseBuilder.responseBuilder(HttpStatus.OK, "Team successfully registered to the tournament.");
+        tournamentService.registerTeamToTournament(tournamentId, teamId);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Team successfully registered to the tournament.");
     }
 }
