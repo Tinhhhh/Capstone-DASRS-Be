@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.repository;
 
 import com.sep490.dasrsbackend.model.entity.Leaderboard;
+import com.sep490.dasrsbackend.model.entity.Team;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +32,6 @@ public interface LeaderboardRepository extends JpaRepository<Leaderboard, Long> 
     List<Leaderboard> findByRoundId(Long roundId);
 
     Optional<Leaderboard> findByRoundIdAndTeamId(Long roundId, Long teamId);
+
+    void deleteAllByTeam(Team team);
 }

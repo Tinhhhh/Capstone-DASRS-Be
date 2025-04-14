@@ -34,6 +34,7 @@ public class TeamServiceImpl implements TeamService {
     private final AccountRepository accountRepository;
     private final MatchRepository matchRepository;
     private final TournamentTeamRepository tournamentTeamRepository;
+    private final LeaderboardRepository leaderboardRepository;
 
     @Override
     public List<MatchResponse> getMatches(Long teamId) {
@@ -389,16 +390,18 @@ public class TeamServiceImpl implements TeamService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Leader not found"));
 
-        if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(team).isEmpty()) {
+        if (!tournamentTeamRepository.findByTeam(team).isEmpty()) {
             throw new IllegalArgumentException("Cannot delete a team currently involved in a tournament");
         }
         if (team.getAccountList().size() > 1) {
-            throw new IllegalArgumentException("Team has more than one member. Cannot delete a team with more than just the leader.");
+            throw new IllegalArgumentException("Cannot delete a team with more than one member.");
         }
 
-        team.setStatus(TeamStatus.TERMINATED);
+        leaderboardRepository.deleteAllByTeam(team);
+        matchTeamRepository.deleteAllByTeam(team);
+        tournamentTeamRepository.deleteAllByTeam(team);
 
-        teamRepository.save(team);
+        teamRepository.delete(team);
     }
 
     @Override

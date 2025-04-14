@@ -147,12 +147,13 @@ public class TeamController {
     }
 
     @DeleteMapping("/delete-team/{teamId}")
-    @Operation(summary = "Delete team", description = "Allows the leader to delete the team. The team will be marked as TERMINATED, and the team will no longer participate in any tournaments.")
+    @Operation(summary = "Delete team", description = "Allows the leader to delete the team. The team and all its related associations will be removed.")
     public ResponseEntity<Object> deleteTeam(@PathVariable Long teamId, @RequestParam UUID leaderId) {
         teamService.deleteTeam(teamId, leaderId);
         return ResponseBuilder.responseBuilder(
                 HttpStatus.OK,
-                "Team successfully deleted and status set to TERMINATED"
+                "Team and related data successfully deleted."
         );
     }
+
 }
