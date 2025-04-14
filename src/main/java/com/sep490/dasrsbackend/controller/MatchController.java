@@ -32,6 +32,7 @@ public class MatchController {
 
     private final MatchService matchService;
 
+    @Operation(summary = "Get matches for a particular team by it's id")
     @GetMapping("/team/{teamId}")
     public ResponseEntity<Object> getMatchesByTeam(
             @PathVariable Long teamId) {
@@ -46,6 +47,7 @@ public class MatchController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully assigned member to match");
     }
 
+    @Operation(summary = "Get matches by round id including terminated matches")
     @GetMapping("/round/{roundId}")
     public ResponseEntity<Object> getMatchByRoundId(@RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
                                                     @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
@@ -63,6 +65,7 @@ public class MatchController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully change match slot");
     }
 
+    @Operation(summary = "Get matches by tournament id")
     @GetMapping("/tournament/{tournamentId}")
     public ResponseEntity<Object> getMatchesByTournamentId(@PathVariable Long tournamentId) {
         try {

@@ -295,7 +295,6 @@ public class RoundUtilityService {
                 }
 
                 unassignedMatchTeams.get(i).setTeam(team);
-                unassignedMatchTeams.get(i).setStatus(MatchTeamStatus.ASSIGNED);
                 index++;
                 i++;
             } while (i < unassignedMatchTeams.size());
