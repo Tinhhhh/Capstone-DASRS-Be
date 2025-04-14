@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -33,4 +32,8 @@ public interface MatchRepository extends JpaRepository<Match, Long>, JpaSpecific
     List<Match> findMatchesByRoundIdAndAccountId(@Param("roundId") Long roundId, @Param("accountId") UUID accountId);
 
     Optional<Match> findByMatchCode(String matchCode);
+
+    @Query("SELECT m FROM Match m WHERE :time between m.timeStart and m.timeEnd")
+    List<Match> findByMatchByTime(@Param("time") Date time);
+
 }

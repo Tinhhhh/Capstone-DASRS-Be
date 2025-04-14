@@ -5,7 +5,6 @@ import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.enums.MatchSort;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
-import com.sep490.dasrsbackend.model.payload.request.ChangeMatchSlot;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
 import com.sep490.dasrsbackend.model.payload.request.UnityRoomRequest;
@@ -59,9 +58,10 @@ public class MatchController {
                 matchService.getMatchByRoundId(pageNo, pageSize, sortBy, roundId, keyword));
     }
 
+    @Operation(summary = "Change match to another slot in case needed", description = "Change match to another slot in case needed. Example: 2025-04-02T08:01:00")
     @PutMapping("/slot/{matchId}")
-    public ResponseEntity<Object> changeMatchSlot(@PathVariable Long matchId, @RequestBody @Valid ChangeMatchSlot changeMatchSlot) {
-        matchService.changeMatchSlot(matchId, changeMatchSlot);
+    public ResponseEntity<Object> changeMatchSlot(@PathVariable Long matchId, @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date) {
+        matchService.changeMatchSlot(matchId, date);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully change match slot");
     }
 
@@ -92,12 +92,12 @@ public class MatchController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully updated match data details");
     }
 
-    @Operation(summary = "Get match by time", description = "Get match by time, format: yyyy-MM-ddTHH:mm:ss. Example: 2025-04-02T08:01:00")
+    @Operation(summary = "Api using for unity to check if there is upcoming match to create ", description = "Get match by time, format: yyyy-MM-ddTHH:mm:ss. Example: 2025-04-02T08:01:00")
     @GetMapping("/available")
-    public ResponseEntity<Object> getAvailableMatch(@RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date) {
+    public ResponseEntity<Object> getAvailableMatch(@RequestParam("tournamentId") Long tournamentId , @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date) {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved available match",
-                matchService.getAvailableMatch(date));
+                matchService.getAvailableMatch(tournamentId, date));
     }
 
     @GetMapping("/by-round-and-player")
@@ -109,6 +109,7 @@ public class MatchController {
                 HttpStatus.OK, "Matches retrieved successfully", responses);
     }
 
+    @Operation(summary = "Api using for unity to check if player is validate to join in match", description = "Get match by time, format: yyyy-MM-ddTHH:mm:ss. Example: 2025-04-02T08:01:00")
     @GetMapping("/unity")
     public ResponseEntity<Object> isPlayerInUnity(@RequestParam("accountId") UUID accountId,
                                                   @RequestParam("roomId") String matchCode,
@@ -120,6 +121,7 @@ public class MatchController {
                 matchService.isValidPlayerInMatch(unityRoomRequest));
     }
 
+    @Operation(summary = "Get match score details by match id and team id")
     @GetMapping("/score-details/{matchId}/{teamId}")
     public ResponseEntity<Object> getMatchScoreDetails(@PathVariable Long matchId, @PathVariable Long teamId) {
         return ResponseBuilder.responseBuilderWithData(
