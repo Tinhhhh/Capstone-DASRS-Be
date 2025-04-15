@@ -29,5 +29,5 @@ public interface TournamentTeamRepository extends JpaRepository<TournamentTeam, 
     @Query("SELECT tt.tournament FROM TournamentTeam tt WHERE tt.team.id = :teamId")
     List<Tournament> findTournamentsByTeamId(Long teamId);
 
-    boolean existsByTournamentIdAndAccountId(Long tournamentId, UUID accountId);
+    boolean existsByTournamentIdAndAccount_AccountId(Long tournamentId, UUID accountId);
 }

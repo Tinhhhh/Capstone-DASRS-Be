@@ -533,7 +533,7 @@ public class TournamentServiceImpl implements TournamentService {
         }
 
         for (Account member : teamMembers) {
-            boolean accountAlreadyRegistered = tournamentTeamRepository.existsByTournamentIdAndAccountId(tournamentId, member.getAccountId());
+            boolean accountAlreadyRegistered = tournamentTeamRepository.existsByTournamentIdAndAccount_AccountId(tournamentId, member.getAccountId());
             if (accountAlreadyRegistered) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST,
                         "Account " + member.fullName() + " is already registered in this tournament");

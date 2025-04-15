@@ -1,7 +1,10 @@
 package com.sep490.dasrsbackend.Util;
 
 import com.sep490.dasrsbackend.model.entity.Round;
+import com.sep490.dasrsbackend.model.entity.Tournament;
+import com.sep490.dasrsbackend.model.entity.TournamentTeam;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
+import jakarta.persistence.criteria.Join;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -54,12 +57,13 @@ public class RoundSpecification {
         };
     }
 
-    public Specification<Round> belongsToTeam(Long teamId) {
-        return (root, query, cb) -> {
-            if (teamId == null) {
-                return null;
-            }
-            return cb.equal(root.join("team").get("id"), teamId);
+    public static Specification<Round> belongsToTeam(Long teamId) {
+        return (root, query, criteriaBuilder) -> {
+            Join<Round, Tournament> tournamentJoin = root.join("tournament");
+
+            Join<Tournament, TournamentTeam> tournamentTeamJoin = tournamentJoin.join("tournamentTeamList");
+
+            return criteriaBuilder.equal(tournamentTeamJoin.get("team").get("id"), teamId);
         };
     }
 }
