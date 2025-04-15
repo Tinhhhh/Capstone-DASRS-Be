@@ -395,13 +395,16 @@ public class TeamServiceImpl implements TeamService {
 
             boolean isSoleLeader = team.getAccountList().size() == 1;
 
-            boolean hasParticipated = tournamentTeamRepository.findByTeam(team).stream()
-                    .anyMatch(tournamentTeam -> tournamentTeam.getCreatedDate() != null);
+            boolean hasParticipated = tournamentTeamRepository.existsByTeam(team);
 
             if (isSoleLeader && !hasParticipated) {
                 leaderboardRepository.deleteAllByTeam(team);
                 matchTeamRepository.deleteAllByTeam(team);
                 tournamentTeamRepository.deleteAllByTeam(team);
+
+                team.getAccountList().forEach(account -> account.setTeam(null));
+                accountRepository.saveAll(team.getAccountList());
+
                 teamRepository.delete(team);
                 logger.info("Team with only one member successfully deleted.");
             } else if (isSoleLeader && hasParticipated) {
@@ -423,6 +426,7 @@ public class TeamServiceImpl implements TeamService {
             throw new RuntimeException("Failed to delete the team due to an internal error.");
         }
     }
+
 
     @Override
     public void createTeam(UUID playerId, String teamName, String teamTag) {
