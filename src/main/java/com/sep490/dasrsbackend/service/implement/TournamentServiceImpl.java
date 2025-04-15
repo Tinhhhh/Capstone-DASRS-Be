@@ -510,6 +510,13 @@ public class TournamentServiceImpl implements TournamentService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
         }
 
+        List<Tournament> activeTournaments = tournamentTeamRepository.findActiveTournamentsByTeamId(teamId);
+        if (!activeTournaments.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST,
+                    "The team is already participating in an active tournament: " +
+                            activeTournaments.get(0).getTournamentName());
+        }
+
         List<Team> teamsInTournament = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
                 .map(TournamentTeam::getTeam)
                 .distinct()
@@ -534,5 +541,4 @@ public class TournamentServiceImpl implements TournamentService {
 
         roundService.injectTeamToTournament(tournamentId, teamId);
     }
-
 }

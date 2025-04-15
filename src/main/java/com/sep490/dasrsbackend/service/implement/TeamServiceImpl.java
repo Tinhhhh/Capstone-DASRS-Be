@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +35,8 @@ public class TeamServiceImpl implements TeamService {
     private final AccountRepository accountRepository;
     private final MatchRepository matchRepository;
     private final TournamentTeamRepository tournamentTeamRepository;
+    private static final Logger logger = Logger.getLogger(TeamServiceImpl.class.getName());
+    private final LeaderboardRepository leaderboardRepository;
 
     @Override
     public List<MatchResponse> getMatches(Long teamId) {
@@ -381,24 +384,52 @@ public class TeamServiceImpl implements TeamService {
 
     @Override
     public void deleteTeam(Long teamId, UUID leaderId) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("Team not found"));
+        try {
+            Team team = teamRepository.findById(teamId)
+                    .orElseThrow(() -> new IllegalArgumentException("Team not found"));
 
-        Account leader = team.getAccountList().stream()
-                .filter(account -> account.getAccountId().equals(leaderId) && account.isLeader())
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Leader not found"));
+            Account leader = team.getAccountList().stream()
+                    .filter(account -> account.getAccountId().equals(leaderId) && account.isLeader())
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Leader not found for the specified team"));
 
-        if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(team).isEmpty()) {
-            throw new IllegalArgumentException("Cannot delete a team currently involved in a tournament");
+            boolean isSoleLeader = team.getAccountList().size() == 1;
+
+            boolean hasParticipated = tournamentTeamRepository.existsByTeam(team);
+
+            if (isSoleLeader && !hasParticipated) {
+                leaderboardRepository.deleteAllByTeam(team);
+                matchTeamRepository.deleteAllByTeam(team);
+                tournamentTeamRepository.deleteAllByTeam(team);
+
+                team.getAccountList().forEach(account -> {
+                    account.setTeam(null);
+                    account.setLeader(false);
+                });
+                accountRepository.saveAll(team.getAccountList());
+
+                teamRepository.delete(team);
+                logger.info("Team with only one member successfully deleted.");
+            } else if (isSoleLeader && hasParticipated) {
+                leader.setTeam(null);
+                leader.setLeader(false);
+                accountRepository.save(leader);
+
+                team.setStatus(TeamStatus.INACTIVE);
+                teamRepository.save(team);
+                logger.info("Team has been marked as INACTIVE, and the leader has been dissociated.");
+            } else if (team.getAccountList().size() > 1) {
+                throw new IllegalArgumentException("Cannot delete a team with more than one member.");
+            } else {
+                throw new IllegalArgumentException("Cannot delete a team that is currently participating in a tournament.");
+            }
+        } catch (IllegalArgumentException e) {
+            logger.severe("Validation error: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.severe("An unexpected error occurred while deleting the team: " + e.getMessage());
+            throw new RuntimeException("Failed to delete the team due to an internal error.");
         }
-        if (team.getAccountList().size() > 1) {
-            throw new IllegalArgumentException("Team has more than one member. Cannot delete a team with more than just the leader.");
-        }
-
-        team.setStatus(TeamStatus.TERMINATED);
-
-        teamRepository.save(team);
     }
 
     @Override
