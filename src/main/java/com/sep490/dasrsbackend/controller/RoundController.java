@@ -71,9 +71,9 @@ public class RoundController {
     }
 
     @Operation(summary = "Get rounds by account ID", description = "Retrieve rounds for the specified account with pagination, sorting, and optional search by round name or tournament name")
-    @GetMapping("/player/rounds")
+    @GetMapping("/account/{accountId}")
     public ResponseEntity<Object> getRoundsByAccountId(
-            @RequestParam(name = "accountId") UUID accountId,
+            @PathVariable UUID accountId,
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(name = "sortBy") RoundSort sortBy,
@@ -83,17 +83,18 @@ public class RoundController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Rounds retrieved successfully.", roundsResponse);
     }
 
-    @Operation(summary = "Get rounds by team ID", description = "Retrieve rounds for the specified team with pagination, sorting, and optional search by round name or tournament name")
-    @GetMapping("/team/rounds")
-    public ResponseEntity<Object> getRoundsByTeamId(
-            @RequestParam(name = "teamId") Long teamId,
+    @Operation(summary = "Get rounds by team and tournament", description = "Retrieve rounds for the specified team and tournament with pagination, sorting, and optional search by round name or tournament name")
+    @GetMapping("/team/{teamId}/tournament/{tournamentId}")
+    public ResponseEntity<Object> getRoundsByTeamAndTournament(
+            @PathVariable Long teamId,
+            @PathVariable Long tournamentId,
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(name = "sortBy") RoundSort sortBy,
             @RequestParam(name = "keyword", required = false) String keyword
     ) {
-        GetRoundsByTeamResponse roundsResponse = roundService.getRoundsByTeamId(teamId, pageNo, pageSize, sortBy, keyword);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Rounds retrieved successfully.", roundsResponse);
+        GetRoundsByTeamResponse response = roundService.getRoundsByTeamIdAndTournamentId(teamId, tournamentId, pageNo, pageSize, sortBy, keyword);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Rounds fetched successfully", response);
     }
 
     @Operation(summary = "Get rounds landing page", description = "Retrieve rounds for the landing page with pagination, sorting, and optional search by round name or tournament name." +

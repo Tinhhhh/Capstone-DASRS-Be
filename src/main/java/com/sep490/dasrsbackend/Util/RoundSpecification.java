@@ -66,4 +66,10 @@ public class RoundSpecification {
             return criteriaBuilder.equal(tournamentTeamJoin.get("team").get("id"), teamId);
         };
     }
+
+    public static Specification<Round> belongsToTournament(Long tournamentId) {
+        return (root, query, criteriaBuilder) -> {
+            return criteriaBuilder.equal(root.get("tournament").get("id"), tournamentId);
+        };
+    }
 }

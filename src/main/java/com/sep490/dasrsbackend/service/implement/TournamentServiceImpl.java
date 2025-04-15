@@ -501,52 +501,47 @@ public class TournamentServiceImpl implements TournamentService {
 
     @Override
     public void registerTeamToTournament(Long tournamentId, Long teamId) {
-        Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+        try {
+            Tournament tournament = tournamentRepository.findById(tournamentId)
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
 
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
+            Team team = teamRepository.findById(teamId)
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
 
-        if (team.getStatus() != TeamStatus.ACTIVE) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
-        }
-
-        List<Account> teamMembers = team.getAccountList();
-        if (teamMembers.size() < 4 || teamMembers.size() > 5) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team must have between 4 and 5 members to register");
-        }
-
-        List<Tournament> activeTournaments = tournamentTeamRepository.findActiveTournamentsByTeamId(teamId);
-        if (!activeTournaments.isEmpty()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST,
-                    "The team is already participating in an active tournament: " +
-                            activeTournaments.get(0).getTournamentName());
-        }
-
-        List<Team> teamsInTournament = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
-                .map(TournamentTeam::getTeam)
-                .distinct()
-                .toList();
-
-        if (tournament.getTeamNumber() <= teamsInTournament.size()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
-        }
-
-        for (Account member : teamMembers) {
-            boolean accountAlreadyRegistered = tournamentTeamRepository.existsByTournamentIdAndAccount_AccountId(tournamentId, member.getAccountId());
-            if (accountAlreadyRegistered) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST,
-                        "Account " + member.fullName() + " is already registered in this tournament");
+            if (team.getStatus() != TeamStatus.ACTIVE) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
             }
-            TournamentTeam tournamentTeam = new TournamentTeam();
-            tournamentTeam.setTournament(tournament);
-            tournamentTeam.setTeam(team);
-            tournamentTeam.setAccount(member);
-            tournamentTeamRepository.save(tournamentTeam);
-        }
 
-        roundService.injectTeamToTournament(tournamentId, teamId);
+            List<Account> teamMembers = team.getAccountList();
+            if (teamMembers.size() < 4 || teamMembers.size() > 5) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Team must have between 4 and 5 members to register");
+            }
+
+            List<Tournament> activeTournaments = tournamentTeamRepository.findActiveTournamentsByTeamId(teamId);
+            if (!activeTournaments.isEmpty()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST,
+                        "The team is already participating in an active tournament: " +
+                                activeTournaments.get(0).getTournamentName());
+            }
+
+            List<Team> teamsInTournament = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
+                    .map(TournamentTeam::getTeam)
+                    .distinct()
+                    .toList();
+
+            if (tournament.getTeamNumber() <= teamsInTournament.size()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
+            }
+
+            roundService.injectTeamToTournament(tournamentId, teamId);
+
+        } catch (DasrsException ex) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        } catch (Exception ex) {
+            throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred while registering the team to the tournament.");
+        }
     }
+
 
     @Override
     public List<TournamentByTeamResponse> getTournamentsByTeamId(Long teamId) {
