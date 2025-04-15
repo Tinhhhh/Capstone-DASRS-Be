@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.model.enums.RoundSort;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
 import com.sep490.dasrsbackend.model.payload.response.GetRoundsByAccountResponse;
+import com.sep490.dasrsbackend.model.payload.response.GetRoundsByTeamResponse;
 import com.sep490.dasrsbackend.model.payload.response.ListRoundResponse;
 import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
 
@@ -30,4 +31,6 @@ public interface RoundService {
     ListRoundResponse findAllRoundsByDate(int pageNo, int pageSize, RoundSort sortBy, String keyword, LocalDateTime start, LocalDateTime end);
 
     void injectTeamToTournament(Long tournamentId, Long teamId);
+
+//    GetRoundsByTeamResponse getRoundsByTeamId(Long teamId, int pageNo, int pageSize, RoundSort sortBy, String keyword);
 }

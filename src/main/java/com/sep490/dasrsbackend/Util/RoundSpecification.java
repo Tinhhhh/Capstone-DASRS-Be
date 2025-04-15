@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @UtilityClass
 public class RoundSpecification {
 
-    // This method filters based on a keyword across multiple fields
     public Specification<Round> hasKeyword(String keyword) {
         return (root, query, cb) -> {
             if (keyword == null || keyword.trim().isEmpty()) {
@@ -52,6 +51,15 @@ public class RoundSpecification {
                 return null;
             }
             return cb.equal(root.get("status"), status);
+        };
+    }
+
+    public Specification<Round> belongsToTeam(Long teamId) {
+        return (root, query, cb) -> {
+            if (teamId == null) {
+                return null;
+            }
+            return cb.equal(root.join("team").get("id"), teamId);
         };
     }
 }

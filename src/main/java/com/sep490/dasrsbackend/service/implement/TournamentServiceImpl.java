@@ -532,13 +532,18 @@ public class TournamentServiceImpl implements TournamentService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
         }
 
-        teamMembers.forEach(member -> {
+        for (Account member : teamMembers) {
+            boolean accountAlreadyRegistered = tournamentTeamRepository.existsByTournamentIdAndAccountId(tournamentId, member.getAccountId());
+            if (accountAlreadyRegistered) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST,
+                        "Account " + member.fullName() + " is already registered in this tournament");
+            }
             TournamentTeam tournamentTeam = new TournamentTeam();
             tournamentTeam.setTournament(tournament);
             tournamentTeam.setTeam(team);
             tournamentTeam.setAccount(member);
             tournamentTeamRepository.save(tournamentTeam);
-        });
+        }
 
         roundService.injectTeamToTournament(tournamentId, teamId);
     }

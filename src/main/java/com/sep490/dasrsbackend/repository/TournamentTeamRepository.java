@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface TournamentTeamRepository extends JpaRepository<TournamentTeam, Long> {
 
@@ -27,4 +28,6 @@ public interface TournamentTeamRepository extends JpaRepository<TournamentTeam, 
 
     @Query("SELECT tt.tournament FROM TournamentTeam tt WHERE tt.team.id = :teamId")
     List<Tournament> findTournamentsByTeamId(Long teamId);
+
+    boolean existsByTournamentIdAndAccountId(Long tournamentId, UUID accountId);
 }
