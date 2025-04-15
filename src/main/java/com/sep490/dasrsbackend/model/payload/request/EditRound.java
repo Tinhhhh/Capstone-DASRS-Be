@@ -18,56 +18,92 @@ public class EditRound {
     @JsonProperty(value = "round_id", index = 1)
     private Long id;
 
-    @JsonProperty("round_name")
+    @NotBlank(message = "Tournament context is required")
+    @Size(max = 5000, message = "Tournament name no more than 5000 characters")
+    @Pattern(regexp = "^[a-zA-ZÀ-ỹ0-9\\s-_!,.]+$", message = "Tournament context contains invalid characters")
+    @JsonProperty(value = "description", index = 2)
+    private String description;
+
+    @JsonProperty(value = "round_name", index = 3)
     @Size(max = 200, message = "Tournament name no more than 200 characters")
     @Pattern(regexp = "^[a-zA-ZÀ-ỹ0-9\\s-_!,.]+$", message = "Tournament context contains invalid characters")
     private String roundName;
 
-    @JsonProperty("round_duration")
+    @JsonProperty(value = "round_duration", index = 4)
     @Min(value = 0, message = "Round duration must be equal or greater than 0")
     @Max(value = 300, message = "Round duration must be less than 300")
     private int roundDuration;
 
-    @JsonProperty("lap_number")
+    @JsonProperty(value = "lap_number", index = 5)
     @Min(value = 0, message = "Lap number must be equal or greater than 0")
     @Max(value = 3, message = "Lap number must be less than 3")
     private int lapNumber;
 
-    @JsonProperty("finish_type")
+    @JsonProperty(value = "finish_type", index = 6)
     @NotNull(message = "Finish type is required")
     private FinishType finishType;
 
-    @JsonProperty("team_limit")
+    @JsonProperty(value = "team_limit", index = 7)
     @Min(value = 0, message = "Team limit must be equal or greater than 0")
     @Max(value = 19, message = "Team limit must be less than 20")
     @NotNull(message = "Team limit is required")
     private int teamLimit;
 
-    @JsonProperty("is_last")
+    @JsonProperty(value = "is_last", index = 8)
     private boolean isLast;
 
-    @NotBlank(message = "Tournament context is required")
-    @Size(max = 5000, message = "Tournament name no more than 5000 characters")
-    @Pattern(regexp = "^[a-zA-ZÀ-ỹ0-9\\s-_!,.]+$", message = "Tournament context contains invalid characters")
-    private String description;
-
-    @JsonProperty("start_date")
+    @JsonProperty(value = "start_date", index = 9)
     private Date startDate;
 
-    @JsonProperty("end_date")
+    @JsonProperty(value = "end_date", index = 10)
     private Date endDate;
 
-    @JsonProperty("scored_method_id")
+    @JsonProperty(value = "scored_method_id", index = 11)
     private Long scoredMethodId;
 
-    @JsonProperty("environment_id")
+    @JsonProperty(value = "environment_id", index = 12)
     private Long environmentId;
 
-    @JsonProperty("match_type_id")
+    @JsonProperty(value = "match_type_id", index = 13)
     private Long matchTypeId;
 
-    @JsonProperty("resource_id")
+    @JsonProperty(value = "resource_id", index = 14)
     private Long resourceId;
+
+    @JsonProperty(value = "lap", index = 15)
+    @DecimalMax(value = "500.0", message = "Team number must be at most 500.0")
+    @DecimalMin(value = "0.0", message = "Team number must be at least 0.0")
+    private double lap;
+
+    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
+    @DecimalMin(value = "-50.0", message = "Team number must be at least -50.0")
+    @JsonProperty(value = "collision", index = 16)
+    private double collision;
+
+    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
+    @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
+    @JsonProperty(value = "total_race_time", index = 17)
+    private double totalRaceTime;
+
+    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
+    @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
+    @JsonProperty(value = "off_track", index = 18)
+    private double offTrack;
+
+    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
+    @DecimalMin(value = "-500.0", message = "Team number must be at least -500.0")
+    @JsonProperty(value = "assist_usage ", index = 19)
+    private double assistUsageCount;
+
+    @DecimalMax(value = "30.0", message = "Team number must be at most 30.0")
+    @DecimalMin(value = "0.0", message = "Team number must be at least 0.0")
+    @JsonProperty(value = "average_speed", index = 20)
+    private double averageSpeed;
+
+    @DecimalMax(value = "100.0", message = "Team number must be at most 100.0")
+    @DecimalMin(value = "0.0", message = "Team number must be at least 0.0")
+    @JsonProperty(value = "total_distance", index = 21)
+    private double totalDistance;
 
 }
 
