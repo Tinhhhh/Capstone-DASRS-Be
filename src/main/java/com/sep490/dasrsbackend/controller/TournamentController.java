@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.model.enums.TournamentStatusFilter;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
+import com.sep490.dasrsbackend.model.payload.response.TournamentByTeamResponse;
 import com.sep490.dasrsbackend.service.TournamentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tournaments")
@@ -84,5 +86,12 @@ public class TournamentController {
     public ResponseEntity<Object> registerTeamToTournament(@PathVariable Long tournamentId, @PathVariable Long teamId) {
         tournamentService.registerTeamToTournament(tournamentId, teamId);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Team successfully registered to the tournament.");
+    }
+
+    @Operation(summary = "Get tournaments by team ID", description = "Retrieve all tournaments associated with a specific team.")
+    @GetMapping("/team/{teamId}")
+    public ResponseEntity<Object> getTournamentsByTeam(@PathVariable Long teamId) {
+        List<TournamentByTeamResponse> tournaments = tournamentService.getTournamentsByTeamId(teamId);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Tournaments fetched successfully", tournaments);
     }
 }

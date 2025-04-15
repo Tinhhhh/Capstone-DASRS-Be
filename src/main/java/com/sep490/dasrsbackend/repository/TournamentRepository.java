@@ -28,4 +28,7 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long>, J
     Optional<Tournament> findByStatusAndEndDateBefore(TournamentStatus tournamentStatus, Date date);
 
     List<Tournament> findByStatusAndStartDateBefore(TournamentStatus tournamentStatus, Date date);
+
+    @Query("SELECT tt.tournament FROM TournamentTeam tt WHERE tt.team.id = :teamId")
+    List<Tournament> findTournamentsByTeamId(Long teamId);
 }

@@ -8,6 +8,7 @@ import com.sep490.dasrsbackend.dto.ParticipantDTO;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
+import com.sep490.dasrsbackend.model.exception.TeamNotFoundException;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.*;
@@ -510,6 +511,11 @@ public class TournamentServiceImpl implements TournamentService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
         }
 
+        List<Account> teamMembers = team.getAccountList();
+        if (teamMembers.size() < 4 || teamMembers.size() > 5) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team must have between 4 and 5 members to register");
+        }
+
         List<Tournament> activeTournaments = tournamentTeamRepository.findActiveTournamentsByTeamId(teamId);
         if (!activeTournaments.isEmpty()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST,
@@ -526,11 +532,6 @@ public class TournamentServiceImpl implements TournamentService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
         }
 
-        List<Account> teamMembers = team.getAccountList();
-        if (teamMembers.isEmpty()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team has no members");
-        }
-
         teamMembers.forEach(member -> {
             TournamentTeam tournamentTeam = new TournamentTeam();
             tournamentTeam.setTournament(tournament);
@@ -540,5 +541,48 @@ public class TournamentServiceImpl implements TournamentService {
         });
 
         roundService.injectTeamToTournament(tournamentId, teamId);
+    }
+
+    @Override
+    public List<TournamentByTeamResponse> getTournamentsByTeamId(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new TeamNotFoundException("Team with ID " + teamId + " not found"));
+
+        List<Tournament> tournaments = tournamentTeamRepository.findTournamentsByTeamId(teamId);
+
+        if (tournaments.isEmpty()) {
+            throw new IllegalStateException("No tournaments found for team: " + team.getTeamName());
+        }
+
+        return tournaments.stream().map(tournament -> {
+            TournamentByTeamResponse response = new TournamentByTeamResponse();
+            response.setId(tournament.getId());
+            response.setTournamentName(tournament.getTournamentName());
+            response.setContext(tournament.getContext());
+            response.setTeamNumber(tournament.getTeamNumber());
+            response.setStatus(tournament.getStatus());
+            response.setStarted(tournament.getStartDate() != null);
+            response.setStartDate(tournament.getStartDate() != null ? tournament.getStartDate().toString() : null);
+            response.setEndDate(tournament.getEndDate() != null ? tournament.getEndDate().toString() : null);
+            response.setCreatedDate(tournament.getCreatedDate().toString());
+
+            response.setTeamList(tournament.getTournamentTeamList().stream()
+                    .map(tt -> {
+                        TeamTournamentResponse teamResponse = new TeamTournamentResponse();
+                        teamResponse.setId(tt.getTeam().getId());
+                        teamResponse.setTeamName(tt.getTeam().getTeamName());
+                        teamResponse.setTeamTag(tt.getTeam().getTeamTag());
+
+                        if (tt.getAccount() != null) {
+                            teamResponse.setAccountId(tt.getAccount().getAccountId());
+                        } else {
+                            teamResponse.setAccountId(null);
+                        }
+
+                        return teamResponse;
+                    }).toList());
+
+            return response;
+        }).toList();
     }
 }

@@ -328,16 +328,21 @@ public class TeamServiceImpl implements TeamService {
                 .orElseThrow(() -> new PlayerNotFoundException("Player not found"));
 
         if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(team).isEmpty()) {
-            throw new InvalidOperationException("Cannot join a team currently in a tournament");
+            throw new InvalidOperationException("Cannot join a team currently participating in a tournament");
         }
 
         if (player.getTeam() != null) {
             throw new InvalidOperationException("Player is already part of a team");
         }
 
+        if (team.getAccountList().size() >= 5) {
+            throw new InvalidOperationException("Team cannot have more than 5 members");
+        }
+
         player.setTeam(team);
         accountRepository.save(player);
     }
+
 
     @Override
     public void changeTeam(Long teamId, UUID playerId) {
@@ -351,12 +356,22 @@ public class TeamServiceImpl implements TeamService {
         }
 
         if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(newTeam).isEmpty()) {
-            throw new InvalidOperationException("Cannot join a team currently in a tournament");
+            throw new InvalidOperationException("Cannot join a team currently participating in a tournament");
+        }
+
+        if (newTeam.getAccountList().size() >= 5) {
+            throw new InvalidOperationException("Team cannot have more than 5 members");
+        }
+
+        Team currentTeam = player.getTeam();
+        if (currentTeam != null && !tournamentTeamRepository.findByTeamAndTournamentNotNull(currentTeam).isEmpty()) {
+            throw new InvalidOperationException("Cannot leave a team currently participating in a tournament");
         }
 
         player.setTeam(newTeam);
         accountRepository.save(player);
     }
+
 
     @Override
     public void leaveTeam(Long teamId, UUID playerId) {

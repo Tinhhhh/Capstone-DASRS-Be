@@ -24,4 +24,7 @@ public interface TournamentTeamRepository extends JpaRepository<TournamentTeam, 
 
     @Query("SELECT CASE WHEN COUNT(tt) > 0 THEN TRUE ELSE FALSE END FROM TournamentTeam tt WHERE tt.team = :team")
     boolean existsByTeam(@Param("team") Team team);
+
+    @Query("SELECT tt.tournament FROM TournamentTeam tt WHERE tt.team.id = :teamId")
+    List<Tournament> findTournamentsByTeamId(Long teamId);
 }
