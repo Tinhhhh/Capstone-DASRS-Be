@@ -402,14 +402,19 @@ public class TeamServiceImpl implements TeamService {
                 matchTeamRepository.deleteAllByTeam(team);
                 tournamentTeamRepository.deleteAllByTeam(team);
 
-                team.getAccountList().forEach(account -> account.setTeam(null));
+                team.getAccountList().forEach(account -> {
+                    account.setTeam(null);
+                    account.setLeader(false);
+                });
                 accountRepository.saveAll(team.getAccountList());
 
                 teamRepository.delete(team);
                 logger.info("Team with only one member successfully deleted.");
             } else if (isSoleLeader && hasParticipated) {
                 leader.setTeam(null);
+                leader.setLeader(false);
                 accountRepository.save(leader);
+
                 team.setStatus(TeamStatus.INACTIVE);
                 teamRepository.save(team);
                 logger.info("Team has been marked as INACTIVE, and the leader has been dissociated.");
@@ -426,7 +431,6 @@ public class TeamServiceImpl implements TeamService {
             throw new RuntimeException("Failed to delete the team due to an internal error.");
         }
     }
-
 
     @Override
     public void createTeam(UUID playerId, String teamName, String teamTag) {
