@@ -388,20 +388,24 @@ public class TeamServiceImpl implements TeamService {
         Account leader = team.getAccountList().stream()
                 .filter(account -> account.getAccountId().equals(leaderId) && account.isLeader())
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Leader not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Leader not found for the specified team"));
 
-        if (!tournamentTeamRepository.findByTeam(team).isEmpty()) {
-            throw new IllegalArgumentException("Cannot delete a team currently involved in a tournament");
+        boolean hasParticipated = !tournamentTeamRepository.findByTeam(team).isEmpty();
+
+        if (!hasParticipated) {
+            leaderboardRepository.deleteAllByTeam(team);
+            matchTeamRepository.deleteAllByTeam(team);
+            tournamentTeamRepository.deleteAllByTeam(team);
+            teamRepository.delete(team);
+
+            throw new IllegalStateException("The team has been successfully deleted as it has not participated in any tournament.");
+        } else {
+            team.getAccountList().clear();
+            team.setStatus(TeamStatus.INACTIVE);
+            teamRepository.save(team);
+
+            throw new IllegalStateException("The team has participated in tournaments. It has been marked as INACTIVE, and all players have been removed.");
         }
-        if (team.getAccountList().size() > 1) {
-            throw new IllegalArgumentException("Cannot delete a team with more than one member.");
-        }
-
-        leaderboardRepository.deleteAllByTeam(team);
-        matchTeamRepository.deleteAllByTeam(team);
-        tournamentTeamRepository.deleteAllByTeam(team);
-
-        teamRepository.delete(team);
     }
 
     @Override
