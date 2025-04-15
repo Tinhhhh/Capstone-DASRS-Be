@@ -175,15 +175,18 @@ public class TournamentServiceImpl implements TournamentService {
         if (newTeamNumber != currentTeamNumber) {
             List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournamentId).stream()
                     .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
-            Round round = rounds.get(0);
 
-            if (round.getTeamLimit() >= newTeamNumber) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, team number must be greater than current team number.");
+            if (!rounds.isEmpty()) {
+                Round round = rounds.get(0);
+
+                if (round.getTeamLimit() >= newTeamNumber) {
+                    throw new DasrsException(HttpStatus.BAD_REQUEST, "Update fails, team number must be greater than current team number.");
+                }
+
+                //regenerate matches
+                roundUtilityService.terminateMatchesToRegenerate(round.getId());
+                roundUtilityService.generateMatch(round, tournament);
             }
-
-            //regenerate matches
-            roundUtilityService.terminateMatchesToRegenerate(round.getId());
-            roundUtilityService.generateMatch(round, tournament);
 
         }
 
@@ -229,6 +232,7 @@ public class TournamentServiceImpl implements TournamentService {
 
         tournaments.forEach(tournamentResponse -> {
             TournamentResponse tournament = getTournament(tournamentResponse.getId());
+            tournament.setStarted(roundUtilityService.isMatchStarted(tournamentResponse.getId()));
             content.add(tournament);
         });
 

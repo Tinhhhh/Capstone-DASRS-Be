@@ -30,8 +30,8 @@ public class RoundUtilityService {
     private final LeaderboardRepository leaderboardRepository;
     private final TournamentTeamRepository tournamentTeamRepository;
 
-    public boolean isMatchStarted(Long id) {
-        List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(id);
+    public boolean isMatchStarted(Long tournamentId) {
+        List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(tournamentId);
         for (Round round : roundList) {
             //Kiểm tra xem có match nào đã khởi động không
             //Kiểm tra getTimeStart before new Date() => match đã khởi động

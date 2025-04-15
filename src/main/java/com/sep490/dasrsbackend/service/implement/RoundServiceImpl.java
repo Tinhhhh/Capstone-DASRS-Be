@@ -72,9 +72,6 @@ public class RoundServiceImpl implements RoundService {
         MatchType matchType = matchTypeRepository.findByIdAndStatus(newRound.getMatchTypeId(), MatchTypeStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match Type not found"));
 
-        ScoredMethod scoredMethod = scoredMethodRepository.findByIdAndStatus(newRound.getScoredMethodId(), ScoredMethodStatus.ACTIVE)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Scored Method not found"));
-
         Environment environment = environmentRepository.findByIdAndStatus(newRound.getEnvironmentId(), EnvironmentStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
 
@@ -97,6 +94,21 @@ public class RoundServiceImpl implements RoundService {
         }
 
         newRoundValidation(newRound, tournament);
+
+        ScoredMethod sc = ScoredMethod.builder()
+                .lap(newRound.getLap())
+                .collision(newRound.getCollision())
+                .totalRaceTime(newRound.getTotalRaceTime())
+                .offTrack(newRound.getOffTrack())
+                .assistUsageCount(newRound.getAssistUsageCount())
+                .averageSpeed(newRound.getAverageSpeed())
+                .totalDistance(newRound.getTotalDistance())
+                .matchFinishType(newRound.getFinishType())
+                .status(ScoredMethodStatus.ACTIVE)
+                .build();
+
+        sc = scoredMethodRepository.save(sc);
+
         Round round = Round.builder()
                 .roundName(newRound.getRoundName())
                 .roundDuration(newRound.getRoundDuration())
@@ -111,7 +123,7 @@ public class RoundServiceImpl implements RoundService {
                 .endDate(newRound.getEndDate())
                 .tournament(tournament)
                 .matchType(matchType)
-                .scoredMethod(scoredMethod)
+                .scoredMethod(sc)
                 .environment(environment)
                 .resource(resource)
                 .build();
@@ -120,6 +132,273 @@ public class RoundServiceImpl implements RoundService {
         updateLatestRound(tournament);
         roundUtilityService.generateMatch(round, tournament);
 //        generateLeaderboard(round);
+    }
+
+    @Transactional
+    @Override
+    public void editRound(EditRound request) {
+        Round round = roundRepository.findById(request.getId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
+
+        Tournament tournament = tournamentRepository.findById(round.getTournament().getId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+
+        MatchType matchType = matchTypeRepository.findByIdAndStatus(request.getMatchTypeId(), MatchTypeStatus.ACTIVE)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match Type not found"));
+
+        ScoredMethod scoredMethod = scoredMethodRepository.findByIdAndStatus(request.getScoredMethodId(), ScoredMethodStatus.ACTIVE)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Scored Method not found"));
+
+        Environment environment = environmentRepository.findByIdAndStatus(request.getEnvironmentId(), EnvironmentStatus.ACTIVE)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
+
+        Resource map = resourceRepository.findByIdAndIsEnable(request.getResourceId(), true)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Map not found"));
+
+        if (map.getResourceType() != ResourceType.MAP) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource invalid, The resource need to be a map");
+        }
+
+        if (roundUtilityService.isMatchStarted(round.getId())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot edit round, there are matches in this round that have started");
+        }
+
+        request.setStartDate(DateUtil.convertToStartOfTheDay(request.getStartDate()));
+        request.setEndDate(DateUtil.convertToEndOfTheDay(request.getEndDate()));
+
+        if (request.getFinishType() == FinishType.LAP) {
+            request.setRoundDuration(0);
+        } else {
+            request.setLapNumber(0);
+        }
+
+        editRoundValidation(request, tournament);
+
+        modelMapper.getConfiguration()
+                .setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
+                .setAmbiguityIgnored(true)
+                .setSkipNullEnabled(true)
+                .setMatchingStrategy(MatchingStrategies.STRICT);
+
+        modelMapper.map(request, round);
+        modelMapper.map(request, scoredMethod);
+        scoredMethod.setId(request.getScoredMethodId());
+
+        //Đổi match type thì phải generate lại match
+        boolean flag = false;
+        if (round.getMatchType().getId() != request.getMatchTypeId()) {
+            roundUtilityService.terminateMatchesToRegenerate(request.getResourceId());
+            flag = true;
+        }
+
+        round.setMatchType(matchType);
+        round.setScoredMethod(scoredMethod);
+        round.setEnvironment(environment);
+        round.setResource(map);
+
+        roundRepository.save(round);
+        if (flag) {
+            roundUtilityService.generateMatch(round, tournament);
+        }
+    }
+
+    @Transactional
+    @Override
+    public void terminateRound(Long id) {
+
+        Round round = roundRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
+
+        if (round.getStatus() != RoundStatus.ACTIVE) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Terminate fails, this round has been completed or terminated");
+        }
+
+        //Terminate các round, match chưa hoàn thành
+        terminateMatchesByRound(round);
+
+        round.setStatus(RoundStatus.TERMINATED);
+        round.setLatest(false);
+        roundRepository.save(round);
+        updateLatestRound(round.getTournament());
+    }
+
+    @Override
+    public RoundResponse findRoundByRoundId(Long id) {
+
+        Round round = roundRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
+
+        modelMapper.getConfiguration().setFieldMatchingEnabled(true)
+                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
+                .setAmbiguityIgnored(true)
+                .setSkipNullEnabled(false)
+                .setMatchingStrategy(MatchingStrategies.STRICT);
+
+        RoundResponse roundResponse = modelMapper.map(round, RoundResponse.class);
+
+        roundResponse.setStartDate(DateUtil.formatTimestamp(round.getStartDate()));
+        roundResponse.setEndDate(DateUtil.formatTimestamp(round.getEndDate()));
+        roundResponse.setCreateDate(DateUtil.formatTimestamp(round.getCreatedDate()));
+        roundResponse.setMatchTypeName(round.getMatchType().getMatchTypeName());
+        roundResponse.setTournamentId(round.getTournament().getId());
+        roundResponse.setScoredMethodId(round.getScoredMethod().getId());
+        roundResponse.setEnvironmentId(round.getEnvironment().getId());
+        roundResponse.setMatchTypeId(round.getMatchType().getId());
+        roundResponse.setMapId(round.getResource().getId());
+
+        return roundResponse;
+
+    }
+
+    @Override
+    public List<RoundResponse> findRoundByTournamentId(Long id) {
+        // by admin, organizer
+        Tournament tournament = tournamentRepository.findById(id)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+
+        List<Round> rounds = roundRepository.findByTournamentId(tournament.getId());
+        List<RoundResponse> roundResponses = new ArrayList<>();
+        rounds.forEach(round -> {
+            RoundResponse roundResponse = findRoundByRoundId(round.getId());
+            roundResponses.add(roundResponse);
+        });
+
+        return roundResponses;
+    }
+
+    @Override
+    public GetRoundsByAccountResponse getRoundsByAccountId(UUID accountId, int pageNo, int pageSize, RoundSort sortBy, String keyword) {
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        Specification<Round> spec = Specification.where(RoundSpecification.hasKeyword(keyword));
+
+        Page<Round> roundsPage = roundRepository.findAll(spec, pageable);
+        List<Round> rounds = roundsPage.getContent();
+
+        List<GetPlayerRoundResponse> roundResponses = rounds.stream()
+                .map(round -> new GetPlayerRoundResponse(
+                        round.getId(),
+                        round.getRoundName(),
+                        round.getTeamLimit(),
+                        round.isLast(),
+                        round.getDescription(),
+                        round.getStatus(),
+                        round.getStartDate() != null ? round.getStartDate().toString() : null,
+                        round.getEndDate() != null ? round.getEndDate().toString() : null,
+                        round.getCreatedDate() != null ? round.getCreatedDate().toString() : null,
+                        round.getTournament() != null ? round.getTournament().getId() : null,
+                        round.getTournament() != null ? round.getTournament().getTournamentName() : null,
+                        round.getScoredMethod() != null ? round.getScoredMethod().getId() : null,
+                        round.getEnvironment() != null ? round.getEnvironment().getId() : null,
+                        round.getMatchType() != null ? round.getMatchType().getId() : null,
+                        round.getMatchType() != null ? round.getMatchType().getMatchTypeName() : null,
+                        round.getResource() != null ? round.getResource().getId() : null,
+                        round.getMatchType() != null ? round.getFinishType() : null
+                ))
+                .collect(toList());
+
+        return GetRoundsByAccountResponse.builder()
+                .rounds(roundResponses)
+                .totalPages(roundsPage.getTotalPages())
+                .totalElements(roundsPage.getTotalElements())
+                .pageNo(roundsPage.getNumber())
+                .pageSize(roundsPage.getSize())
+                .last(roundsPage.isLast())
+                .build();
+    }
+
+    @Override
+    public ListRoundResponse findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword) {
+
+        Sort sort = Sort.by(sortBy.getField()).descending();
+
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<Round> spec = Specification.where(RoundSpecification.hasRoundName(keyword));
+
+        Page<Round> roundPage = roundRepository.findAll(spec, pageable);
+
+        List<RoundResponse> roundResponses = new ArrayList<>();
+        roundPage.getContent().forEach(round -> {
+            RoundResponse roundResponse = findRoundByRoundId(round.getId());
+            roundResponses.add(roundResponse);
+        });
+
+        ListRoundResponse listRoundResponses = new ListRoundResponse();
+        listRoundResponses.setTotalPages(roundPage.getTotalPages());
+        listRoundResponses.setTotalElements(roundPage.getTotalElements());
+        listRoundResponses.setPageNo(roundPage.getNumber());
+        listRoundResponses.setPageSize(roundPage.getSize());
+        listRoundResponses.setLast(roundPage.isLast());
+        listRoundResponses.setContent(roundResponses);
+
+        return listRoundResponses;
+    }
+
+    @Override
+    public ListRoundResponse findAllRoundsByDate(int pageNo, int pageSize, RoundSort sortBy, String keyword, LocalDateTime start, LocalDateTime end) {
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<Round> spec = Specification
+                .where(RoundSpecification.hasKeyword(keyword))
+                .and(RoundSpecification.betweenStartAndEndDate(start, end)
+                        .and(RoundSpecification.hasStatus(RoundStatus.ACTIVE))
+                );
+
+        Page<Round> roundPage = roundRepository.findAll(spec, pageable);
+        List<RoundResponse> roundResponses = new ArrayList<>();
+        roundPage.getContent().forEach(round -> {
+            if (round.getTournament().getStatus() == TournamentStatus.ACTIVE) {
+                RoundResponse roundResponse = findRoundByRoundId(round.getId());
+                roundResponses.add(roundResponse);
+            }
+        });
+
+        ListRoundResponse listRoundResponses = new ListRoundResponse();
+        listRoundResponses.setTotalPages(roundPage.getTotalPages());
+        listRoundResponses.setTotalElements(roundPage.getTotalElements());
+        listRoundResponses.setPageNo(roundPage.getNumber());
+        listRoundResponses.setPageSize(roundPage.getSize());
+        listRoundResponses.setLast(roundPage.isLast());
+        listRoundResponses.setContent(roundResponses);
+
+        return listRoundResponses;
+    }
+
+    @Override
+    public void injectTeamToTournament(Long tournamentId, Long teamId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
+
+        if (team.getStatus() != TeamStatus.ACTIVE) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
+        }
+        List<Team> teams = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
+                .map(TournamentTeam::getTeam)
+                .distinct()
+                .toList();
+
+        if (tournament.getTeamNumber() <= teams.size()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
+        }
+
+        List<Account> accounts = accountRepository.findByTeamId(teamId);
+
+        for (Account account : accounts) {
+            if (!account.isLocked()) {
+                TournamentTeam tournamentTeam = new TournamentTeam();
+                tournamentTeam.setTournament(tournament);
+                tournamentTeam.setTeam(team);
+                tournamentTeam.setAccount(account);
+                tournamentTeamRepository.save(tournamentTeam);
+            }
+
+        }
+        roundUtilityService.injectTeamToMatchTeam(tournamentId);
     }
 
     private void updateLatestRound(Tournament tournament) {
@@ -252,74 +531,6 @@ public class RoundServiceImpl implements RoundService {
 
     }
 
-    @Transactional
-    @Override
-    public void editRound(EditRound request) {
-        Round round = roundRepository.findById(request.getId())
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
-
-        Tournament tournament = tournamentRepository.findById(round.getTournament().getId())
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
-
-        MatchType matchType = matchTypeRepository.findByIdAndStatus(request.getMatchTypeId(), MatchTypeStatus.ACTIVE)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match Type not found"));
-
-        ScoredMethod scoredMethod = scoredMethodRepository.findByIdAndStatus(request.getScoredMethodId(), ScoredMethodStatus.ACTIVE)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Scored Method not found"));
-
-        Environment environment = environmentRepository.findByIdAndStatus(request.getEnvironmentId(), EnvironmentStatus.ACTIVE)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
-
-        Resource map = resourceRepository.findByIdAndIsEnable(request.getResourceId(), true)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Map not found"));
-
-        if (map.getResourceType() != ResourceType.MAP) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource invalid, The resource need to be a map");
-        }
-
-        if (roundUtilityService.isMatchStarted(round.getId())) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot edit round, there are matches in this round that have started");
-        }
-
-        request.setStartDate(DateUtil.convertToStartOfTheDay(request.getStartDate()));
-        request.setEndDate(DateUtil.convertToEndOfTheDay(request.getEndDate()));
-
-        if (request.getFinishType() == FinishType.LAP) {
-            request.setRoundDuration(0);
-        } else {
-            request.setLapNumber(0);
-        }
-
-        editRoundValidation(request, tournament);
-
-        modelMapper.getConfiguration()
-                .setFieldMatchingEnabled(true)
-                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
-                .setAmbiguityIgnored(true)
-                .setSkipNullEnabled(true)
-                .setMatchingStrategy(MatchingStrategies.STRICT);
-
-        modelMapper.map(request, round);
-
-        //Đổi match type thì phải generate lại match
-        boolean flag = false;
-        if (round.getMatchType().getId() != request.getMatchTypeId()) {
-            roundUtilityService.terminateMatchesToRegenerate(request.getResourceId());
-            flag = true;
-        }
-
-        round.setMatchType(matchType);
-        round.setScoredMethod(scoredMethod);
-        round.setEnvironment(environment);
-        round.setResource(map);
-
-        roundRepository.save(round);
-        if (flag) {
-            roundUtilityService.generateMatch(round, tournament);
-        }
-    }
-
-
     private void editRoundValidation(EditRound editRound, Tournament tournament) {
 
         if (tournament.getStatus() != TournamentStatus.ACTIVE) {
@@ -399,26 +610,6 @@ public class RoundServiceImpl implements RoundService {
         validateTime(editRound.getStartDate(), editRound.getEndDate(), boundaryStartDate, boundaryEndDate, matches);
     }
 
-    @Transactional
-    @Override
-    public void terminateRound(Long id) {
-
-        Round round = roundRepository.findById(id)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
-
-        if (round.getStatus() != RoundStatus.ACTIVE) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Terminate fails, this round has been completed or terminated");
-        }
-
-        //Terminate các round, match chưa hoàn thành
-        terminateMatchesByRound(round);
-
-        round.setStatus(RoundStatus.TERMINATED);
-        round.setLatest(false);
-        roundRepository.save(round);
-        updateLatestRound(round.getTournament());
-    }
-
     private void terminateMatchesByRound(Round round) {
         List<Match> matches = matchRepository.findByRoundId(round.getId()).stream().
                 filter(match -> match.getStatus() == MatchStatus.PENDING)
@@ -437,80 +628,9 @@ public class RoundServiceImpl implements RoundService {
         }
     }
 
-    @Override
-    public RoundResponse findRoundByRoundId(Long id) {
-
-        Round round = roundRepository.findById(id)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
-
-        modelMapper.getConfiguration().setFieldMatchingEnabled(true)
-                .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
-                .setAmbiguityIgnored(true)
-                .setSkipNullEnabled(false)
-                .setMatchingStrategy(MatchingStrategies.STRICT);
-
-        RoundResponse roundResponse = modelMapper.map(round, RoundResponse.class);
-
-        roundResponse.setStartDate(DateUtil.formatTimestamp(round.getStartDate()));
-        roundResponse.setEndDate(DateUtil.formatTimestamp(round.getEndDate()));
-        roundResponse.setCreateDate(DateUtil.formatTimestamp(round.getCreatedDate()));
-        roundResponse.setMatchTypeName(round.getMatchType().getMatchTypeName());
-        roundResponse.setTournamentId(round.getTournament().getId());
-        roundResponse.setScoredMethodId(round.getScoredMethod().getId());
-        roundResponse.setEnvironmentId(round.getEnvironment().getId());
-        roundResponse.setMatchTypeId(round.getMatchType().getId());
-        roundResponse.setMapId(round.getResource().getId());
-
-        return roundResponse;
-
-    }
-
-    @Override
-    public List<RoundResponse> findRoundByTournamentId(Long id) {
-        // by admin, organizer
-        Tournament tournament = tournamentRepository.findById(id)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
-
-        List<Round> rounds = roundRepository.findByTournamentId(tournament.getId());
-        List<RoundResponse> roundResponses = new ArrayList<>();
-        rounds.forEach(round -> {
-            RoundResponse roundResponse = findRoundByRoundId(round.getId());
-            roundResponses.add(roundResponse);
-        });
-
-        return roundResponses;
-    }
-
-    @Override
-    public ListRoundResponse findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword) {
-
-        Sort sort = Sort.by(sortBy.getField()).descending();
-
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Specification<Round> spec = Specification.where(RoundSpecification.hasRoundName(keyword));
-
-        Page<Round> roundPage = roundRepository.findAll(spec, pageable);
-
-        List<RoundResponse> roundResponses = new ArrayList<>();
-        roundPage.getContent().forEach(round -> {
-            RoundResponse roundResponse = findRoundByRoundId(round.getId());
-            roundResponses.add(roundResponse);
-        });
-
-        ListRoundResponse listRoundResponses = new ListRoundResponse();
-        listRoundResponses.setTotalPages(roundPage.getTotalPages());
-        listRoundResponses.setTotalElements(roundPage.getTotalElements());
-        listRoundResponses.setPageNo(roundPage.getNumber());
-        listRoundResponses.setPageSize(roundPage.getSize());
-        listRoundResponses.setLast(roundPage.isLast());
-        listRoundResponses.setContent(roundResponses);
-
-        return listRoundResponses;
-    }
-
     //second, minute, hour, day, month, year
     //* = every
-//    @Scheduled(cron = "5 * * * * ?")
+    //@Scheduled(cron = "5 * * * * ?")
     @Scheduled(cron = "1 0 0 * * ?")
     @Transactional
     public void checkIfRoundEnd() {
@@ -539,113 +659,6 @@ public class RoundServiceImpl implements RoundService {
         }
 
         logger.info("Detecting round end task is completed");
-    }
-
-    @Override
-    public GetRoundsByAccountResponse getRoundsByAccountId(UUID accountId, int pageNo, int pageSize, RoundSort sortBy, String keyword) {
-        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-
-        Specification<Round> spec = Specification.where(RoundSpecification.hasKeyword(keyword));
-
-        Page<Round> roundsPage = roundRepository.findAll(spec, pageable);
-        List<Round> rounds = roundsPage.getContent();
-
-        List<GetPlayerRoundResponse> roundResponses = rounds.stream()
-                .map(round -> new GetPlayerRoundResponse(
-                        round.getId(),
-                        round.getRoundName(),
-                        round.getTeamLimit(),
-                        round.isLast(),
-                        round.getDescription(),
-                        round.getStatus(),
-                        round.getStartDate() != null ? round.getStartDate().toString() : null,
-                        round.getEndDate() != null ? round.getEndDate().toString() : null,
-                        round.getCreatedDate() != null ? round.getCreatedDate().toString() : null,
-                        round.getTournament() != null ? round.getTournament().getId() : null,
-                        round.getTournament() != null ? round.getTournament().getTournamentName() : null,
-                        round.getScoredMethod() != null ? round.getScoredMethod().getId() : null,
-                        round.getEnvironment() != null ? round.getEnvironment().getId() : null,
-                        round.getMatchType() != null ? round.getMatchType().getId() : null,
-                        round.getMatchType() != null ? round.getMatchType().getMatchTypeName() : null,
-                        round.getResource() != null ? round.getResource().getId() : null,
-                        round.getMatchType() != null ? round.getFinishType() : null
-                ))
-                .collect(toList());
-
-        return GetRoundsByAccountResponse.builder()
-                .rounds(roundResponses)
-                .totalPages(roundsPage.getTotalPages())
-                .totalElements(roundsPage.getTotalElements())
-                .pageNo(roundsPage.getNumber())
-                .pageSize(roundsPage.getSize())
-                .last(roundsPage.isLast())
-                .build();
-    }
-
-    @Override
-    public ListRoundResponse findAllRoundsByDate(int pageNo, int pageSize, RoundSort sortBy, String keyword, LocalDateTime start, LocalDateTime end) {
-        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Specification<Round> spec = Specification
-                .where(RoundSpecification.hasKeyword(keyword))
-                .and(RoundSpecification.betweenStartAndEndDate(start, end)
-                        .and(RoundSpecification.hasStatus(RoundStatus.ACTIVE))
-                );
-
-        Page<Round> roundPage = roundRepository.findAll(spec, pageable);
-        List<RoundResponse> roundResponses = new ArrayList<>();
-        roundPage.getContent().forEach(round -> {
-            if (round.getTournament().getStatus() == TournamentStatus.ACTIVE) {
-                RoundResponse roundResponse = findRoundByRoundId(round.getId());
-                roundResponses.add(roundResponse);
-            }
-        });
-
-        ListRoundResponse listRoundResponses = new ListRoundResponse();
-        listRoundResponses.setTotalPages(roundPage.getTotalPages());
-        listRoundResponses.setTotalElements(roundPage.getTotalElements());
-        listRoundResponses.setPageNo(roundPage.getNumber());
-        listRoundResponses.setPageSize(roundPage.getSize());
-        listRoundResponses.setLast(roundPage.isLast());
-        listRoundResponses.setContent(roundResponses);
-
-        return listRoundResponses;
-    }
-
-    @Override
-    public void injectTeamToTournament(Long tournamentId, Long teamId) {
-        Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
-
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
-
-        if (team.getStatus() != TeamStatus.ACTIVE) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
-        }
-        List<Team> teams = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
-                .map(TournamentTeam::getTeam)
-                .distinct()
-                .toList();
-
-        if (tournament.getTeamNumber() <= teams.size()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
-        }
-
-        List<Account> accounts = accountRepository.findByTeamId(teamId);
-
-        for (Account account : accounts) {
-            if (!account.isLocked()) {
-                TournamentTeam tournamentTeam = new TournamentTeam();
-                tournamentTeam.setTournament(tournament);
-                tournamentTeam.setTeam(team);
-                tournamentTeam.setAccount(account);
-                tournamentTeamRepository.save(tournamentTeam);
-            }
-
-        }
-        roundUtilityService.injectTeamToMatchTeam(tournamentId);
     }
 
     public void generateLeaderboard(Round round) {

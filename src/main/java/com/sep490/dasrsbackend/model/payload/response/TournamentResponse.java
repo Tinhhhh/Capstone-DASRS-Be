@@ -1,15 +1,9 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.entity.Round;
-import com.sep490.dasrsbackend.model.entity.Team;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
-import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
 
-import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -32,6 +26,9 @@ public class TournamentResponse {
     private int teamNumber;
 
     private TournamentStatus status;
+
+    @JsonProperty("is_started")
+    private boolean isStarted;
 
     @JsonProperty("start_date")
     private String startDate;
