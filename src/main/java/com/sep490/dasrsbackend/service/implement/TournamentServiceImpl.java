@@ -565,23 +565,6 @@ public class TournamentServiceImpl implements TournamentService {
             response.setStartDate(tournament.getStartDate() != null ? tournament.getStartDate().toString() : null);
             response.setEndDate(tournament.getEndDate() != null ? tournament.getEndDate().toString() : null);
             response.setCreatedDate(tournament.getCreatedDate().toString());
-
-            response.setTeamList(tournament.getTournamentTeamList().stream()
-                    .map(tt -> {
-                        TeamTournamentResponse teamResponse = new TeamTournamentResponse();
-                        teamResponse.setId(tt.getTeam().getId());
-                        teamResponse.setTeamName(tt.getTeam().getTeamName());
-                        teamResponse.setTeamTag(tt.getTeam().getTeamTag());
-
-                        if (tt.getAccount() != null) {
-                            teamResponse.setAccountId(tt.getAccount().getAccountId());
-                        } else {
-                            teamResponse.setAccountId(null);
-                        }
-
-                        return teamResponse;
-                    }).toList());
-
             return response;
         }).toList();
     }

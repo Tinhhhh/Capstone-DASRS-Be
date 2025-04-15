@@ -38,7 +38,4 @@ public class TournamentByTeamResponse {
 
     @JsonProperty("created_date")
     private String createdDate;
-
-    @JsonProperty("team_list")
-    private List<TeamTournamentResponse> teamList;
 }
