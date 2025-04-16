@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sep490.dasrsbackend.model.enums.FinishType;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.ResourceType;
 import lombok.AllArgsConstructor;
@@ -33,6 +34,15 @@ public class UnityMatchResponse {
 
     @JsonProperty("time_end")
     private String timeEnd;
+
+    @JsonProperty(value = "round_duration")
+    private int roundDuration;
+
+    @JsonProperty(value = "lap_number")
+    private int lapNumber;
+
+    @JsonProperty(value = "finish_type")
+    private FinishType finishType;
 
     @JsonProperty("status")
     private MatchStatus status;
