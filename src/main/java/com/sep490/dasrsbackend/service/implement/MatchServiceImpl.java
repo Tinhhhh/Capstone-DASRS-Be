@@ -467,6 +467,7 @@ public class MatchServiceImpl implements MatchService {
         MatchResponse matchResponse = modelMapper.map(getMatchResponse(match), MatchResponse.class);
         UnityMatchResponse unityMatchResponse = modelMapper.map(matchResponse, UnityMatchResponse.class);
         unityMatchResponse.setMatchId(match.getId());
+        unityMatchResponse.setScoredMethodId(round.getScoredMethod().getId());
         unityMatchResponse.setRoundDuration(round.getRoundDuration());
         unityMatchResponse.setLapNumber(round.getLapNumber());
         unityMatchResponse.setFinishType(round.getFinishType());
