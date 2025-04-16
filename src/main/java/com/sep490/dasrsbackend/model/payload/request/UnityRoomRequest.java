@@ -15,7 +15,6 @@ import java.util.UUID;
 @NoArgsConstructor
 public class UnityRoomRequest {
 
-
     private UUID accountId;
 
     private String matchCode;
