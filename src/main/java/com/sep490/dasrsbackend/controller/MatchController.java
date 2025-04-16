@@ -112,7 +112,7 @@ public class MatchController {
     @Operation(summary = "Api using for unity to check if player is validate to join in match", description = "Get match by time, format: yyyy-MM-ddTHH:mm:ss. Example: 2025-04-02T08:01:00")
     @GetMapping("/unity")
     public ResponseEntity<Object> isPlayerInUnity(@RequestParam("accountId") UUID accountId,
-                                                  @RequestParam("matchCode") String matchCode,
+                                                  @RequestParam("roomId") String matchCode,
                                                   @RequestParam("joinTime") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime joinTime) {
         UnityRoomRequest unityRoomRequest = new UnityRoomRequest(accountId, matchCode, DateUtil.convertToDate(joinTime));
 
