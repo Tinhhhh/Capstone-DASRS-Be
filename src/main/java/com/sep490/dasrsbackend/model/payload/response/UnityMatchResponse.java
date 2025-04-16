@@ -23,6 +23,9 @@ public class UnityMatchResponse {
     @JsonProperty("match_id")
     private Long matchId;
 
+    @JsonProperty("scored_method_id")
+    private Long scoredMethodId;
+
     @JsonProperty("match_name")
     private String matchName;
 
