@@ -10,8 +10,14 @@ import lombok.*;
 @Builder
 public class UnityRoomResponse {
 
-    @JsonProperty("is_success")
+    @JsonProperty(value = "is_success", index = 1)
     private boolean isSuccess;
+
+    @JsonProperty(value = "scored_method_id", index = 2)
+    private Long scoredMethodId;
+
+    @JsonProperty(value = "match_code", index = 3)
+    private String matchCode;
 
     @JsonProperty("message")
     private String message;
