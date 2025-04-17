@@ -2,12 +2,8 @@ package com.sep490.dasrsbackend.model.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
-import com.sep490.dasrsbackend.model.enums.MatchTypeStatus;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.FutureOrPresent;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -58,7 +54,7 @@ public class Match {
     private List<Record> recordList;
 
     @OneToMany(mappedBy = "match")
-    private List<Review> reviewList;
+    private List<Complaint> complaintList;
 
     @ManyToOne
     @JoinColumn(name = "round_id", nullable = false)

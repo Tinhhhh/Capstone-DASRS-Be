@@ -26,7 +26,7 @@ public class Team {
     @Column(name = "team_name")
     private String teamName;
 
-    @Column(name = "team_tag")
+    @Column(name = "team_tag", unique = true)
     private String teamTag;
 
     @Enumerated(EnumType.STRING)

@@ -25,7 +25,7 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long>, J
             nativeQuery = true)
     boolean findByDate(@Param("startDate") Date startDate);
 
-    Optional<Tournament> findByStatusAndEndDateBefore(TournamentStatus tournamentStatus, Date date);
+    List<Tournament> findByStatusAndEndDateBefore(TournamentStatus tournamentStatus, Date date);
 
     List<Tournament> findByStatusAndStartDateBefore(TournamentStatus tournamentStatus, Date date);
 

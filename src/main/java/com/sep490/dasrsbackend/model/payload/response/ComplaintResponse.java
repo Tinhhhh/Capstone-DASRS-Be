@@ -1,7 +1,7 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.ReviewStatus;
+import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -9,7 +9,7 @@ import java.util.Date;
 
 @Data
 @Builder
-public class ReviewResponse {
+public class ComplaintResponse {
 
     private Long id;
 
@@ -19,7 +19,7 @@ public class ReviewResponse {
 
     private String reply;
 
-    private ReviewStatus status;
+    private ComplaintStatus status;
 
     @JsonProperty("created_date")
     private Date createdDate;

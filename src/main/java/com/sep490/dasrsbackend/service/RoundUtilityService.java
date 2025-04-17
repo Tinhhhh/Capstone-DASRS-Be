@@ -31,7 +31,7 @@ public class RoundUtilityService {
     private final TournamentTeamRepository tournamentTeamRepository;
 
     public boolean isMatchStarted(Long tournamentId) {
-        List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(tournamentId);
+        List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(tournamentId).stream().filter(round -> round.getStatus() == RoundStatus.ACTIVE).toList();
         for (Round round : roundList) {
             //Kiểm tra xem có match nào đã khởi động không
             //Kiểm tra getTimeStart before new Date() => match đã khởi động
@@ -44,18 +44,24 @@ public class RoundUtilityService {
         return false;
     }
 
+    public boolean isMatchStartedForRound(Long roundId) {
+        List<Match> mathList = matchRepository.findByRoundId(roundId).stream()
+                .filter(match -> match.getTimeStart().before(new Date())).toList();
+        if (!mathList.isEmpty()) {
+            return true;
+        }
+        return false;
+    }
+
     public void terminateMatchesToRegenerate(Long roundId) {
         List<Match> matches = matchRepository.findByRoundId(roundId);
         for (Match match : matches) {
-            match.setStatus(MatchStatus.TERMINATED);
             List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
-            for (MatchTeam matchTeam : matchTeams) {
-                matchTeam.setStatus(MatchTeamStatus.TERMINATED);
-                matchTeamRepository.save(matchTeam);
-            }
-            matchRepository.save(match);
+            matchTeamRepository.deleteAll(matchTeams);
         }
+        matchRepository.deleteAll(matches);
     }
+
 
     public void generateMatch(Round round, Tournament tournament) {
         List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId()).stream()
@@ -190,14 +196,20 @@ public class RoundUtilityService {
 
         List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournamentId).stream()
                 .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
+
+        //trường hợp không có round nào đang hoạt động => không cần inject
+        if (rounds.stream().filter(round -> round.getStatus() == RoundStatus.ACTIVE).count() == 0) {
+            return;
+        }
+
         //Xác định inject cho round nào
         //Mặc định láy round đầu tiên
         Round round = new Round();
         List<Leaderboard> leaderboards = new ArrayList<>();
 
         for (int i = 0; i < rounds.size(); i++) {
-            if (rounds.get(i).getStatus() == RoundStatus.ACTIVE) {
-                round = rounds.get(i);
+            if (rounds.get(i).getStatus() == RoundStatus.COMPLETED) {
+                round = rounds.get(i + 1);
             }
 
             //Nếu round đang được inject không phải là round đầu tiên

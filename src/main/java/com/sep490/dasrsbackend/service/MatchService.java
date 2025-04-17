@@ -33,4 +33,8 @@ public interface MatchService {
 
     //get match score details
     List<LeaderboardDetails> getMatchScoreDetails(Long matchId, Long teamId);
+
+    void rejoinMatch(Long matchId, UUID accountId);
+
+    void createMatch(Long roundId, Long teamId);
 }
