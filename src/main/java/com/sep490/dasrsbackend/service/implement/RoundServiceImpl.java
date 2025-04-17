@@ -146,9 +146,6 @@ public class RoundServiceImpl implements RoundService {
         MatchType matchType = matchTypeRepository.findByIdAndStatus(request.getMatchTypeId(), MatchTypeStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match Type not found"));
 
-        ScoredMethod scoredMethod = scoredMethodRepository.findByIdAndStatus(request.getScoredMethodId(), ScoredMethodStatus.ACTIVE)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Scored Method not found"));
-
         Environment environment = environmentRepository.findByIdAndStatus(request.getEnvironmentId(), EnvironmentStatus.ACTIVE)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Environment not found"));
 
@@ -159,7 +156,7 @@ public class RoundServiceImpl implements RoundService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource invalid, The resource need to be a map");
         }
 
-        if (roundUtilityService.isMatchStarted(round.getId())) {
+        if (roundUtilityService.isMatchStartedForRound(round.getId())) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot edit round, there are matches in this round that have started");
         }
 
@@ -174,6 +171,17 @@ public class RoundServiceImpl implements RoundService {
 
         editRoundValidation(request, tournament);
 
+        //Đổi match type hoặc start date thì phải generate lại match
+        boolean flag = false;
+
+        if (round.getMatchType().getId() != request.getMatchTypeId()) {
+            flag = true;
+        }
+
+        if (round.getStartDate().getTime() != request.getStartDate().getTime()) {
+            flag = true;
+        }
+
         modelMapper.getConfiguration()
                 .setFieldMatchingEnabled(true)
                 .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
@@ -181,24 +189,21 @@ public class RoundServiceImpl implements RoundService {
                 .setSkipNullEnabled(true)
                 .setMatchingStrategy(MatchingStrategies.STRICT);
 
+        Long scId = round.getScoredMethod().getId();
+        ScoredMethod sc = round.getScoredMethod();
+        modelMapper.map(request, sc);
+        sc.setId(scId);
         modelMapper.map(request, round);
-        modelMapper.map(request, scoredMethod);
-        scoredMethod.setId(request.getScoredMethodId());
-
-        //Đổi match type thì phải generate lại match
-        boolean flag = false;
-        if (round.getMatchType().getId() != request.getMatchTypeId()) {
-            roundUtilityService.terminateMatchesToRegenerate(request.getResourceId());
-            flag = true;
-        }
+        round.setScoredMethod(sc);
 
         round.setMatchType(matchType);
-        round.setScoredMethod(scoredMethod);
+        round.setScoredMethod(sc);
         round.setEnvironment(environment);
         round.setResource(map);
 
         roundRepository.save(round);
         if (flag) {
+            roundUtilityService.terminateMatchesToRegenerate(round.getId());
             roundUtilityService.generateMatch(round, tournament);
         }
     }
@@ -645,17 +650,18 @@ public class RoundServiceImpl implements RoundService {
         Date date = calendar.getTime();
 
         //Kiểm tra xem có vòng sẽ kết thúc ko
-        Optional<Round> roundEnd = roundRepository.findByStatusAndEndDateBefore(RoundStatus.ACTIVE, date);
-        if (roundEnd.isPresent()) {
-            logger.info("Found a round that reach end date");
-            Tournament tournament = roundEnd.get().getTournament();
-            if (tournament.getStatus() == TournamentStatus.ACTIVE) {
-                roundEnd.get().setStatus(RoundStatus.COMPLETED);
-                roundRepository.save(roundEnd.get());
-                logger.info("Change round status to completed. Round id: {}", roundEnd.get().getId());
+        List<Round> roundEnd = roundRepository.findByStatusAndEndDateBefore(RoundStatus.ACTIVE, date);
+        if (!roundEnd.isEmpty()) {
+            for (Round round : roundEnd) {
+                logger.info("Found a round that reach end date");
+                Tournament tournament = round.getTournament();
+                if (tournament.getStatus() == TournamentStatus.ACTIVE) {
+                    round.setStatus(RoundStatus.COMPLETED);
+                    roundRepository.save(round);
+                    logger.info("Change round status to completed. Round id: {}", round.getId());
+                }
+                roundUtilityService.injectTeamToMatchTeam(tournament.getId());
             }
-
-            roundUtilityService.injectTeamToMatchTeam(tournament.getId());
         }
 
         logger.info("Detecting round end task is completed");

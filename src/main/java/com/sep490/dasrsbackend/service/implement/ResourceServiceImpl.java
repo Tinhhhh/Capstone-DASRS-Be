@@ -74,7 +74,7 @@ public class ResourceServiceImpl implements ResourceService {
 
         if (round.isPresent()) {
             if (round.get().getResource().getId().equals(id)) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource's status can't be change while round is active");
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource's status can't be change while there is a round using it");
             }
         }
 

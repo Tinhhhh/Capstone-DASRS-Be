@@ -58,51 +58,48 @@ public class EditRound {
     @JsonProperty(value = "end_date", index = 10)
     private Date endDate;
 
-    @JsonProperty(value = "scored_method_id", index = 11)
-    private Long scoredMethodId;
-
-    @JsonProperty(value = "environment_id", index = 12)
+    @JsonProperty(value = "environment_id", index = 11)
     private Long environmentId;
 
-    @JsonProperty(value = "match_type_id", index = 13)
+    @JsonProperty(value = "match_type_id", index = 12)
     private Long matchTypeId;
 
-    @JsonProperty(value = "resource_id", index = 14)
+    @JsonProperty(value = "resource_id", index = 13)
     private Long resourceId;
 
-    @JsonProperty(value = "lap", index = 15)
-    @DecimalMax(value = "500.0", message = "Team number must be at most 500.0")
-    @DecimalMin(value = "0.0", message = "Team number must be at least 0.0")
+    @JsonProperty(value = "lap", index = 14)
+    @DecimalMax(value = "500.0", message = "Maximum value can be bonus is 500.0")
+    @DecimalMin(value = "0.0", message = "Maximum value can be deducted is 0.0")
     private double lap;
 
-    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
-    @DecimalMin(value = "-50.0", message = "Team number must be at least -50.0")
-    @JsonProperty(value = "collision", index = 16)
+    @DecimalMax(value = "0.0", message = "Maximum value can be bonus is 0.0")
+    @DecimalMin(value = "-50.0", message = "Maximum value can be deducted is -50.0")
+    @JsonProperty(value = "collision", index = 15)
     private double collision;
 
-    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
-    @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
-    @JsonProperty(value = "total_race_time", index = 17)
+    @DecimalMax(value = "0.0", message = "Maximum value can be bonus is 0.0")
+    @DecimalMin(value = "-10.0", message = "Maximum value can be deducted is -10.0")
+    @JsonProperty(value = "total_race_time", index = 16)
     private double totalRaceTime;
 
-    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
-    @DecimalMin(value = "-10.0", message = "Team number must be at least -10.0")
-    @JsonProperty(value = "off_track", index = 18)
+    @DecimalMax(value = "0.0", message = "Maximum value can be bonus is 0.0")
+    @DecimalMin(value = "-10.0", message = "Maximum value can be deducted is -10.0")
+    @JsonProperty(value = "off_track", index = 17)
     private double offTrack;
 
-    @DecimalMax(value = "0.0", message = "Team number must be at most 0.0")
-    @DecimalMin(value = "-500.0", message = "Team number must be at least -500.0")
-    @JsonProperty(value = "assist_usage ", index = 19)
+    @DecimalMax(value = "0.0", message = "Maximum value can be bonus is 0.0")
+    @DecimalMin(value = "-500.0", message = "Maximum value can be deducted is -500.0")
+    @JsonProperty(value = "assist_usage ", index = 18)
     private double assistUsageCount;
 
-    @DecimalMax(value = "30.0", message = "Team number must be at most 30.0")
-    @DecimalMin(value = "0.0", message = "Team number must be at least 0.0")
-    @JsonProperty(value = "average_speed", index = 20)
+    @DecimalMax(value = "30.0", message = "Maximum value can be bonus is 30.0")
+    @DecimalMin(value = "0.0", message = "Maximum value can be deducted is 0.0")
+    @JsonProperty(value = "average_speed", index = 19)
     private double averageSpeed;
 
-    @DecimalMax(value = "100.0", message = "Team number must be at most 100.0")
-    @DecimalMin(value = "0.0", message = "Team number must be at least 0.0")
-    @JsonProperty(value = "total_distance", index = 21)
+    @DecimalMax(value = "100.0", message = "Maximum value can be bonus is 100.0")
+    @DecimalMin(value = "0.0", message = "Maximum value can be deducted is 0.0")
+    @JsonProperty(value = "total_distance", index = 20)
     private double totalDistance;
 
 }

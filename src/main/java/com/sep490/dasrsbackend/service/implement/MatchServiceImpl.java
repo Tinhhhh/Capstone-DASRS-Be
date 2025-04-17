@@ -29,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -561,80 +560,63 @@ public class MatchServiceImpl implements MatchService {
     }
 
     //Background service này dùng để đánh status các trận đấu đã kết thúc nhưng ko đc update kết quả trận đấu.
-    @Scheduled(cron = "1 0 * * * ?")
+    @Scheduled(cron = "1 0 0 * * ?")
     public void detectNotFinishMatch() {
         logger.info("Detecting not finished match task running at {}", LocalDateTime.now());
-        logger.info("is working hours ?");
+        logger.info("Checking for upcoming matches...");
 
-        LocalDateTime now = LocalDateTime.now();
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
 
-        // Khoảng thời gian diễn ra trận đấu
-        LocalTime morningStart = LocalTime.of(8, 00);  // 8:00 sáng
-        LocalTime morningEnd = LocalTime.of(12, 10);   // 12:10 sáng
-        LocalTime afternoonStart = LocalTime.of(13, 00); // 13:00 chiều
-        LocalTime afternoonEnd = LocalTime.of(17, 10);  // 17:10 chiều
+        Date date = calendar.getTime();
+        List<Tournament> tournaments = tournamentRepository.findByStatusAndStartDateBefore(TournamentStatus.ACTIVE, date);
 
-        LocalTime currentHrs = now.toLocalTime();
+        if (!tournaments.isEmpty()) {
+            for (Tournament t : tournaments) {
 
-        // Kiểm tra nếu thời gian hiện tại nằm trong khoảng thời gian diễn ra trận đấu
-        if ((currentHrs.isAfter(morningStart) && currentHrs.isBefore(morningEnd)) ||
-                (currentHrs.isAfter(afternoonStart) && currentHrs.isBefore(afternoonEnd))) {
-            logger.info("Working hours");
-            logger.info("Checking for upcoming matches...");
-
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(Calendar.HOUR_OF_DAY, 0);
-            calendar.set(Calendar.MINUTE, 0);
-            calendar.set(Calendar.SECOND, 1);
-            calendar.set(Calendar.MILLISECOND, 0);
-
-            Date date = calendar.getTime();
-            List<Tournament> tournaments = tournamentRepository.findByStatusAndStartDateBefore(TournamentStatus.ACTIVE, date);
-
-            if (!tournaments.isEmpty()) {
-                for (Tournament t : tournaments) {
-
-                    List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(t.getId());
-                    if (!rounds.isEmpty()) {
-                        for (Round r : rounds) {
-                            //Tìm xem match nào đã kết thúc
-                            List<Match> matches = matchRepository.findByRoundId(r.getId());
-                            for (Match match : matches) {
-                                if (match.getTimeEnd().before(DateUtil.convertToDate(LocalDateTime.now())) && match.getStatus() == MatchStatus.PENDING) {
-                                    match.setStatus(MatchStatus.FINISHED);
-                                    matchRepository.save(match);
-                                    logger.info("Match {} has been set to finished", match.getId());
-                                } else {
-                                    logger.info("Match {} is still in progress", match.getId());
-                                }
-
-                                List<Team> teams = matchTeamRepository.findByMatchId(match.getId()).stream()
-                                        .map(MatchTeam::getTeam)
-                                        .distinct()
-                                        .toList();
-
-                                for (Team team : teams) {
-                                    //Kiểm tra xem team này đã có leaderboard chưa
-                                    Optional<Leaderboard> lbOtp = leaderboardRepository.findByRoundIdAndTeamId(r.getId(), team.getId());
-                                    Leaderboard lb = new Leaderboard();
-                                    if (lbOtp.isEmpty()) {
-                                        lb.setTeam(team);
-                                        lb.setRound(r);
-                                        lb.setTeamScore(0);
-                                        lb.setRanking(0);
-                                        leaderboardRepository.save(lb);
-                                    }
-                                }
-
+                List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(t.getId());
+                if (!rounds.isEmpty()) {
+                    for (Round r : rounds) {
+                        //Tìm xem match nào đã kết thúc
+                        List<Match> matches = matchRepository.findByRoundId(r.getId());
+                        for (Match match : matches) {
+                            if (match.getTimeEnd().before(DateUtil.convertToDate(LocalDateTime.now())) && match.getStatus() == MatchStatus.PENDING) {
+                                match.setStatus(MatchStatus.FINISHED);
+                                matchRepository.save(match);
+                                logger.info("Match {} has been set to finished", match.getId());
+                            } else {
+                                logger.info("Match {} is still in progress", match.getId());
                             }
+
+                            List<Team> teams = matchTeamRepository.findByMatchId(match.getId()).stream()
+                                    .map(MatchTeam::getTeam)
+                                    .filter(Objects::nonNull)
+                                    .distinct()
+                                    .toList();
+
+                            for (Team team : teams) {
+                                //Kiểm tra xem team này đã có leaderboard chưa
+                                Optional<Leaderboard> lbOtp = leaderboardRepository.findByRoundIdAndTeamId(r.getId(), team.getId());
+                                Leaderboard lb = new Leaderboard();
+                                if (lbOtp.isEmpty()) {
+                                    lb.setTeam(team);
+                                    lb.setRound(r);
+                                    lb.setTeamScore(0);
+                                    lb.setRanking(0);
+                                    leaderboardRepository.save(lb);
+                                }
+                            }
+
                         }
-                    } else {
-                        logger.info("No active round found");
                     }
+                } else {
+                    logger.info("No active round found");
                 }
-            } else {
-                logger.info("No active tournament found");
             }
+        } else {
+            logger.info("No active tournament found");
         }
         logger.info("Detecting not finished match task finished at {}", LocalDateTime.now());
     }
@@ -725,6 +707,16 @@ public class MatchServiceImpl implements MatchService {
         }
 
         return leaderboardDetails;
+    }
+
+    @Override
+    public void rejoinMatch(Long matchId, UUID accountId) {
+
+    }
+
+    @Override
+    public void createMatch(Long roundId, Long teamId) {
+
     }
 
 }

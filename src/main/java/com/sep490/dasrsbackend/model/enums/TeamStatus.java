@@ -5,7 +5,6 @@ import lombok.Getter;
 @Getter
 public enum TeamStatus {
     ACTIVE("ACTIVE"),
-    COMPLETED("COMPLETED"),
     INACTIVE("INACTIVE");
 
     private final String status;

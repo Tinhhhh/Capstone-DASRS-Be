@@ -1,17 +1,16 @@
 package com.sep490.dasrsbackend.model.enums;
 
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
-public enum ReviewStatus {
+public enum ComplaintStatus {
     PENDING("PENDING"),
     FINISHED("FINISHED"),
     CANCELLED("CANCELLED");
 
     private final String status;
 
-    ReviewStatus(String status) {
+    ComplaintStatus(String status) {
         this.status = status;
     }
 }

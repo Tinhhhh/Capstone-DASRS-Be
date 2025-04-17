@@ -1,8 +1,7 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.ReviewStatus;
+import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -17,9 +16,9 @@ import java.util.Date;
 @AllArgsConstructor
 @Entity
 @Builder
-@Table(name = "review")
+@Table(name = "complaint")
 @EntityListeners(AuditingEntityListener.class)
-public class Review {
+public class Complaint {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +35,7 @@ public class Review {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    private ReviewStatus status;
+    private ComplaintStatus status;
 
     @JsonIgnore
     @CreatedDate

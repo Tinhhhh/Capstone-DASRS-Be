@@ -359,11 +359,9 @@ public class TournamentServiceImpl implements TournamentService {
 
         tournament.setStatus(TournamentStatus.TERMINATED);
 
-        //Nếu có 1 round đã khởi động thì
-        if (roundUtilityService.isMatchStarted(id)) {
-            //Terminate các round, match chưa hoàn thành
-            terminateRoundByTournamentId(id);
-        }
+        //Terminate các round, match chưa hoàn thành
+        terminateRoundByTournamentId(id);
+
         tournament.setStatus(TournamentStatus.TERMINATED);
         tournamentRepository.save(tournament);
 
@@ -428,38 +426,15 @@ public class TournamentServiceImpl implements TournamentService {
         Date date = calendar.getTime();
 
         //Kiểm tra xem có tournament nào kết thúc ko
-        Optional<Tournament> tournament = tournamentRepository.findByStatusAndEndDateBefore(TournamentStatus.ACTIVE, date);
-        if (tournament.isPresent()) {
-            logger.info("Found a tournament that has reached the end date.");
-            List<Round> rounds = roundRepository.findByTournamentIdAndStatus(tournament.get().getId(), RoundStatus.COMPLETED);
+        List<Tournament> tournament = tournamentRepository.findByStatusAndEndDateBefore(TournamentStatus.ACTIVE, date);
+        if (!tournament.isEmpty()) {
+            for (Tournament t : tournament) {
+                logger.info("Found a tournament that has reached the end date.");
 
-            boolean flag = false;
-            for (Round round : rounds) {
-                if (round.isLast()) {
-                    flag = true;
-                    break;
-                }
-            }
+                t.setStatus(TournamentStatus.COMPLETED);
+                tournamentRepository.save(t);
+                logger.info("Tournament completed successfully. Tournament Id: {}", t.getId());
 
-            if (flag) {
-                tournament.get().setStatus(TournamentStatus.COMPLETED);
-                tournamentRepository.save(tournament.get());
-                logger.info("Tournament completed successfully. Tournament Id: {}", tournament.get().getId());
-
-                // Update for all team
-                logger.info("Update status for all teams in tournament.");
-//                List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.get().getId(), TeamStatus.ACTIVE);
-                List<Team> teams = null;
-                for (Team team : teams) {
-                    team.setStatus(TeamStatus.COMPLETED);
-                    teamRepository.save(team);
-                    logger.info("Team {} status updated to COMPLETED.", team.getTeamName());
-                }
-                logger.info("Update status for all teams in tournament successfully.");
-
-            } else {
-                logger.error("There is no last round completed in tournament but tournament end date is reached. Tournament Id: {}", tournament.get().getId());
-                terminateRoundByTournamentId(tournament.get().getId());
             }
         }
 

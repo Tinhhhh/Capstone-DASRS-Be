@@ -144,7 +144,7 @@ public class ExcelImportService {
     }
 
     private Team validateOrCreateTeam(String teamName, String teamTag, Tournament tournament) {
-        Team team = teamRepository.findByTeamNameAndTeamTag(teamName, teamTag).orElse(null);
+        Team team = teamRepository.findTeamByTeamNameAndTeamTag(teamName, teamTag).orElse(null);
 
         if (team == null) {
             team = new Team();
