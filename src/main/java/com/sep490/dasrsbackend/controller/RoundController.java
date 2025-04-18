@@ -105,4 +105,11 @@ public class RoundController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Team injected successfully");
     }
 
+    @Operation(summary = "Extend round end date", description = "Extend the end date of the round with the specified ID.")
+    @PutMapping("/extend/{roundId}")
+    public ResponseEntity<Object> extendRoundEndDate(@PathVariable Long roundId, @RequestParam("endDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        roundService.extendRoundEndDate(roundId, endDate);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Round end date extended successfully");
+    }
+
 }

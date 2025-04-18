@@ -160,7 +160,7 @@ public class MatchServiceImpl implements MatchService {
         matchTeamRepository.save(matchTeam);
     }
 
-    public void validateMemberParticipation(Account assignee, List<Account> assignedMember)     {
+    public void validateMemberParticipation(Account assignee, List<Account> assignedMember) {
 
         List<Account> members = accountRepository.findByTeamId(assignee.getTeam().getId());
 
@@ -295,6 +295,8 @@ public class MatchServiceImpl implements MatchService {
 
         score += calculateScore(sm, sa);
         matchTeam.setScore(score);
+        int attempt = matchTeam.getAttempt();
+        matchTeam.setAttempt(attempt++);
         matchTeamRepository.save(matchTeam);
 
         match.setStatus(MatchStatus.FINISHED);

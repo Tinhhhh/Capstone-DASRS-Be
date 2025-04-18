@@ -30,4 +30,6 @@ public interface RoundService {
     ListRoundResponse findAllRoundsByDate(int pageNo, int pageSize, RoundSort sortBy, String keyword, LocalDateTime start, LocalDateTime end);
 
     void injectTeamToTournament(Long tournamentId, Long teamId);
+
+    void extendRoundEndDate(Long id, LocalDateTime endDate);
 }
