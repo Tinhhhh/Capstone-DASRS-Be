@@ -8,10 +8,7 @@ import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
-import com.sep490.dasrsbackend.model.payload.response.GetPlayerRoundResponse;
-import com.sep490.dasrsbackend.model.payload.response.GetRoundsByAccountResponse;
-import com.sep490.dasrsbackend.model.payload.response.ListRoundResponse;
-import com.sep490.dasrsbackend.model.payload.response.RoundResponse;
+import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.RoundService;
 import com.sep490.dasrsbackend.service.RoundUtilityService;
@@ -315,6 +312,51 @@ public class RoundServiceImpl implements RoundService {
     }
 
     @Override
+    public GetRoundsByTeamResponse getRoundsByTeamIdAndTournamentId(Long teamId, Long tournamentId, int pageNo, int pageSize, RoundSort sortBy, String keyword) {
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+
+        Specification<Round> spec = Specification.where(RoundSpecification.belongsToTeam(teamId))
+                .and(RoundSpecification.belongsToTournament(tournamentId))
+                .and(RoundSpecification.hasKeyword(keyword));
+
+        Page<Round> roundsPage = roundRepository.findAll(spec, pageable);
+        List<Round> rounds = roundsPage.getContent();
+
+        List<GetTeamRoundResponse> roundResponses = rounds.stream()
+                .map(round -> new GetTeamRoundResponse(
+                        round.getId(),
+                        round.getRoundName(),
+                        round.getTeamLimit(),
+                        round.isLast(),
+                        round.getDescription(),
+                        round.getStatus(),
+                        round.getStartDate() != null ? round.getStartDate().toString() : null,
+                        round.getEndDate() != null ? round.getEndDate().toString() : null,
+                        round.getCreatedDate() != null ? round.getCreatedDate().toString() : null,
+                        round.getTournament() != null ? round.getTournament().getId() : null,
+                        round.getTournament() != null ? round.getTournament().getTournamentName() : null,
+                        round.getScoredMethod() != null ? round.getScoredMethod().getId() : null,
+                        round.getEnvironment() != null ? round.getEnvironment().getId() : null,
+                        round.getMatchType() != null ? round.getMatchType().getId() : null,
+                        round.getMatchType() != null ? round.getMatchType().getMatchTypeName() : null,
+                        round.getResource() != null ? round.getResource().getId() : null,
+                        round.getMatchType() != null ? round.getFinishType() : null
+                ))
+                .collect(toList());
+
+        return GetRoundsByTeamResponse.builder()
+                .rounds(roundResponses)
+                .totalPages(roundsPage.getTotalPages())
+                .totalElements(roundsPage.getTotalElements())
+                .pageNo(roundsPage.getNumber())
+                .pageSize(roundsPage.getSize())
+                .last(roundsPage.isLast())
+                .build();
+    }
+
+
+    @Override
     public ListRoundResponse findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword) {
 
         Sort sort = Sort.by(sortBy.getField()).descending();
@@ -373,37 +415,45 @@ public class RoundServiceImpl implements RoundService {
 
     @Override
     public void injectTeamToTournament(Long tournamentId, Long teamId) {
-        Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+        try {
+            Tournament tournament = tournamentRepository.findById(tournamentId)
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
 
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
+            Team team = teamRepository.findById(teamId)
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
 
-        if (team.getStatus() != TeamStatus.ACTIVE) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
-        }
-        List<Team> teams = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
-                .map(TournamentTeam::getTeam)
-                .distinct()
-                .toList();
-
-        if (tournament.getTeamNumber() <= teams.size()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
-        }
-
-        List<Account> accounts = accountRepository.findByTeamId(teamId);
-
-        for (Account account : accounts) {
-            if (!account.isLocked()) {
-                TournamentTeam tournamentTeam = new TournamentTeam();
-                tournamentTeam.setTournament(tournament);
-                tournamentTeam.setTeam(team);
-                tournamentTeam.setAccount(account);
-                tournamentTeamRepository.save(tournamentTeam);
+            if (team.getStatus() != TeamStatus.ACTIVE) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
             }
 
+            List<Team> teams = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
+                    .map(TournamentTeam::getTeam)
+                    .distinct()
+                    .toList();
+
+            if (tournament.getTeamNumber() <= teams.size()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
+            }
+
+            List<Account> accounts = accountRepository.findByTeamId(teamId);
+
+            for (Account account : accounts) {
+                if (!account.isLocked()) {
+                    TournamentTeam tournamentTeam = new TournamentTeam();
+                    tournamentTeam.setTournament(tournament);
+                    tournamentTeam.setTeam(team);
+                    tournamentTeam.setAccount(account);
+                    tournamentTeamRepository.save(tournamentTeam);
+                }
+            }
+
+            roundUtilityService.injectTeamToMatchTeam(tournamentId);
+
+        } catch (DasrsException ex) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        } catch (Exception ex) {
+            throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred while injecting the team to the tournament.");
         }
-        roundUtilityService.injectTeamToMatchTeam(tournamentId);
     }
 
     @Override

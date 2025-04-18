@@ -1,7 +1,10 @@
 package com.sep490.dasrsbackend.Util;
 
 import com.sep490.dasrsbackend.model.entity.Round;
+import com.sep490.dasrsbackend.model.entity.Tournament;
+import com.sep490.dasrsbackend.model.entity.TournamentTeam;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
+import jakarta.persistence.criteria.Join;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -10,7 +13,6 @@ import java.time.LocalDateTime;
 @UtilityClass
 public class RoundSpecification {
 
-    // This method filters based on a keyword across multiple fields
     public Specification<Round> hasKeyword(String keyword) {
         return (root, query, cb) -> {
             if (keyword == null || keyword.trim().isEmpty()) {
@@ -52,6 +54,22 @@ public class RoundSpecification {
                 return null;
             }
             return cb.equal(root.get("status"), status);
+        };
+    }
+
+    public static Specification<Round> belongsToTeam(Long teamId) {
+        return (root, query, criteriaBuilder) -> {
+            Join<Round, Tournament> tournamentJoin = root.join("tournament");
+
+            Join<Tournament, TournamentTeam> tournamentTeamJoin = tournamentJoin.join("tournamentTeamList");
+
+            return criteriaBuilder.equal(tournamentTeamJoin.get("team").get("id"), teamId);
+        };
+    }
+
+    public static Specification<Round> belongsToTournament(Long tournamentId) {
+        return (root, query, criteriaBuilder) -> {
+            return criteriaBuilder.equal(root.get("tournament").get("id"), tournamentId);
         };
     }
 }

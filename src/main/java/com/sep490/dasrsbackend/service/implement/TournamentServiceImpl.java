@@ -8,6 +8,7 @@ import com.sep490.dasrsbackend.dto.ParticipantDTO;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
+import com.sep490.dasrsbackend.model.exception.TeamNotFoundException;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.*;
@@ -382,6 +383,7 @@ public class TournamentServiceImpl implements TournamentService {
         if (!tournament.isEmpty()) {
             for (Tournament t : tournament) {
                 logger.info("Found a tournament that has reached the end date.");
+
                 t.setStatus(TournamentStatus.COMPLETED);
                 tournamentRepository.save(t);
                 logger.info("Tournament completed successfully. Tournament Id: {}", t.getId());
@@ -431,38 +433,71 @@ public class TournamentServiceImpl implements TournamentService {
 
     @Override
     public void registerTeamToTournament(Long tournamentId, Long teamId) {
-        Tournament tournament = tournamentRepository.findById(tournamentId).orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
+        try {
+            Tournament tournament = tournamentRepository.findById(tournamentId)
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Tournament not found"));
 
-        Team team = teamRepository.findById(teamId).orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
+            Team team = teamRepository.findById(teamId)
+                    .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
 
-        if (team.getStatus() != TeamStatus.ACTIVE) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
+            if (team.getStatus() != TeamStatus.ACTIVE) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Team is not active");
+            }
+
+            List<Account> teamMembers = team.getAccountList();
+            if (teamMembers.size() < 4 || teamMembers.size() > 5) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Team must have between 4 and 5 members to register");
+            }
+
+            List<Tournament> activeTournaments = tournamentTeamRepository.findActiveTournamentsByTeamId(teamId);
+            if (!activeTournaments.isEmpty()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST,
+                        "The team is already participating in an active tournament: " +
+                                activeTournaments.get(0).getTournamentName());
+            }
+
+            List<Team> teamsInTournament = tournamentTeamRepository.findByTournamentId(tournamentId).stream()
+                    .map(TournamentTeam::getTeam)
+                    .distinct()
+                    .toList();
+
+            if (tournament.getTeamNumber() <= teamsInTournament.size()) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
+            }
+
+            roundService.injectTeamToTournament(tournamentId, teamId);
+
+        } catch (DasrsException ex) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        } catch (Exception ex) {
+            throw new DasrsException(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred while registering the team to the tournament.");
+        }
+    }
+
+
+    @Override
+    public List<TournamentByTeamResponse> getTournamentsByTeamId(Long teamId) {
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new TeamNotFoundException("Team with ID " + teamId + " not found"));
+
+        List<Tournament> tournaments = tournamentTeamRepository.findTournamentsByTeamId(teamId);
+
+        if (tournaments.isEmpty()) {
+            throw new IllegalStateException("No tournaments found for team: " + team.getTeamName());
         }
 
-        List<Tournament> activeTournaments = tournamentTeamRepository.findActiveTournamentsByTeamId(teamId);
-        if (!activeTournaments.isEmpty()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "The team is already participating in an active tournament: " + activeTournaments.get(0).getTournamentName());
-        }
-
-        List<Team> teamsInTournament = tournamentTeamRepository.findByTournamentId(tournamentId).stream().map(TournamentTeam::getTeam).distinct().toList();
-
-        if (tournament.getTeamNumber() <= teamsInTournament.size()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
-        }
-
-        List<Account> teamMembers = team.getAccountList();
-        if (teamMembers.isEmpty()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team has no members");
-        }
-
-        teamMembers.forEach(member -> {
-            TournamentTeam tournamentTeam = new TournamentTeam();
-            tournamentTeam.setTournament(tournament);
-            tournamentTeam.setTeam(team);
-            tournamentTeam.setAccount(member);
-            tournamentTeamRepository.save(tournamentTeam);
-        });
-
-        roundService.injectTeamToTournament(tournamentId, teamId);
+        return tournaments.stream().map(tournament -> {
+            TournamentByTeamResponse response = new TournamentByTeamResponse();
+            response.setId(tournament.getId());
+            response.setTournamentName(tournament.getTournamentName());
+            response.setContext(tournament.getContext());
+            response.setTeamNumber(tournament.getTeamNumber());
+            response.setStatus(tournament.getStatus());
+            response.setStarted(tournament.getStartDate() != null);
+            response.setStartDate(tournament.getStartDate() != null ? tournament.getStartDate().toString() : null);
+            response.setEndDate(tournament.getEndDate() != null ? tournament.getEndDate().toString() : null);
+            response.setCreatedDate(tournament.getCreatedDate().toString());
+            return response;
+        }).toList();
     }
 }

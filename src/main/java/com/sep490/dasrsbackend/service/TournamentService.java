@@ -1,11 +1,13 @@
 package com.sep490.dasrsbackend.service;
 
+import com.sep490.dasrsbackend.model.entity.Tournament;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatusFilter;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
 import com.sep490.dasrsbackend.model.payload.response.ListTournament;
 import com.sep490.dasrsbackend.model.payload.response.TeamTournamentDetails;
+import com.sep490.dasrsbackend.model.payload.response.TournamentByTeamResponse;
 import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
 
 import java.time.LocalDateTime;
@@ -27,4 +29,6 @@ public interface TournamentService {
     List<TeamTournamentDetails> getTeamsByTournamentId(Long tournamentId);
 
     void registerTeamToTournament(Long tournamentId, Long teamId);
+
+    List<TournamentByTeamResponse> getTournamentsByTeamId(Long teamId);
 }
