@@ -212,54 +212,6 @@ public class TeamServiceImpl implements TeamService {
 //        matchTeamRepository.save(matchTeam);
 //    }
 
-    public void validateMemberParticipation(Account assignee, List<Account> teamMatches) {
-
-        List<Account> members = accountRepository.findByTeamId(assignee.getTeam().getId());
-
-        if (members.isEmpty()) {
-            throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
-                    "Assign fails. No member found in the team");
-        }
-
-        Map<Account, Integer> participationCount = new HashMap<>();
-
-        members.forEach(member -> participationCount.put(member, 0));
-        // Đếm số lần tham gia của từng member
-        for (Account acc : teamMatches) {
-            participationCount.computeIfPresent(acc, (key, value) -> value + 1);
-        }
-
-        // Tìm min & max số lần tham gia
-        int min = Collections.min(participationCount.values());
-        int max = Collections.max(participationCount.values());
-
-        Map<String, String> response = new HashMap<>();
-        if (max - min <= 1) {
-            List<String> availableMembers = participationCount.entrySet().stream()
-                    .filter(entry -> entry.getValue() == min)  // Những người không bị dư số trận
-                    .map(entry -> entry.getKey().fullName())
-                    .collect(Collectors.toList());
-
-            response = Map.of(
-                    "available_members", String.join(", ", availableMembers)
-            );
-        } else {
-            if (max - min > 1) {
-                // Nếu max - min > 1 => lỗi
-                throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
-                        "Assign fails. Please contact administrator for more information");
-            }
-        }
-
-        // Nếu memberId không thuộc danh sách hợp lệ => lỗi
-        if (participationCount.get(assignee) != min) {
-            throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
-                    "Assign fails. The number of times each member participates in the competition must be the same" +
-                            "User: " + assignee.fullName() + " is not eligible",
-                    response);
-        }
-    }
-
     @Override
     public TeamResponse getTeamDetails(Long teamId) {
         Team team = teamRepository.findById(teamId)

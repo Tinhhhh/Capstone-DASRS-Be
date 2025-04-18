@@ -26,6 +26,9 @@ public class TournamentTeam {
     @Column(name = "created_date", nullable = false, updatable = false)
     private Date createdDate;
 
+    @Column(name = "is_active")
+    private boolean isActive;
+
     @ManyToOne
     @JoinColumn(name = "team_Id")
     Team team;

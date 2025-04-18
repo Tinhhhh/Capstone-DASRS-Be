@@ -51,6 +51,7 @@ public class MatchServiceImpl implements MatchService {
     private final LeaderboardService leaderboardService;
 
     private final static Logger logger = org.slf4j.LoggerFactory.getLogger(MatchServiceImpl.class);
+    private final TournamentTeamRepository tournamentTeamRepository;
 
     @Override
     public List<MatchResponseForTeam> getMatches(Long teamId) {
@@ -118,11 +119,11 @@ public class MatchServiceImpl implements MatchService {
         }
 
         if (leader.getTeam().getId() != member.getTeam().getId()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assignee is not in the same team");
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assignee is not in the same team with assigner");
         }
 
         if (leader.getTeam().getId() != team.getId()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assigner is not in the leader of the current team");
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Assign fails. Assigner is neither leader nor member of the current match");
         }
 
         if (match.getTimeStart().before(DateUtil.convertToDate(LocalDateTime.now()))) {
@@ -135,33 +136,76 @@ public class MatchServiceImpl implements MatchService {
 
 
         // Đảm bảo tất cả thành viên đều tham gia trận đấu
-        List<Account> availableMembers = accountRepository.findByTeamId(member.getTeam().getId());
-        List<Account> existedMembers = new ArrayList<>();
+        Tournament tournament = match.getRound().getTournament();
 
-        List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(team.getId());
-
-        for (MatchTeam eachMatchTeam : matchTeams) {
-            existedMembers.add(eachMatchTeam.getAccount());
+        List<Account> asssignedMember = new ArrayList<>();
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
+        for (Round round : rounds) {
+            List<Match> matches = matchRepository.findByRoundId(round.getId()).stream().filter(match1 -> match1.getStatus() != MatchStatus.TERMINATED).toList();
+            for (Match m : matches) {
+                List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(m.getId()).stream().filter(matchTeam1 -> matchTeam1.getStatus() == MatchTeamStatus.ASSIGNED).toList();
+                for (MatchTeam mt : matchTeams) {
+                    if (mt.getAccount() != null) {
+                        asssignedMember.add(mt.getAccount());
+                    }
+                }
+            }
         }
 
-        for (Account existed : existedMembers) {
-            availableMembers.remove(existed);
-        }
-
-        String message = availableMembers.stream()
-                .map(Account::fullName)
-                .collect(Collectors.joining(", "));
-
-        Map<String, String> response = Map.of("available_members", message);
-
-        if (!availableMembers.contains(member)) {
-            throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
-                    "Assign fails. The number of times each member participates in the competition must be the same",
-                    response);
+        if (!asssignedMember.isEmpty()) {
+            validateMemberParticipation(member, asssignedMember);
         }
         matchTeam.setAccount(member);
         matchTeam.setStatus(MatchTeamStatus.ASSIGNED);
         matchTeamRepository.save(matchTeam);
+    }
+
+    public void validateMemberParticipation(Account assignee, List<Account> assignedMember)     {
+
+        List<Account> members = accountRepository.findByTeamId(assignee.getTeam().getId());
+
+        if (members.isEmpty()) {
+            throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
+                    "Assign fails. No member found in the team");
+        }
+
+        Map<Account, Integer> participationCount = new HashMap<>();
+
+        members.forEach(member -> participationCount.put(member, 0));
+        // Đếm số lần tham gia của từng member
+        for (Account acc : assignedMember) {
+            participationCount.computeIfPresent(acc, (key, value) -> value + 1);
+        }
+
+        // Tìm min & max số lần tham gia
+        int min = Collections.min(participationCount.values());
+        int max = Collections.max(participationCount.values());
+
+        Map<String, String> response = new HashMap<>();
+        if (max - min <= 1) {
+            List<String> availableMembers = participationCount.entrySet().stream()
+                    .filter(entry -> entry.getValue() == min)  // Những người không bị dư số trận
+                    .map(entry -> entry.getKey().fullName())
+                    .collect(Collectors.toList());
+
+            response = Map.of(
+                    "available_members", String.join(", ", availableMembers)
+            );
+        } else {
+            if (max - min > 1) {
+                // Nếu max - min > 1 => lỗi
+                throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
+                        "Assign fails. Please contact administrator for more information");
+            }
+        }
+
+        // Nếu memberId không thuộc danh sách hợp lệ => lỗi
+        if (participationCount.get(assignee) != min) {
+            throw new TournamentRuleException(HttpStatus.BAD_REQUEST,
+                    "Assign fails. The number of times each member participates in the competition must be the same" +
+                            "User: " + assignee.fullName() + " is not eligible",
+                    response);
+        }
     }
 
     @Override
@@ -558,9 +602,9 @@ public class MatchServiceImpl implements MatchService {
 
         return score <= 0 ? 0 : score;
     }
-
     //Background service này dùng để đánh status các trận đấu đã kết thúc nhưng ko đc update kết quả trận đấu.
-    @Scheduled(cron = "1 0 0 * * ?")
+
+    @Scheduled(cron = "1 0 * * * ?")
     public void detectNotFinishMatch() {
         logger.info("Detecting not finished match task running at {}", LocalDateTime.now());
         logger.info("Checking for upcoming matches...");
@@ -710,8 +754,24 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
-    public void rejoinMatch(Long matchId, UUID accountId) {
+    public void rejoinMatch(String email) {
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Account not found, please contact administrator for more information"));
 
+        Team team = account.getTeam();
+        List<Match> match = matchTeamRepository.findByTeamIdAndAccountAccountId(team.getId(), account.getAccountId()).stream()
+                .map(MatchTeam::getMatch)
+                .filter(m -> m.getTimeStart().before(DateUtil.convertToDate(LocalDateTime.now())) && m.getTimeEnd().after(DateUtil.convertToDate(LocalDateTime.now())))
+                .toList();
+
+        if (match.size() > 1) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "You have more than 1 match to rejoin, please contact administrator for more information");
+        }
+
+        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchIdAndAccountAccountId(account.getTeam().getId(), match.get(0).getId(), account.getAccountId())
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information"));
+        matchTeam.setAttempt(0);
+        matchTeamRepository.save(matchTeam);
     }
 
     @Override
