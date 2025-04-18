@@ -33,4 +33,6 @@ public interface RoundService {
     void injectTeamToTournament(Long tournamentId, Long teamId);
 
     GetRoundsByTeamResponse getRoundsByTeamIdAndTournamentId(Long teamId, Long tournamentId, int pageNo, int pageSize, RoundSort sortBy, String keyword);
+
+    void extendRoundEndDate(Long id, LocalDateTime endDate);
 }

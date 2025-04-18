@@ -456,6 +456,59 @@ public class RoundServiceImpl implements RoundService {
         }
     }
 
+    @Override
+    public void extendRoundEndDate(Long id, LocalDateTime newEndDate) {
+
+        newEndDate = DateUtil.convertToLocalDateTime(DateUtil.convertToEndOfTheDay(DateUtil.convertToDate(newEndDate)));
+
+        Round round = roundRepository.findById(id).orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Round not found."));
+
+        if (round.getStatus() != RoundStatus.ACTIVE) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Round must be active to extend end date.");
+        }
+
+        LocalDateTime oldEndDate = DateUtil.convertToLocalDateTime(round.getEndDate());
+
+        if (newEndDate.isBefore(oldEndDate)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Round end date cannot change to before current end date: " + DateUtil.formatTimestamp(round.getEndDate()));
+        }
+
+        if (newEndDate.isAfter(oldEndDate.plusDays(7))) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Round extend end date cannot change > 7 days at once.");
+        }
+
+        Tournament tournament = round.getTournament();
+
+        if (newEndDate.isAfter(DateUtil.convertToLocalDateTime(tournament.getEndDate()))) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Round end date cannot change to the date after current tournament end date: " + DateUtil.formatTimestamp(tournament.getEndDate()));
+        }
+
+        List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId()).stream()
+                .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
+
+        for (int i = 0; i < rounds.size(); i++) {
+            if (rounds.get(i).getId() == round.getId()) {
+                //Nếu là round cuối cùng thì không cần kiểm tra
+                if (round.isLast()) {
+                    return;
+                }
+
+                //Nếu không phải round cuối cùng thì kiểm tra round sau
+                if (i + 1 < rounds.size()) {
+                    Round nextRound = rounds.get(i + 1);
+                    if (nextRound.getStartDate().before(DateUtil.convertToDate(newEndDate))) {
+                        throw new DasrsException(HttpStatus.BAD_REQUEST, "Round end date cannot change to the date after next round start date: " + DateUtil.formatTimestamp(nextRound.getStartDate()));
+                    }
+                } else {
+                    throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal error. No last round found");
+                }
+            }
+        }
+
+        round.setEndDate(DateUtil.convertToDate(newEndDate));
+        roundRepository.save(round);
+    }
+
     private void updateLatestRound(Tournament tournament) {
         List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId()).stream()
                 .sorted(Comparator.comparing(Round::getTeamLimit).reversed())

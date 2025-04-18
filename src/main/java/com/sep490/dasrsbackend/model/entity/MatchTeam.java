@@ -18,9 +18,6 @@ public class MatchTeam {
     @Column(name = "match_team_id")
     private Long id;
 
-    @Column(name = "team_tag")
-    private String teamTag;
-
     @Column(name = "car_name")
     private String carName;
 
