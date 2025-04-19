@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.Util.GenerateCode;
 import com.sep490.dasrsbackend.Util.Schedule;
 import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.enums.MatchForm;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.MatchTeamStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
@@ -157,6 +158,7 @@ public class RoundUtilityService {
                         .timeStart(DateUtil.convertToDate(startTime))
                         .timeEnd(DateUtil.convertToDate(startTime.plusMinutes((long) matchDuration)))
                         .status(MatchStatus.PENDING)
+                        .matchForm(MatchForm.OFFICIAL)
                         .round(round)
                         .build();
 
@@ -362,33 +364,159 @@ public class RoundUtilityService {
         MatchType matchType = round.getMatchType();
         double matchDuration = matchType.getMatchDuration() * 60;
 
-        int numberOfPlayers = 1; // số người mỗi team
-        int numberOfTeams = 1; // số team
-
         //Số trận cần tạo
         double numberOfMatches = matchTeams.size();
 
         List<Match> matches = matchRepository.findByRoundId(round.getId()).stream()
-                .filter(match -> match.getStatus() == MatchStatus.FINISHED)
                 .sorted(Comparator.comparing(Match::getTimeEnd).reversed())
                 .toList();
 
-        LocalDateTime matchEndTime = DateUtil.convertToLocalDateTime(matches.get(0).getTimeEnd());
+        Match lastMatch = matches.get(0);
+        LocalDateTime matchEndTime = DateUtil.convertToLocalDateTime(lastMatch.getTimeEnd());
+        LocalDateTime startTime = null;
 
-        if (matchEndTime.isAfter(LocalDateTime.now())) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
-                    "matches need to be completed before rematch can be created. last match end time: " +
-                    DateUtil.formatTimestamp(matches.get(0).getTimeEnd(), DATE_TIME_FORMAT));
+        //Trường hợp chưa tạo rematch nào => Rematch sẽ đc tạo vào ngày hôm sau của trận OFFICIAL cuối cùng
+        if (lastMatch.getMatchForm() == MatchForm.OFFICIAL) {
+            startTime = LocalDateTime.now().plusDays(1).withHour(Schedule.WORKING_HOURS_START).withMinute(0).withSecond(0).withNano(0);
+
+            if (matchEndTime.isAfter(LocalDateTime.now())) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
+                        "matches need to be completed before rematch can be created. last match end time: " +
+                        DateUtil.formatTimestamp(lastMatch.getTimeEnd(), DATE_TIME_FORMAT));
+            }
+
+            if (round.getEndDate().after(DateUtil.convertToDate(LocalDateTime.now()))) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
+                        "round is ended, rematch cannot be created");
+            }
+
+            if (startTime.isAfter(DateUtil.convertToLocalDateTime(round.getEndDate()))) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
+                        "this round schedule need: " + (Math.ceil(numberOfMatches / Schedule.MAX_WORKING_HOURS)) + " days more to create matches");
+            }
         }
 
-        LocalDateTime startTime = matchEndTime.plusDays(1).withHour(Schedule.WORKING_HOURS_START).withMinute(0).withSecond(0).withNano(0);
+        LocalTime workStart = LocalTime.of(Schedule.WORKING_HOURS_START, 0);
+        LocalTime workEnd = LocalTime.of(Schedule.WORKING_HOURS_END, 0);
 
-        if (startTime.isAfter(DateUtil.convertToLocalDateTime(round.getEndDate()))) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
-                    "the first round schedule need: " + (Math.ceil(numberOfMatches / Schedule.MAX_WORKING_HOURS) - 1) + " days more to create matches");
+        //Trường hợp đã tạo rematch => Rematch sẽ đc tạo vào giờ tiếp theo của trận rematch cuối cùng
+        if (lastMatch.getMatchForm() == MatchForm.REMATCH) {
+            startTime = matchEndTime.plusHours(1).withMinute(0).withSecond(0).withNano(0);
+            //Thời gian kết thúc của round
+            LocalDateTime endRoundTime = DateUtil.convertToLocalDateTime(round.getEndDate()).withHour(Schedule.WORKING_HOURS_END);
+
+            //Kiểm tra xem sau khi tạo rematch cuối cuùng có vượt quá thời gian kết thúc của round không
+
+            LocalDateTime lastMatchEndTime = startTime;
+            //Đánh dấu số trận có thể tạo trước khi qua ngày mới
+            int index = 0;
+            //Tạo flag đánh dấu đã qua ngày mới hay chưa
+            boolean pass = false;
+            for (int i = 0; i < numberOfMatches; i++) {
+                LocalTime lastMatchEndTimeLocal = lastMatchEndTime.toLocalTime();
+
+                //Nếu trong khung giờ làm việc (8:00 - 17:00), tăng biến đếm
+                if (lastMatchEndTimeLocal.isAfter(workStart) && lastMatchEndTimeLocal.isBefore(workEnd)
+                        && lastMatchEndTimeLocal.getHour() != Schedule.LUNCH_BREAK_START) {
+                    lastMatchEndTime = lastMatchEndTime.plusHours(Schedule.SLOT_DURATION);
+                    //Nếu chưa qua ngày mới thì cộng giá trị index
+                    if (!pass) {
+                        index++;
+                    }
+                } else {
+                    //Nếu không trong khung giờ làm việc (8:00 - 17:00)
+                    //Có thể là giờ nghỉ trưa hoặc sau giờ làm việc
+                    //Nếu là sau giờ làm việc thì cộng thêm 1 ngày và quay về giờ làm việc
+                    if (lastMatchEndTimeLocal.getHour() == Schedule.WORKING_HOURS_END) {
+                        lastMatchEndTime = lastMatchEndTime.plusDays(1).withHour(Schedule.WORKING_HOURS_START);
+                        //Đánh dấu đã qua ngày mới
+                        pass = true;
+                    }
+                    //Nếu là giờ nghỉ trưa thì cộng thêm 1 tiếng
+                    if (lastMatchEndTimeLocal.getHour() == Schedule.LUNCH_BREAK_START) {
+                        lastMatchEndTime = lastMatchEndTime.plusHours(1);
+                    }
+                }
+
+            }
+            //Số ngày cần thêm = (số trận cần tạo - số trận có thể tạo) / 8 => ra số ngày.
+            double days = (Math.ceil((numberOfMatches - index) / Schedule.MAX_WORKING_HOURS));
+            if (lastMatchEndTime.isAfter(endRoundTime)) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
+                        "this round schedule need: " + (Math.ceil(numberOfMatches / Schedule.MAX_WORKING_HOURS)) + " days more to create matches");
+            }
+
         }
 
-        LocalDate localEndDate = DateUtil.convertToLocalDateTime(round.getEndDate()).toLocalDate();
+        //Build string matchName
+        StringBuilder stringBuilder = new StringBuilder();
+        String seasonPrefix = GenerateCode.seasonPrefix(DateUtil.convertToLocalDateTime(round.getTournament().getStartDate()));
+        String matchTypePrefix = "REMATCH";
+
+        List<Match> rematchMatches = new ArrayList<>();
+        //Tạo match
+        while (numberOfMatches > 0) {
+            LocalTime currentTime = startTime.toLocalTime();
+            // Nếu trong khung giờ làm việc (8:00 - 17:00), tăng biến đếm
+            if (!currentTime.isBefore(workStart) && currentTime.isBefore(workEnd) && currentTime.getHour() != Schedule.LUNCH_BREAK_START) {
+
+                //generate match code
+                String matchCode;
+                Optional<Match> isDuplicate;
+                do {
+                    //Ghép lại thành match code
+                    stringBuilder.setLength(0);
+                    matchCode = stringBuilder
+                            .append(seasonPrefix)
+                            .append("_")
+                            .append(matchTypePrefix)
+                            .append("_")
+                            .append(GenerateCode.generateMatchCode())
+                            .toString();
+
+                    isDuplicate = matchRepository.findByMatchCode(matchCode);
+                } while (isDuplicate.isPresent());
+
+                Match match = Match.builder()
+                        .matchName("Rematch: Single player 1 Team")
+                        .matchCode(matchCode)
+                        .timeStart(DateUtil.convertToDate(startTime))
+                        .timeEnd(DateUtil.convertToDate(startTime.plusMinutes((long) matchDuration)))
+                        .status(MatchStatus.PENDING)
+                        .matchForm(MatchForm.REMATCH)
+                        .round(round)
+                        .build();
+
+                rematchMatches.add(matchRepository.save(match));
+
+                startTime = startTime.plusHours(Schedule.SLOT_DURATION);
+                numberOfMatches--;
+            } else {
+                if (currentTime.getHour() == Schedule.WORKING_HOURS_END) {
+                    startTime = startTime.plusDays(1).withHour(Schedule.WORKING_HOURS_START);
+                } else {
+                    startTime = startTime.plusHours(Schedule.SLOT_DURATION);
+                }
+            }
+        }
+
+        //Tạo matchTeam cho từng match
+        for (int i = 0; i < matchTeams.size(); i++) {
+            rematchMatches.get(i).setMatchName(
+                    rematchMatches.get(i).getMatchName() + " - " +
+                            matchTeams.get(i).getTeam().getTeamName()
+            );
+            matchRepository.save(rematchMatches.get(i));
+
+            MatchTeam matchTeam = new MatchTeam();
+            matchTeam.setMatch(rematchMatches.get(i));
+            matchTeam.setTeam(matchTeams.get(i).getTeam());
+            matchTeam.setAccount(matchTeams.get(i).getAccount());
+            matchTeam.setStatus(MatchTeamStatus.ASSIGNED);
+            matchTeam.setScore(0);
+            matchTeam.setAttempt(0);
+            matchTeamRepository.save(matchTeam);
+        }
 
 
     }
