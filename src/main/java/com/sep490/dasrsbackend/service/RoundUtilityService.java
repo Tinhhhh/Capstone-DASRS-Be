@@ -20,6 +20,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.sep490.dasrsbackend.Util.DateUtil.DATE_TIME_FORMAT;
+
 @Service
 @RequiredArgsConstructor
 public class RoundUtilityService {
@@ -339,5 +341,55 @@ public class RoundUtilityService {
                 }).toList();
 
         matchTeamRepository.saveAll(unassignedMatchTeams);
+    }
+
+    public void generateRematch(List<MatchTeam> matchTeams) {
+        List<Round> rounds = matchTeams.stream()
+                .map(m -> m.getMatch().getRound())
+                .distinct()
+                .toList();
+
+        if (rounds.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal error. Round not found");
+        }
+
+        if (rounds.size() > 1) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal error. Multiple rounds found");
+        }
+
+        Round round = rounds.get(0);
+
+        MatchType matchType = round.getMatchType();
+        double matchDuration = matchType.getMatchDuration() * 60;
+
+        int numberOfPlayers = 1; // số người mỗi team
+        int numberOfTeams = 1; // số team
+
+        //Số trận cần tạo
+        double numberOfMatches = matchTeams.size();
+
+        List<Match> matches = matchRepository.findByRoundId(round.getId()).stream()
+                .filter(match -> match.getStatus() == MatchStatus.FINISHED)
+                .sorted(Comparator.comparing(Match::getTimeEnd).reversed())
+                .toList();
+
+        LocalDateTime matchEndTime = DateUtil.convertToLocalDateTime(matches.get(0).getTimeEnd());
+
+        if (matchEndTime.isAfter(LocalDateTime.now())) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
+                    "matches need to be completed before rematch can be created. last match end time: " +
+                    DateUtil.formatTimestamp(matches.get(0).getTimeEnd(), DATE_TIME_FORMAT));
+        }
+
+        LocalDateTime startTime = matchEndTime.plusDays(1).withHour(Schedule.WORKING_HOURS_START).withMinute(0).withSecond(0).withNano(0);
+
+        if (startTime.isAfter(DateUtil.convertToLocalDateTime(round.getEndDate()))) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
+                    "the first round schedule need: " + (Math.ceil(numberOfMatches / Schedule.MAX_WORKING_HOURS) - 1) + " days more to create matches");
+        }
+
+        LocalDate localEndDate = DateUtil.convertToLocalDateTime(round.getEndDate()).toLocalDate();
+
+
     }
 }

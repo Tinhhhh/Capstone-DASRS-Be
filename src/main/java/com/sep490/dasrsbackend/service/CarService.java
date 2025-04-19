@@ -8,7 +8,7 @@ import com.sep490.dasrsbackend.model.payload.response.ListCarResponse;
 
 public interface CarService {
 
-    ListCarResponse getAllCars(int pageNo, int pageSize, String sortBy, String sortDir);
+    ListCarResponse getAllCars(int pageNo, int pageSize, String sortBy, String sortDir, Boolean isActive);
 
     CarResponse getCarById(Long id);
 

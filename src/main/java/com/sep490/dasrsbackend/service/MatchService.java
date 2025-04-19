@@ -34,5 +34,5 @@ public interface MatchService {
     //get match score details
     List<LeaderboardDetails> getMatchScoreDetails(Long matchId, Long teamId);
 
-    void createMatch(Long roundId, Long teamId);
+    void createMatch(List<Long> matchTeamIds);
 }

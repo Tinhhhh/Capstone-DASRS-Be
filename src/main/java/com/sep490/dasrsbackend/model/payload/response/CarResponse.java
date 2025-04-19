@@ -74,7 +74,7 @@ public class CarResponse {
     @JsonProperty("rear_ssd")
     private double rearSSD;
 
-    @Column(name = "max_brake_torque")
+    @JsonProperty("max_brake_torque")
     private double maxBrakeTorque;
 
     @JsonProperty("is_enabled")

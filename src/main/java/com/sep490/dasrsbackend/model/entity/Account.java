@@ -81,9 +81,6 @@ public class Account {
     @OneToMany(mappedBy = "account")
     private List<AccessToken> accessTokens;
 
-    @OneToMany(mappedBy = "account")
-    private List<AccountCar> accountCars;
-
     @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)

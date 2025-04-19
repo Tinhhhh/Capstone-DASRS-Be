@@ -1,8 +1,8 @@
 package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.Util.CarSpecification;
 import com.sep490.dasrsbackend.Util.DateUtil;
-import com.sep490.dasrsbackend.model.entity.*;
-import com.sep490.dasrsbackend.model.enums.TeamStatus;
+import com.sep490.dasrsbackend.model.entity.Car;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.EditCar;
 import com.sep490.dasrsbackend.model.payload.request.NewCar;
@@ -12,12 +12,11 @@ import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.CarService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.config.Configuration;
-import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,12 +36,18 @@ public class CarServiceImpl implements CarService {
     private final AccountRepository accountRepository;
 
     @Override
-    public ListCarResponse getAllCars(int pageNo, int pageSize, String sortBy, String sortDir) {
+    public ListCarResponse getAllCars(int pageNo, int pageSize, String sortBy, String sortDir, Boolean isEnabled) {
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-
-        Page<Car> cars = carRepository.findAll(pageable);
+        Page<Car> cars;
+        Specification<Car> specification;
+        if (isEnabled != null) {
+            specification = CarSpecification.isEnabled(isEnabled);
+            cars = carRepository.findAll(specification, pageable);
+        } else {
+            cars = carRepository.findAll(pageable);
+        }
 
         List<CarResponse> carResponses = new ArrayList<>();
 
@@ -79,6 +84,15 @@ public class CarServiceImpl implements CarService {
     @Override
     public void createCar(NewCar newCar) {
         Car car = modelMapper.map(newCar, Car.class);
+
+        if (newCar.getShiftUpRPM() > newCar.getMaxTorqueAsNM() || newCar.getShiftUpRPM() < newCar.getMinEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift up RPM must be between min engine RPM and max torque as NM");
+        }
+
+        if (newCar.getShiftDownRPM() > newCar.getMaxTorqueAsNM() || newCar.getShiftDownRPM() < newCar.getMinEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift down RPM must be between min engine RPM and max torque as NM");
+        }
+
         car.setEnabled(true);
         carRepository.save(car);
 

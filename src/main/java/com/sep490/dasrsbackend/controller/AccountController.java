@@ -185,13 +185,13 @@ public class AccountController {
         }
     }
 
-    @GetMapping("/loadout/{accountId}/{carId}")
-    public ResponseEntity<Object> getCarLoadout(@PathVariable Long carId, @PathVariable UUID accountId) {
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Car loadout retrieved successfully.", accountCarService.getCarLoadout(carId, accountId));
-    }
-
-    @PutMapping("/loadout/{accountId}/{carId}")
-    public ResponseEntity<Object> updateCarLoadout(@PathVariable Long carId, @PathVariable UUID accountId, @RequestBody @Valid UpdateCarCustomization customization) {
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Car loadout updated successfully.", accountCarService.updateCarLoadout(carId, accountId, customization));
-    }
+//    @GetMapping("/loadout/{accountId}/{carId}")
+//    public ResponseEntity<Object> getCarLoadout(@PathVariable Long carId, @PathVariable UUID accountId) {
+//        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Car loadout retrieved successfully.", accountCarService.getCarLoadout(carId, accountId));
+//    }
+//
+//    @PutMapping("/loadout/{accountId}/{carId}")
+//    public ResponseEntity<Object> updateCarLoadout(@PathVariable Long carId, @PathVariable UUID accountId, @RequestBody @Valid UpdateCarCustomization customization) {
+//        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Car loadout updated successfully.", accountCarService.updateCarLoadout(carId, accountId, customization));
+//    }
 }

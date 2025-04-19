@@ -13,6 +13,7 @@ import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.LeaderboardService;
 import com.sep490.dasrsbackend.service.MatchService;
+import com.sep490.dasrsbackend.service.RoundUtilityService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.config.Configuration;
@@ -52,6 +53,7 @@ public class MatchServiceImpl implements MatchService {
 
     private final static Logger logger = org.slf4j.LoggerFactory.getLogger(MatchServiceImpl.class);
     private final TournamentTeamRepository tournamentTeamRepository;
+    private final RoundUtilityService roundUtilityService;
 
     @Override
     public List<MatchResponseForTeam> getMatches(Long teamId) {
@@ -759,7 +761,18 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
-    public void createMatch(Long roundId, Long teamId) {
+    public void createMatch(List<Long> matchTeamIds) {
+
+        List<MatchTeam> matchTeams = matchTeamRepository.findAllById(matchTeamIds);
+        boolean sameRound = matchTeams.stream().map(m -> m.getMatch().getRound())
+                .distinct()
+                .count() == 1;
+
+        if (!sameRound) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "All the teams are not in the same round");
+        }
+
+        roundUtilityService.generateRematch(matchTeams);
 
     }
 

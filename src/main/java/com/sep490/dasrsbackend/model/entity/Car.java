@@ -93,8 +93,5 @@ public class Car {
     private Date createdDate;
 
     @OneToMany(mappedBy = "car")
-    private List<AccountCar> accountCars;
-
-    @OneToMany(mappedBy = "car")
     private List<MatchTeam> matchTeams;
 }
