@@ -86,10 +86,13 @@ public class MatchServiceImpl implements MatchService {
                 MatchTeamResponse matchTeamResponse = new MatchTeamResponse();
                 if (matchTeam.getAccount() == null) {
                     matchTeamResponse.setPlayerId(null);
+                    matchTeamResponse.setPlayerName(null);
                 } else {
                     matchTeamResponse.setPlayerId(matchTeam.getAccount().getAccountId());
+                    matchTeamResponse.setPlayerName(matchTeam.getAccount().fullName());
                 }
                 matchTeamResponse.setMatchTeamId(matchTeam.getId());
+                matchTeamResponse.setStatus(matchTeam.getStatus());
                 matchTeamResponses.add(matchTeamResponse);
             }
             matchResponse.setMatchTeam(matchTeamResponses);
@@ -441,7 +444,7 @@ public class MatchServiceImpl implements MatchService {
         return matchResponses;
     }
 
-    private MatchResponse getMatchResponse(Match match) {
+    public MatchResponse getMatchResponse(Match match) {
         MatchResponse matchResponse = modelMapper.map(match, MatchResponse.class);
         matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart(), DateUtil.DATE_TIME_FORMAT));
         matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd(), DateUtil.DATE_TIME_FORMAT));
@@ -753,27 +756,6 @@ public class MatchServiceImpl implements MatchService {
         }
 
         return leaderboardDetails;
-    }
-
-    @Override
-    public void rejoinMatch(String email) {
-        Account account = accountRepository.findByEmail(email)
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Account not found, please contact administrator for more information"));
-
-        Team team = account.getTeam();
-        List<Match> match = matchTeamRepository.findByTeamIdAndAccountAccountId(team.getId(), account.getAccountId()).stream()
-                .map(MatchTeam::getMatch)
-                .filter(m -> m.getTimeStart().before(DateUtil.convertToDate(LocalDateTime.now())) && m.getTimeEnd().after(DateUtil.convertToDate(LocalDateTime.now())))
-                .toList();
-
-        if (match.size() > 1) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "You have more than 1 match to rejoin, please contact administrator for more information");
-        }
-
-        MatchTeam matchTeam = matchTeamRepository.findByTeamIdAndMatchIdAndAccountAccountId(account.getTeam().getId(), match.get(0).getId(), account.getAccountId())
-                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "MatchTeam not found, please contact administrator for more information"));
-        matchTeam.setAttempt(0);
-        matchTeamRepository.save(matchTeam);
     }
 
     @Override
