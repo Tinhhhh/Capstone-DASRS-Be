@@ -5,8 +5,8 @@ import lombok.Getter;
 @Getter
 public enum ComplaintStatus {
     PENDING("PENDING"),
-    FINISHED("FINISHED"),
-    CANCELLED("CANCELLED");
+    APPROVED("APPROVED"),
+    REJECTED("REJECTED");
 
     private final String status;
 
