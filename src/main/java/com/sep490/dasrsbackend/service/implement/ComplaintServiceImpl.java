@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
@@ -15,8 +16,10 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -148,8 +151,6 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .description(request.getDescription())
                 .status(ComplaintStatus.PENDING)
                 .matchTeam(matchTeam)
-                .createdDate(new Date())
-                .lastModifiedDate(new Date())
                 .build();
 
         complaint = complaintRepository.save(complaint);
@@ -165,14 +166,23 @@ public class ComplaintServiceImpl implements ComplaintService {
         Team team = matchTeam.getTeam();
         Account account = matchTeam.getAccount();
 
+        Date createdDate = complaint.getCreatedDate();
+        Date lastModifiedDate = complaint.getLastModifiedDate();
+
+        SimpleDateFormat sdf = new SimpleDateFormat(DateUtil.DATE_TIME_FORMAT);
+        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
+
+        String formattedCreatedDate = sdf.format(createdDate);
+        String formattedLastModifiedDate = sdf.format(lastModifiedDate);
+
         return ComplaintResponseDetails.builder()
                 .id(complaint.getId())
                 .title(complaint.getTitle())
                 .description(complaint.getDescription())
                 .reply(complaint.getReply())
                 .status(complaint.getStatus())
-                .createdDate(complaint.getCreatedDate())
-                .lastModifiedDate(complaint.getLastModifiedDate())
+                .createdDate(formattedCreatedDate)
+                .lastModifiedDate(formattedLastModifiedDate)
                 .matchId(match.getId())
                 .teamId(team.getId())
                 .accountId(account.getAccountId())
