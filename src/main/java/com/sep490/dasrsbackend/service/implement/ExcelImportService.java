@@ -264,23 +264,23 @@ public class ExcelImportService {
         return true;
     }
 
-    private void validateTeamSizeAndLeader(Team team, boolean isLeader, Map<Long, Boolean> teamLeaderMap) {
-        int currentMemberCount = accountRepository.countByTeamId(team.getId());
-
-        if (currentMemberCount >= 5) {
-            throw new IllegalArgumentException("Team " + team.getTeamName() + " already has 5 members. Cannot add more.");
-        }
-
-        if (isLeader) {
-            if (teamLeaderMap.getOrDefault(team.getId(), false)) {
-                throw new IllegalArgumentException("Team " + team.getTeamName() + " already has a leader.");
-            }
-            teamLeaderMap.put(team.getId(), true);
-        } else {
-            if (!teamLeaderMap.getOrDefault(team.getId(), false)) {
-                throw new IllegalArgumentException("Team " + team.getTeamName() + " must have a leader before adding members.");
-            }
-        }
-    }
+//    private void validateTeamSizeAndLeader(Team team, boolean isLeader, Map<Long, Boolean> teamLeaderMap) {
+//        int currentMemberCount = accountRepository.countByTeamId(team.getId());
+//
+//        if (currentMemberCount >= 5) {
+//            throw new IllegalArgumentException("Team " + team.getTeamName() + " already has 5 members. Cannot add more.");
+//        }
+//
+//        if (isLeader) {
+//            if (teamLeaderMap.getOrDefault(team.getId(), false)) {
+//                throw new IllegalArgumentException("Team " + team.getTeamName() + " already has a leader.");
+//            }
+//            teamLeaderMap.put(team.getId(), true);
+//        } else {
+//            if (!teamLeaderMap.getOrDefault(team.getId(), false)) {
+//                throw new IllegalArgumentException("Team " + team.getTeamName() + " must have a leader before adding members.");
+//            }
+//        }
+//    }
 
 }
