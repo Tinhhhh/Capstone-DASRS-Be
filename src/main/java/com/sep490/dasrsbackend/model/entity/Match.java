@@ -53,9 +53,6 @@ public class Match {
     @OneToMany(mappedBy = "match")
     private List<Record> recordList;
 
-    @OneToMany(mappedBy = "match")
-    private List<Complaint> complaintList;
-
     @ManyToOne
     @JoinColumn(name = "round_id", nullable = false)
     private Round round;
