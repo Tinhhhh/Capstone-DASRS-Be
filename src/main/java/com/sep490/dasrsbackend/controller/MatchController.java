@@ -94,7 +94,7 @@ public class MatchController {
 
     @Operation(summary = "Api using for unity to check if there is upcoming match to create ", description = "Get match by time, format: yyyy-MM-ddTHH:mm:ss. Example: 2025-04-02T08:01:00")
     @GetMapping("/available")
-    public ResponseEntity<Object> getAvailableMatch(@RequestParam("tournamentId") Long tournamentId , @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date) {
+    public ResponseEntity<Object> getAvailableMatch(@RequestParam("tournamentId") Long tournamentId, @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date) {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved available match",
                 matchService.getAvailableMatch(tournamentId, date));
@@ -127,6 +127,13 @@ public class MatchController {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved match score details",
                 matchService.getMatchScoreDetails(matchId, teamId));
+    }
+
+    @Operation(summary = "Rematch a match", description = "Rematch a match")
+    @PostMapping("/rematch")
+    public ResponseEntity<Object> rematch(@RequestParam("matchTeamId") List<Long> matchTeamId) {
+        matchService.createMatch(matchTeamId);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully create match");
     }
 
 }

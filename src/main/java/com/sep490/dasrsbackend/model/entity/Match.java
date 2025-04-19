@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.model.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.sep490.dasrsbackend.model.enums.MatchForm;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,6 +42,10 @@ public class Match {
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private MatchStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "match_form")
+    private MatchForm matchForm;
 
     @JsonIgnore
     @CreatedDate

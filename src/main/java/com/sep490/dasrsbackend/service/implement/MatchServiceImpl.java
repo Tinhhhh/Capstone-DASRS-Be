@@ -81,6 +81,7 @@ public class MatchServiceImpl implements MatchService {
             matchResponse.setTeamTag(team.getTeamTag());
             matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart(), DateUtil.DATE_TIME_FORMAT));
             matchResponse.setTimeEnd(DateUtil.formatTimestamp(match.getTimeEnd(), DateUtil.DATE_TIME_FORMAT));
+            matchResponse.setMatchForm(match.getMatchForm());
 
             List<MatchTeam> mt = matchTeamRepository.findByTeamIdAndMatchId(team.getId(), match.getId());
             List<MatchTeamResponse> matchTeamResponses = new ArrayList<>();
@@ -300,8 +301,6 @@ public class MatchServiceImpl implements MatchService {
 
         score += calculateScore(sm, sa);
         matchTeam.setScore(score);
-        int attempt = matchTeam.getAttempt();
-        matchTeam.setAttempt(attempt++);
         matchTeamRepository.save(matchTeam);
 
         match.setStatus(MatchStatus.FINISHED);
@@ -562,13 +561,8 @@ public class MatchServiceImpl implements MatchService {
 
         for (MatchTeam matchTeam : matchTeams) {
             if (matchTeam.getTeam().getId().equals(teamId) && matchTeam.getAccount().getAccountId().equals(accountId)) {
-                if (matchTeam.getAttempt() == 0) {
-                    isValidPlayer = true;
-                    break;
-                } else {
-                    unityRoomResponse.setMessage("You have already joined the match");
-                    return unityRoomResponse;
-                }
+                isValidPlayer = true;
+                break;
             }
         }
 
@@ -760,6 +754,7 @@ public class MatchServiceImpl implements MatchService {
         return leaderboardDetails;
     }
 
+    @Transactional
     @Override
     public void createMatch(List<Long> matchTeamIds) {
 
@@ -772,7 +767,23 @@ public class MatchServiceImpl implements MatchService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "All the teams are not in the same round");
         }
 
+        List<String> attemptedTeam = new ArrayList<>();
+        for (MatchTeam matchTeam : matchTeams) {
+            if (matchTeam.getAttempt() != 0) {
+                attemptedTeam.add(matchTeam.getId().toString());
+            }
+        }
+
+        if (!attemptedTeam.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "These matchTeamId had already been rematch once: " + String.join(", ", attemptedTeam));
+        }
+
+
         roundUtilityService.generateRematch(matchTeams);
+        for (MatchTeam matchTeam : matchTeams) {
+            matchTeam.setAttempt(1);
+            matchTeamRepository.save(matchTeam);
+        }
 
     }
 

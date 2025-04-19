@@ -1,11 +1,11 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sep490.dasrsbackend.model.enums.MatchForm;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import lombok.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -40,6 +40,9 @@ public class MatchResponseForTeam {
 
     @JsonProperty("status")
     private MatchStatus status;
+
+    @JsonProperty("match_form")
+    private MatchForm matchForm;
 
     @JsonProperty("match_team")
     private List<MatchTeamResponse> matchTeam;
