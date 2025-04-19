@@ -44,7 +44,6 @@ public class ExcelImportService {
 
     public List<AccountDTO> importAccountsFromExcel(InputStream inputStream, List<String> errorMessages) throws IOException {
         List<AccountDTO> accountDTOs = new ArrayList<>();
-        List<Account> importedAccounts = new ArrayList<>();
         try (Workbook workbook = new XSSFWorkbook(inputStream)) {
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rowIterator = sheet.iterator();
@@ -78,8 +77,6 @@ public class ExcelImportService {
                     Account account = accountConverter.convertToEntity(accountDTO);
 
                     account = accountRepository.save(account);
-
-                    importedAccounts.add(account);
                     accountDTOs.add(accountConverter.convertToDTO(account));
 
                     emailService.sendAccountInformation(
@@ -98,63 +95,11 @@ public class ExcelImportService {
             }
         }
 
-        generateAccountCarForAccounts(importedAccounts);
         if (!errorMessages.isEmpty()) {
             System.err.println("Import Errors:");
             errorMessages.forEach(System.err::println);
         }
         return accountDTOs;
-    }
-
-    private void generateAccountCarForAccounts(List<Account> accounts) {
-        List<Car> cars = carRepository.findCarsByEnabled();
-        if (cars.isEmpty()) {
-            throw new IllegalStateException("No enabled cars available.");
-        }
-
-        for (Account account : accounts) {
-            for (Car car : cars) {
-                AccountCar accountCar = AccountCar.builder()
-                        .account(account)
-                        .car(car)
-                        .id(new AccountCarId(account.getAccountId(), car.getId()))
-                        .build();
-
-                try {
-                    accountCarRepository.save(accountCar);
-                    logger.info("Successfully saved AccountCar for Account: " + account.getAccountId() + " and Car: " + car.getId());
-                } catch (Exception e) {
-                    logger.error("Failed to save AccountCar for Account: " + account.getAccountId() + " and Car: " + car.getId(), e);
-                }
-            }
-        }
-    }
-
-
-    private void generateAccountCar(Tournament tournament) {
-        if (tournament == null) {
-            throw new IllegalArgumentException("Tournament must not be null.");
-        }
-
-        List<Car> cars = carRepository.findCarsByEnabled();
-//        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.getId(), TeamStatus.ACTIVE);
-        List<Team> teams = null;
-        for (Team team : teams) {
-            List<Account> accounts = accountRepository.findByTeamIdAndIsLocked(team.getId(), false);
-            if (!accounts.isEmpty()) {
-                for (Account account : accounts) {
-                    for (Car car : cars) {
-                        AccountCar accountCar = AccountCar.builder()
-                                .account(account)
-                                .car(car)
-                                .build();
-                        accountCarRepository.save(accountCar);
-                    }
-                }
-            } else {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "Team " + team.getTeamName() + " has no members.");
-            }
-        }
     }
 
     private AccountDTO parseRowToAccountDTO(Row row) {
