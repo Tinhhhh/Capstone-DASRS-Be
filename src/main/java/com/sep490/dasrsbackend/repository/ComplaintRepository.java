@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
@@ -16,4 +17,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findByStatus(ComplaintStatus status);
 
     List<Complaint> findByMatch_MatchTeamList_Team_Id(Long teamId);
+
+    List<Complaint> findByMatchTeam_Match_Id(Long matchId);
+    List<Complaint> findByMatchTeam_Team_Id(Long teamId);
+    List<Complaint> findByMatchTeam_Account_AccountId(UUID accountId);
 }

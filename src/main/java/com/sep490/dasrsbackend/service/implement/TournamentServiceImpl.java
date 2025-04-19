@@ -465,7 +465,19 @@ public class TournamentServiceImpl implements TournamentService {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament has reached the maximum number of teams");
             }
 
-            roundService.injectTeamToTournament(tournamentId, teamId);
+            List<Account> accounts = accountRepository.findByTeamId(teamId);
+            for (Account account : accounts) {
+                if (!account.isLocked()) {
+                    TournamentTeam tournamentTeam = new TournamentTeam();
+                    tournamentTeam.setTournament(tournament);
+                    tournamentTeam.setTeam(team);
+                    tournamentTeam.setAccount(account);
+                    tournamentTeam.setActive(true);
+                    tournamentTeamRepository.save(tournamentTeam);
+                }
+            }
+
+            roundUtilityService.injectTeamToMatchTeam(tournamentId);
 
         } catch (DasrsException ex) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, ex.getMessage());

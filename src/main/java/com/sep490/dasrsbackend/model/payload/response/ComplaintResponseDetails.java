@@ -36,4 +36,7 @@ public class ComplaintResponseDetails {
 
     @JsonProperty("account_id")
     private UUID accountId;
+
+    @JsonProperty("match_team_id")
+    private Long matchTeamId;
 }

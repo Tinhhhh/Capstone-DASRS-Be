@@ -96,12 +96,10 @@ public class ComplaintController {
     @Operation(summary = "Create a complaint", description = "Create a new complaint by providing match, team, and account IDs along with complaint details.")
     @PostMapping("/complaints")
     public ResponseEntity<Object> createComplaint(
-            @RequestParam Long matchId,
-            @RequestParam Long teamId,
-            @RequestParam UUID accountId,
+            @RequestParam Long matchTeamId,
             @RequestBody ComplaintRequest request) {
 
-        ComplaintResponseDetails response = complaintService.createComplaint(matchId, teamId, accountId, request);
+        ComplaintResponseDetails response = complaintService.createComplaint(matchTeamId, request);
         return ResponseBuilder.responseBuilderWithData(HttpStatus.CREATED, "Complaint created successfully", response);
     }
 
