@@ -34,13 +34,9 @@ public class EditCar {
     private double maxEngineRPM;
 
     @JsonProperty("shift_up_rpm")
-    @DecimalMax(value = "10000.0", message = "shift_up_rpm must be less than or equal to 10000")
-    @DecimalMin(value = "1000.0", message = "shift_up_rpm must be greater than or equal to 1000")
     private double shiftUpRPM;
 
     @JsonProperty("shift_down_rpm")
-    @DecimalMax(value = "10000.0", message = "shift_down_rpm must be less than or equal to 10000")
-    @DecimalMin(value = "1000.0", message = "shift_down_rpm must be greater than or equal to 1000")
     private double shiftDownRPM;
 
     @JsonProperty("final_drive_ratio")

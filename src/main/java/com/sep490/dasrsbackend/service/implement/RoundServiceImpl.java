@@ -511,8 +511,6 @@ public class RoundServiceImpl implements RoundService {
                     if (nextRound.getStartDate().before(DateUtil.convertToDate(newEndDate))) {
                         throw new DasrsException(HttpStatus.BAD_REQUEST, "Round end date cannot change to the date after next round start date: " + DateUtil.formatTimestamp(nextRound.getStartDate()));
                     }
-                } else {
-                    throw new DasrsException(HttpStatus.BAD_REQUEST, "Internal error. No last round found");
                 }
             }
         }

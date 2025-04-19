@@ -47,11 +47,12 @@ public class CarController {
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
-            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection
+            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection,
+            @RequestParam(name = "isEnabled", required = false) Boolean isEnabled
     ) {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Get all cars successfully",
-                carService.getAllCars(pageNo, pageSize, sortBy, sortDirection)
+                carService.getAllCars(pageNo, pageSize, sortBy, sortDirection, isEnabled)
         );
     }
 }
