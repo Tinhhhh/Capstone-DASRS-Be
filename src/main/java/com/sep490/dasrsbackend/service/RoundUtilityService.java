@@ -32,6 +32,11 @@ public class RoundUtilityService {
 
     public boolean isMatchStarted(Long tournamentId) {
         List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(tournamentId).stream().filter(round -> round.getStatus() == RoundStatus.ACTIVE).toList();
+
+        if (roundList.isEmpty()) {
+            return false;
+        }
+
         for (Round round : roundList) {
             //Kiểm tra xem có match nào đã khởi động không
             //Kiểm tra getTimeStart before new Date() => match đã khởi động

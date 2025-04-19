@@ -268,6 +268,7 @@ public class TournamentServiceImpl implements TournamentService {
             roundResponse.setScoredMethodId(round.getScoredMethod().getId());
             roundResponse.setEnvironmentId(round.getEnvironment().getId());
             roundResponse.setMatchTypeId(round.getMatchType().getId());
+            roundResponse.setMapId(round.getResource().getId());
             roundResponses.add(roundResponse);
         });
 
