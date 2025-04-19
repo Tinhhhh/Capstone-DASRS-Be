@@ -21,8 +21,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.sep490.dasrsbackend.Util.DateUtil.DATE_TIME_FORMAT;
-
 @Service
 @RequiredArgsConstructor
 public class RoundUtilityService {
@@ -382,7 +380,7 @@ public class RoundUtilityService {
             if (matchEndTime.isAfter(LocalDateTime.now())) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
                         "matches need to be completed before rematch can be created. last match end time: " +
-                        DateUtil.formatTimestamp(lastMatch.getTimeEnd(), DATE_TIME_FORMAT));
+                        DateUtil.formatTimestamp(lastMatch.getTimeEnd(), DateUtil.DATE_TIME_FORMAT));
             }
 
             if (round.getEndDate().after(DateUtil.convertToDate(LocalDateTime.now()))) {
