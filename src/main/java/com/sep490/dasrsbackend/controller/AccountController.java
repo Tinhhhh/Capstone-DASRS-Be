@@ -46,10 +46,7 @@ public class AccountController {
     private final JwtTokenProvider jwtTokenProvider;
     private final AccountCarService accountCarService;
 
-    @Operation(
-            summary = "Register a new account by importing an Excel file",
-            description = "Register new accounts by importing an Excel file. All required fields must be filled. A confirmation email will be sent after successful registration."
-    )
+    @Operation(summary = "Register a new account by importing an Excel file", description = "Register new accounts by importing an Excel file. All required fields must be filled. A confirmation email will be sent after successful registration.")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> importAccounts(@RequestParam("file") MultipartFile file) {
         try {

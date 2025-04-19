@@ -2,23 +2,21 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.converter.AccountConverter;
 import com.sep490.dasrsbackend.dto.AccountDTO;
-import com.sep490.dasrsbackend.model.entity.Account;
-import com.sep490.dasrsbackend.model.entity.Role;
-import com.sep490.dasrsbackend.model.entity.Team;
-import com.sep490.dasrsbackend.model.entity.Tournament;
+import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.RoleEnum;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
-import com.sep490.dasrsbackend.repository.AccountRepository;
-import com.sep490.dasrsbackend.repository.RoleRepository;
-import com.sep490.dasrsbackend.repository.TeamRepository;
-import com.sep490.dasrsbackend.repository.TournamentRepository;
+import com.sep490.dasrsbackend.model.exception.DasrsException;
+import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.EmailService;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +37,10 @@ public class ExcelImportService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
+    private final CarRepository carRepository;
+    private final AccountCarRepository accountCarRepository;
+
+    private static final Logger logger = LoggerFactory.getLogger(ExcelImportService.class);
 
     public List<AccountDTO> importAccountsFromExcel(InputStream inputStream, List<String> errorMessages) throws IOException {
         List<AccountDTO> accountDTOs = new ArrayList<>();
@@ -70,13 +72,11 @@ public class ExcelImportService {
                     }
 
                     String plainPassword = accountDTO.getPassword();
-
                     String encodedPassword = passwordEncoder.encode(plainPassword);
                     accountDTO.setPassword(encodedPassword);
                     Account account = accountConverter.convertToEntity(accountDTO);
 
                     account = accountRepository.save(account);
-
                     accountDTOs.add(accountConverter.convertToDTO(account));
 
                     emailService.sendAccountInformation(
@@ -94,13 +94,13 @@ public class ExcelImportService {
                 }
             }
         }
+
         if (!errorMessages.isEmpty()) {
             System.err.println("Import Errors:");
             errorMessages.forEach(System.err::println);
         }
         return accountDTOs;
     }
-
 
     private AccountDTO parseRowToAccountDTO(Row row) {
         AccountDTO accountDTO = new AccountDTO();

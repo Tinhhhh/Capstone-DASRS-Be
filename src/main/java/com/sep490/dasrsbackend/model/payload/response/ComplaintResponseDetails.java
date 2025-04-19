@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import lombok.Builder;
@@ -23,10 +24,10 @@ public class ComplaintResponseDetails {
     private ComplaintStatus status;
 
     @JsonProperty("created_date")
-    private Date createdDate;
+    private String createdDate;
 
     @JsonProperty("last_modified_date")
-    private Date lastModifiedDate;
+    private String lastModifiedDate;
 
     @JsonProperty("match_id")
     private Long matchId;
