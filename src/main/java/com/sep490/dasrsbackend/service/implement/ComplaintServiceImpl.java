@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.Util.ComplaintSpecification;
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
@@ -8,11 +9,17 @@ import com.sep490.dasrsbackend.model.exception.ResourceNotFoundException;
 import com.sep490.dasrsbackend.model.payload.request.*;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
+import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseWithDetails;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.ComplaintService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -146,6 +153,16 @@ public class ComplaintServiceImpl implements ComplaintService {
         MatchTeam matchTeam = matchTeamRepository.findById(matchTeamId)
                 .orElseThrow(() -> new ResourceNotFoundException("MatchTeam not found for ID: " + matchTeamId));
 
+        if (matchTeam.getTeam() == null) {
+            throw new IllegalArgumentException("MatchTeam is missing an associated Team for ID: " + matchTeamId);
+        }
+        if (matchTeam.getMatch() == null) {
+            throw new IllegalArgumentException("MatchTeam is missing an associated Match for ID: " + matchTeamId);
+        }
+        if (matchTeam.getAccount() == null) {
+            throw new IllegalArgumentException("MatchTeam is missing an associated Account for ID: " + matchTeamId);
+        }
+
         Complaint complaint = Complaint.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -157,6 +174,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         return mapToResponseDetails(matchTeamId, complaint);
     }
+
 
     private ComplaintResponseDetails mapToResponseDetails(Long matchTeamId, Complaint complaint) {
         MatchTeam matchTeam = matchTeamRepository.findById(matchTeamId)
@@ -187,6 +205,8 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .teamId(team.getId())
                 .accountId(account.getAccountId())
                 .matchTeamId(matchTeam.getId())
+                .matchName(match.getMatchName())
+                .teamName(team.getTeamName())
                 .build();
     }
 
@@ -204,7 +224,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         MatchTeam matchTeam = complaint.getMatchTeam();
         Match match = matchTeam.getMatch();
-        validateMatchAndTeams(matchTeam);
+//        validateMatchAndTeams(matchTeam);
 
         complaint.setReply(replyRequest.getReply());
         complaint.setStatus(replyRequest.getStatus());
@@ -222,26 +242,35 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         MatchTeam matchTeam = complaint.getMatchTeam();
         Match match = matchTeam.getMatch();
-        validateMatchAndTeams(matchTeam);
+//        validateMatchAndTeams(matchTeam);
 
         return mapToResponseDetails(matchTeam.getId(), complaint);
     }
 
     @Override
-    public List<ComplaintResponseDetails> getAllComplaints() {
-        List<Complaint> complaints = complaintRepository.findAll();
+    public List<ComplaintResponseDetails> getAllComplaints(ComplaintStatus status, String sortBy, String sortDirection) {
+        Pageable pageable = getPageable(0, Integer.MAX_VALUE, sortBy, sortDirection);
+        Specification<Complaint> spec = Specification.where(ComplaintSpecification.hasStatus(status));
+
+        Page<Complaint> complaints = complaintRepository.findAll(spec, pageable);
+
         if (complaints.isEmpty()) {
             throw new ResourceNotFoundException("No complaints found");
         }
 
-        return complaints.stream()
+        return complaints.getContent().stream()
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
-                    Match match = matchTeam.getMatch();
-                    validateMatchAndTeams(matchTeam);
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
+    }
+
+    private Pageable getPageable(int pageNo, int pageSize, String sortBy, String sortDirection) {
+        Sort sort = sortDirection.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        return PageRequest.of(pageNo, pageSize, sort);
     }
 
     @Override
@@ -249,7 +278,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
 
-        validateMatchAndTeams(complaint.getMatchTeam());
+//        validateMatchAndTeams(complaint.getMatchTeam());
 
         complaintRepository.delete(complaint);
     }
@@ -265,7 +294,7 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
                     Match match = matchTeam.getMatch();
-                    validateMatchAndTeams(matchTeam);
+//                    validateMatchAndTeams(matchTeam);
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
@@ -282,7 +311,7 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
                     Match match = matchTeam.getMatch();
-                    validateMatchAndTeams(matchTeam);
+//                    validateMatchAndTeams(matchTeam);
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
@@ -299,7 +328,40 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
                     Match match = matchTeam.getMatch();
-                    validateMatchAndTeams(matchTeam);
+//                    validateMatchAndTeams(matchTeam);
+                    return mapToResponseDetails(matchTeam.getId(), complaint);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ComplaintResponseDetails> getComplaintsByRoundId(Long roundId) {
+        if (roundId == null || roundId <= 0) {
+            throw new IllegalArgumentException("Invalid roundId: " + roundId);
+        }
+
+        // Fetch matches by roundId
+        List<Match> matches = matchRepository.findByRound_Id(roundId);
+        if (matches.isEmpty()) {
+            throw new ResourceNotFoundException("No matches found for roundId: " + roundId);
+        }
+
+        List<Long> matchIds = matches.stream()
+                .map(Match::getId)
+                .toList();
+
+        List<Complaint> complaints = complaintRepository.findByRoundId(roundId);
+        if (complaints.isEmpty()) {
+            throw new ResourceNotFoundException("No complaints found for roundId: " + roundId);
+        }
+
+        return complaints.stream()
+                .map(complaint -> {
+                    MatchTeam matchTeam = complaint.getMatchTeam();
+                    if (matchTeam == null) {
+                        throw new IllegalStateException("Complaint ID " + complaint.getId() + " is not associated with any MatchTeam.");
+                    }
+
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
@@ -319,7 +381,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         MatchTeam matchTeam = complaint.getMatchTeam();
         Match match = matchTeam.getMatch();
-        validateMatchAndTeams(matchTeam);
+//        validateMatchAndTeams(matchTeam);
 
         complaint.setTitle(updateRequest.getTitle());
         complaint.setDescription(updateRequest.getDescription());
@@ -330,25 +392,25 @@ public class ComplaintServiceImpl implements ComplaintService {
         return mapToResponseDetails(matchTeam.getId(), complaint);
     }
 
-    private void validateMatchAndTeams(MatchTeam matchTeam) {
-        if (matchTeam == null) {
-            throw new ResourceNotFoundException("MatchTeam not found");
-        }
-        Match match = matchTeam.getMatch();
-        if (match == null) {
-            throw new ResourceNotFoundException("Match not found");
-        }
-        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
-        if (matchTeams.isEmpty()) {
-            throw new ResourceNotFoundException("No teams found for matchId: " + match.getId());
-        }
-
-        matchTeams.forEach(mt -> {
-            if (mt.getTeam() == null || mt.getAccount() == null) {
-                throw new ResourceNotFoundException("Invalid team or account for matchId: " + match.getId());
-            }
-        });
-    }
+//    private void validateMatchAndTeams(MatchTeam matchTeam) {
+//        if (matchTeam == null) {
+//            throw new ResourceNotFoundException("MatchTeam not found");
+//        }
+//        Match match = matchTeam.getMatch();
+//        if (match == null) {
+//            throw new ResourceNotFoundException("Match not found");
+//        }
+//        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+//        if (matchTeams.isEmpty()) {
+//            throw new ResourceNotFoundException("No teams found for matchId: " + match.getId());
+//        }
+//
+//        matchTeams.forEach(mt -> {
+//            if (mt.getTeam() == null || mt.getAccount() == null) {
+//                throw new ResourceNotFoundException("Invalid team or account for matchId: " + match.getId());
+//            }
+//        });
+//    }
 }
 
 

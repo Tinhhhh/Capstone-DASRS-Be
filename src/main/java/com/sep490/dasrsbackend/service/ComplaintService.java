@@ -32,7 +32,7 @@ public interface ComplaintService {
 
     ComplaintResponseDetails getComplaintById(Long id);
 
-    List<ComplaintResponseDetails> getAllComplaints();
+    List<ComplaintResponseDetails> getAllComplaints(ComplaintStatus status, String sortBy, String sortDirection);;
 
     void deleteComplaint(Long id);
 
@@ -43,4 +43,6 @@ public interface ComplaintService {
     List<ComplaintResponseDetails> getComplaintsByTeamId(Long teamId);
 
     ComplaintResponseDetails updateComplaint(Long id, ComplaintUpdateRequest updateRequest);
+
+    List<ComplaintResponseDetails> getComplaintsByRoundId(Long roundId);
 }

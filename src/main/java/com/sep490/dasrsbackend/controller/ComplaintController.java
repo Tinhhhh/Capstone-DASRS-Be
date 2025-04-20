@@ -94,7 +94,7 @@ public class ComplaintController {
 //    }
 
     @Operation(summary = "Create a complaint", description = "Create a new complaint by providing match, team, and account IDs along with complaint details.")
-    @PostMapping("/complaints")
+    @PostMapping("/create")
     public ResponseEntity<Object> createComplaint(
             @RequestParam Long matchTeamId,
             @RequestBody ComplaintRequest request) {
@@ -104,7 +104,7 @@ public class ComplaintController {
     }
 
     @Operation(summary = "Reply to a complaint", description = "Reply to a complaint with a status update and the reply content.")
-    @PutMapping("/complaints/reply/{id}")
+    @PutMapping("/reply/{id}")
     public ResponseEntity<Object> replyToComplaint(
             @PathVariable Long id,
             @RequestBody ComplaintReplyRequest replyRequest) {
@@ -120,10 +120,13 @@ public class ComplaintController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaint fetched successfully", response);
     }
 
-    @Operation(summary = "Get all complaints", description = "Fetch all complaints")
+    @Operation(summary = "Get all complaints", description = "Fetch all complaints with optional status filtering and sorting")
     @GetMapping
-    public ResponseEntity<Object> getAllComplaints() {
-        List<ComplaintResponseDetails> responses = complaintService.getAllComplaints();
+    public ResponseEntity<Object> getAllComplaints(
+            @RequestParam(required = false) ComplaintStatus status,
+            @RequestParam(defaultValue = "createdDate") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+        List<ComplaintResponseDetails> responses = complaintService.getAllComplaints(status, sortBy, sortDirection);
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
     }
 
@@ -156,11 +159,18 @@ public class ComplaintController {
     }
 
     @Operation(summary = "Update a complaint", description = "Allows players to update the title or description of an existing complaint.")
-    @PutMapping("/complaints/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<Object> updateComplaint(
             @PathVariable Long id,
             @RequestBody ComplaintUpdateRequest updateRequest) {
         ComplaintResponseDetails updatedComplaint = complaintService.updateComplaint(id, updateRequest);
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaint updated successfully", updatedComplaint);
+    }
+
+    @Operation(summary = "Get complaints by round ID", description = "Fetch all complaints related to a specific round")
+    @GetMapping("/round/{roundId}")
+    public ResponseEntity<Object> getComplaintsByRoundId(@PathVariable Long roundId) {
+        List<ComplaintResponseDetails> responses = complaintService.getComplaintsByRoundId(roundId);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
     }
 }

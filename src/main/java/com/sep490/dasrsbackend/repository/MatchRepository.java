@@ -36,4 +36,6 @@ public interface MatchRepository extends JpaRepository<Match, Long>, JpaSpecific
     @Query("SELECT m FROM Match m WHERE :time between m.timeStart and m.timeEnd")
     List<Match> findByMatchByTime(@Param("time") Date time);
 
+    List<Match> findByRound_Id(Long roundId);
+
 }
