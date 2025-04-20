@@ -120,10 +120,13 @@ public class ComplaintController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaint fetched successfully", response);
     }
 
-    @Operation(summary = "Get all complaints", description = "Fetch all complaints")
+    @Operation(summary = "Get all complaints", description = "Fetch all complaints with optional status filtering and sorting")
     @GetMapping
-    public ResponseEntity<Object> getAllComplaints() {
-        List<ComplaintResponseDetails> responses = complaintService.getAllComplaints();
+    public ResponseEntity<Object> getAllComplaints(
+            @RequestParam(required = false) ComplaintStatus status,
+            @RequestParam(defaultValue = "createdDate") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+        List<ComplaintResponseDetails> responses = complaintService.getAllComplaints(status, sortBy, sortDirection);
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
     }
 
@@ -162,5 +165,12 @@ public class ComplaintController {
             @RequestBody ComplaintUpdateRequest updateRequest) {
         ComplaintResponseDetails updatedComplaint = complaintService.updateComplaint(id, updateRequest);
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaint updated successfully", updatedComplaint);
+    }
+
+    @Operation(summary = "Get complaints by round ID", description = "Fetch all complaints related to a specific round")
+    @GetMapping("/round/{roundId}")
+    public ResponseEntity<Object> getComplaintsByRoundId(@PathVariable Long roundId) {
+        List<ComplaintResponseDetails> responses = complaintService.getComplaintsByRoundId(roundId);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
     }
 }

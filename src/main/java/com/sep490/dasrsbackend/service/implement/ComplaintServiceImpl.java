@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.Util.ComplaintSpecification;
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
@@ -14,6 +15,11 @@ import com.sep490.dasrsbackend.service.ComplaintService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -204,7 +210,6 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .build();
     }
 
-
     @Override
     public ComplaintResponseDetails replyToComplaint(Long id, ComplaintReplyRequest replyRequest) {
         if (replyRequest.getReply() == null || replyRequest.getReply().isEmpty()) {
@@ -243,19 +248,29 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public List<ComplaintResponseDetails> getAllComplaints() {
-        List<Complaint> complaints = complaintRepository.findAll();
+    public List<ComplaintResponseDetails> getAllComplaints(ComplaintStatus status, String sortBy, String sortDirection) {
+        Pageable pageable = getPageable(0, Integer.MAX_VALUE, sortBy, sortDirection);
+        Specification<Complaint> spec = Specification.where(ComplaintSpecification.hasStatus(status));
+
+        Page<Complaint> complaints = complaintRepository.findAll(spec, pageable);
+
         if (complaints.isEmpty()) {
             throw new ResourceNotFoundException("No complaints found");
         }
 
-        return complaints.stream()
+        return complaints.getContent().stream()
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
-//                    validateMatchAndTeams(matchTeam);
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
+    }
+
+    private Pageable getPageable(int pageNo, int pageSize, String sortBy, String sortDirection) {
+        Sort sort = sortDirection.equalsIgnoreCase(Sort.Direction.ASC.name())
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        return PageRequest.of(pageNo, pageSize, sort);
     }
 
     @Override
@@ -314,6 +329,39 @@ public class ComplaintServiceImpl implements ComplaintService {
                     MatchTeam matchTeam = complaint.getMatchTeam();
                     Match match = matchTeam.getMatch();
 //                    validateMatchAndTeams(matchTeam);
+                    return mapToResponseDetails(matchTeam.getId(), complaint);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ComplaintResponseDetails> getComplaintsByRoundId(Long roundId) {
+        if (roundId == null || roundId <= 0) {
+            throw new IllegalArgumentException("Invalid roundId: " + roundId);
+        }
+
+        // Fetch matches by roundId
+        List<Match> matches = matchRepository.findByRound_Id(roundId);
+        if (matches.isEmpty()) {
+            throw new ResourceNotFoundException("No matches found for roundId: " + roundId);
+        }
+
+        List<Long> matchIds = matches.stream()
+                .map(Match::getId)
+                .toList();
+
+        List<Complaint> complaints = complaintRepository.findByRoundId(roundId);
+        if (complaints.isEmpty()) {
+            throw new ResourceNotFoundException("No complaints found for roundId: " + roundId);
+        }
+
+        return complaints.stream()
+                .map(complaint -> {
+                    MatchTeam matchTeam = complaint.getMatchTeam();
+                    if (matchTeam == null) {
+                        throw new IllegalStateException("Complaint ID " + complaint.getId() + " is not associated with any MatchTeam.");
+                    }
+
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
