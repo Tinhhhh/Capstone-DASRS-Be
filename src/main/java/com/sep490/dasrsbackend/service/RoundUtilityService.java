@@ -190,7 +190,6 @@ public class RoundUtilityService {
                 MatchTeam matchTeam = new MatchTeam();
                 matchTeam.setMatch(match);
                 matchTeam.setStatus(MatchTeamStatus.UNASSIGNED);
-                matchTeam.setScore(0);
                 matchTeam.setAttempt(0);
                 matchTeamRepository.save(matchTeam);
             }
@@ -211,7 +210,7 @@ public class RoundUtilityService {
 
         //Xác định inject cho round nào
         //Mặc định láy round đầu tiên
-        Round round = new Round();
+        Round round = rounds.get(0);
         List<Leaderboard> leaderboards = new ArrayList<>();
 
         for (int i = 0; i < rounds.size(); i++) {
@@ -249,7 +248,7 @@ public class RoundUtilityService {
             return;
         }
 
-        //Lấy danh sách matchTeam của round dđang được inject
+        //Lấy danh sách matchTeam của round đang được inject
         List<Match> matches = matchRepository.findByRoundId(round.getId()).stream().filter(match -> match.getStatus() == MatchStatus.PENDING).toList();
         List<MatchTeam> matchTeams = new ArrayList<>();
         for (Match match : matches) {
@@ -372,20 +371,22 @@ public class RoundUtilityService {
         Match lastMatch = matches.get(0);
         LocalDateTime matchEndTime = DateUtil.convertToLocalDateTime(lastMatch.getTimeEnd());
         LocalDateTime startTime = null;
+        LocalDate today = LocalDate.now();
 
         //Trường hợp chưa tạo rematch nào => Rematch sẽ đc tạo vào ngày hôm sau của trận OFFICIAL cuối cùng
         if (lastMatch.getMatchForm() == MatchForm.OFFICIAL) {
             startTime = LocalDateTime.now().plusDays(1).withHour(Schedule.WORKING_HOURS_START).withMinute(0).withSecond(0).withNano(0);
 
+            LocalDate endDate = DateUtil.convertToLocalDateTime(round.getEndDate()).toLocalDate();
             if (matchEndTime.isAfter(LocalDateTime.now())) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
-                        "matches need to be completed before rematch can be created. last match end time: " +
+                        "last matches need to be completed before rematch can be created. last match end time: " +
                         DateUtil.formatTimestamp(lastMatch.getTimeEnd(), DateUtil.DATE_TIME_FORMAT));
             }
 
-            if (round.getEndDate().after(DateUtil.convertToDate(LocalDateTime.now()))) {
+            if (!endDate.isAfter(today)) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
-                        "round is ended, rematch cannot be created");
+                        "Rematch cannot be created because the round has already ended, and rematches can only start from tomorrow.");
             }
 
             if (startTime.isAfter(DateUtil.convertToLocalDateTime(round.getEndDate()))) {
@@ -399,6 +400,23 @@ public class RoundUtilityService {
 
         //Trường hợp đã tạo rematch => Rematch sẽ đc tạo vào giờ tiếp theo của trận rematch cuối cùng
         if (lastMatch.getMatchForm() == MatchForm.REMATCH) {
+
+            //Sort lại, laấy danh sách rematch theo thời gian bắt đầu sớm nhất => match 0 sẽ là match bắt đầu sớm nhất
+            List<Match> rematchs = matches.stream()
+                    .filter(match -> match.getMatchForm() == MatchForm.REMATCH)
+                    .sorted(Comparator.comparing(Match::getTimeStart))
+                    .toList();
+
+            LocalDate rematch = DateUtil.convertToLocalDateTime(rematchs.get(0).getTimeStart()).toLocalDate();
+//            LocalDate today = LocalDate.of(2025, 4, 21);
+
+            //Nếu rematch bất kì đã bắt đầu thì không thể tạo rematch
+            if (!rematch.isAfter(today)) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
+                        "Rematch creation deadline has passed as a rematch has already started or is scheduled for today: " +
+                        DateUtil.formatTimestamp(rematchs.get(0).getTimeStart(), DateUtil.DATE_TIME_FORMAT));
+            }
+
             startTime = matchEndTime.plusHours(1).withMinute(0).withSecond(0).withNano(0);
             //Thời gian kết thúc của round
             LocalDateTime endRoundTime = DateUtil.convertToLocalDateTime(round.getEndDate()).withHour(Schedule.WORKING_HOURS_END);
@@ -441,7 +459,7 @@ public class RoundUtilityService {
             double days = (Math.ceil((numberOfMatches - index) / Schedule.MAX_WORKING_HOURS));
             if (lastMatchEndTime.isAfter(endRoundTime)) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
-                        "this round schedule need: " + (Math.ceil(numberOfMatches / Schedule.MAX_WORKING_HOURS)) + " days more to create matches");
+                        "this round schedule need: " + days + " days more to create matches");
             }
 
         }

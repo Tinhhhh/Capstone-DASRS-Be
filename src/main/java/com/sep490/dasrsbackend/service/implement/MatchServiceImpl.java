@@ -54,6 +54,7 @@ public class MatchServiceImpl implements MatchService {
     private final static Logger logger = org.slf4j.LoggerFactory.getLogger(MatchServiceImpl.class);
     private final TournamentTeamRepository tournamentTeamRepository;
     private final RoundUtilityService roundUtilityService;
+    private final LeaderboardServiceImpl leaderboardServiceImpl;
 
     @Override
     public List<MatchResponseForTeam> getMatches(Long teamId) {
@@ -147,7 +148,8 @@ public class MatchServiceImpl implements MatchService {
         List<Account> asssignedMember = new ArrayList<>();
         List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(tournament.getId());
         for (Round round : rounds) {
-            List<Match> matches = matchRepository.findByRoundId(round.getId()).stream().filter(match1 -> match1.getStatus() != MatchStatus.TERMINATED).toList();
+            List<Match> matches = matchRepository.findByRoundId(round.getId()).stream()
+                    .filter(match1 -> match1.getStatus() != MatchStatus.TERMINATED && match1.getMatchForm() == MatchForm.OFFICIAL).toList();
             for (Match m : matches) {
                 List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(m.getId()).stream().filter(matchTeam1 -> matchTeam1.getStatus() == MatchTeamStatus.ASSIGNED).toList();
                 for (MatchTeam mt : matchTeams) {
@@ -300,18 +302,35 @@ public class MatchServiceImpl implements MatchService {
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Score Attribute not found"));
 
         score += calculateScore(sm, sa);
+        matchTeam.setStatus(MatchTeamStatus.COMPLETED);
         matchTeam.setScore(score);
         matchTeamRepository.save(matchTeam);
 
-        match.setStatus(MatchStatus.FINISHED);
-        matchRepository.save(match);
+        boolean isMatchCompleted = matchTeamRepository.findByMatchId(match.getId()).stream()
+                .filter(matchTeam1 -> matchTeam1.getStatus() != MatchTeamStatus.TERMINATED)
+                .allMatch(matchTeam1 -> matchTeam1.getStatus() == MatchTeamStatus.COMPLETED);
+
+        if (isMatchCompleted) {
+            match.setStatus(MatchStatus.FINISHED);
+            matchRepository.save(match);
+        }
+
 
         //cập nhật bảng xếp hạng leaderboard
         Optional<Leaderboard> lbOtp = leaderboardRepository.findByRoundIdAndTeamId(round.getId(), team.getId());
         Leaderboard lb = new Leaderboard();
         if (lbOtp.isPresent()) {
             lb = lbOtp.get();
-            List<MatchTeam> matchTeams = matchTeamRepository.findByTeamIdAndMatchId(team.getId(), match.getId());
+
+            List<Match> matches = matchRepository.findByRoundId(round.getId()).stream()
+                    .filter(match1 -> match1.getStatus() != MatchStatus.TERMINATED).toList();
+
+            List<MatchTeam> matchTeams = matches.stream()
+                    .flatMap(match1 -> matchTeamRepository.findByMatchId(match1.getId()).stream())
+                    .filter(matchTeam1 -> matchTeam1.getStatus() != MatchTeamStatus.TERMINATED)
+                    .filter(matchTeam1 -> matchTeam1.getTeam().getId() == team.getId())
+                    .toList();
+
             double totalScore = 0;
             for (MatchTeam mt : matchTeams) {
                 totalScore += mt.getScore();
@@ -325,6 +344,8 @@ public class MatchServiceImpl implements MatchService {
 
         leaderboardRepository.save(lb);
         leaderboardService.updateLeaderboard(round.getId());
+
+
     }
 
     @Override
@@ -605,6 +626,7 @@ public class MatchServiceImpl implements MatchService {
     }
     //Background service này dùng để đánh status các trận đấu đã kết thúc nhưng ko đc update kết quả trận đấu.
 
+    @Transactional
     @Scheduled(cron = "1 0 * * * ?")
     public void detectNotFinishMatch() {
         logger.info("Detecting not finished match task running at {}", LocalDateTime.now());
@@ -628,12 +650,23 @@ public class MatchServiceImpl implements MatchService {
                         List<Match> matches = matchRepository.findByRoundId(r.getId());
                         for (Match match : matches) {
                             if (match.getTimeEnd().before(DateUtil.convertToDate(LocalDateTime.now())) && match.getStatus() == MatchStatus.PENDING) {
+//                            if (match.getStatus() == MatchStatus.PENDING) {
+
+                                List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId()).stream()
+                                        .filter(matchTeam -> matchTeam.getStatus() != MatchTeamStatus.TERMINATED).toList();
+
+                                for (MatchTeam matchTeam : matchTeams) {
+                                    matchTeam.setStatus(MatchTeamStatus.COMPLETED);
+                                    matchTeamRepository.save(matchTeam);
+                                }
+
                                 match.setStatus(MatchStatus.FINISHED);
                                 matchRepository.save(match);
                                 logger.info("Match {} has been set to finished", match.getId());
                             } else {
                                 logger.info("Match {} is still in progress", match.getId());
                             }
+
 
                             List<Team> teams = matchTeamRepository.findByMatchId(match.getId()).stream()
                                     .map(MatchTeam::getTeam)
@@ -644,8 +677,8 @@ public class MatchServiceImpl implements MatchService {
                             for (Team team : teams) {
                                 //Kiểm tra xem team này đã có leaderboard chưa
                                 Optional<Leaderboard> lbOtp = leaderboardRepository.findByRoundIdAndTeamId(r.getId(), team.getId());
-                                Leaderboard lb = new Leaderboard();
                                 if (lbOtp.isEmpty()) {
+                                    Leaderboard lb = new Leaderboard();
                                     lb.setTeam(team);
                                     lb.setRound(r);
                                     lb.setTeamScore(0);
@@ -654,6 +687,8 @@ public class MatchServiceImpl implements MatchService {
                                 }
                             }
 
+                            //Cập nhật lại leaderboard
+                            leaderboardServiceImpl.updateLeaderboard(r.getId());
                         }
                     }
                 } else {

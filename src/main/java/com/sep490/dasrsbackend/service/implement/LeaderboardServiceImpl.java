@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.enums.MatchForm;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
@@ -41,6 +42,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round not found")
         );
 
+        //Xếp hạng lại leaderboard
         List<Leaderboard> lbs = leaderboardRepository.findByRoundId(round.getId());
 
         lbs.sort(Comparator.comparing(Leaderboard::getTeamScore).reversed());
@@ -52,20 +54,70 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
         leaderboardRepository.saveAll(lbs);
 
-        List<Match> matches = matchRepository.findByRoundId(round.getId()).stream().filter(match -> match.getStatus() != MatchStatus.TERMINATED).toList();
-        boolean isCompleted = true;
-        for (Match match : matches) {
-            if (match.getStatus() == MatchStatus.PENDING) {
-                isCompleted = false;
-                break;
+        //Kiểm tra xem round đã hoàn thành chưa
+        if (round.getStatus() == RoundStatus.ACTIVE) {
+            List<Match> matches = matchRepository.findByRoundId(round.getId()).stream()
+                    .filter(match -> match.getStatus() != MatchStatus.TERMINATED).toList();
+
+            boolean isCompleted = true;
+            for (Match match : matches) {
+                if (match.getStatus() == MatchStatus.PENDING) {
+                    isCompleted = false;
+                    break;
+                }
+            }
+
+            if (isCompleted) {
+                round.setStatus(RoundStatus.COMPLETED);
+                roundUtilityService.injectTeamToMatchTeam(round.getTournament().getId());
+                roundRepository.save(round);
             }
         }
 
-        if (isCompleted) {
-            round.setStatus(RoundStatus.COMPLETED);
-            roundUtilityService.injectTeamToMatchTeam(round.getTournament().getId());
-            roundRepository.save(round);
+        //Nêếu round đã hoàn thành thì kiểm tra có rematch ko?
+        if (round.getStatus() == RoundStatus.COMPLETED) {
+
+            //Nếu đây là round cuối cuùng thì chỉ cập nhật kết quả leaderboard thôi
+            if (round.isLast()) {
+                return;
+            }
+
+            //Lấy danh sách rematch
+            List<Match> rematches = matchRepository.findByRoundId(round.getId()).stream()
+                    .filter(rematch -> rematch.getMatchForm() == MatchForm.REMATCH && rematch.getStatus() != MatchStatus.TERMINATED)
+                    .toList();
+
+            //Nếu có rematch thì round tiếp theo phải đc làm mới
+            if (!rematches.isEmpty()) {
+                List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(round.getTournament().getId()).stream()
+                        .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
+
+                //Mặc định nextRound là round hiện tại,
+                Round nextRound = new Round();
+
+                for (int i = 0; i < rounds.size(); i++) {
+                    //Tìm round tiếp theo, round tiếp theo phải là round = active
+                    if (rounds.get(i).getStatus() == RoundStatus.COMPLETED) {
+                        nextRound = rounds.get(i + 1);
+                    }
+                }
+
+                //Nếu nextRound == round => Nghĩa là hiện tại chỉ có 1 round
+                //Round tiếp theo chưa đc tạo
+
+                //Trường hợp có round tiếp theo
+                if (nextRound != round) {
+                    //Terminate match hiện tại của round
+                    //generate match mới
+                    roundUtilityService.terminateMatchesToRegenerate(nextRound.getId());
+                    roundUtilityService.generateMatch(nextRound, nextRound.getTournament());
+                }
+
+
+            }
         }
+
+
     }
 
     @Override
