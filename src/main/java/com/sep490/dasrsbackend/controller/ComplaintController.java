@@ -94,7 +94,7 @@ public class ComplaintController {
 //    }
 
     @Operation(summary = "Create a complaint", description = "Create a new complaint by providing match, team, and account IDs along with complaint details.")
-    @PostMapping("/complaints")
+    @PostMapping("/create")
     public ResponseEntity<Object> createComplaint(
             @RequestParam Long matchTeamId,
             @RequestBody ComplaintRequest request) {
@@ -104,7 +104,7 @@ public class ComplaintController {
     }
 
     @Operation(summary = "Reply to a complaint", description = "Reply to a complaint with a status update and the reply content.")
-    @PutMapping("/complaints/reply/{id}")
+    @PutMapping("/reply/{id}")
     public ResponseEntity<Object> replyToComplaint(
             @PathVariable Long id,
             @RequestBody ComplaintReplyRequest replyRequest) {
@@ -156,7 +156,7 @@ public class ComplaintController {
     }
 
     @Operation(summary = "Update a complaint", description = "Allows players to update the title or description of an existing complaint.")
-    @PutMapping("/complaints/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<Object> updateComplaint(
             @PathVariable Long id,
             @RequestBody ComplaintUpdateRequest updateRequest) {
