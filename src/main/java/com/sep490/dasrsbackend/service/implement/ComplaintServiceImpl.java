@@ -8,6 +8,7 @@ import com.sep490.dasrsbackend.model.exception.ResourceNotFoundException;
 import com.sep490.dasrsbackend.model.payload.request.*;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
+import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseWithDetails;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.ComplaintService;
 import jakarta.persistence.EntityNotFoundException;
@@ -187,8 +188,11 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .teamId(team.getId())
                 .accountId(account.getAccountId())
                 .matchTeamId(matchTeam.getId())
+                .matchName(match.getMatchName())
+                .teamName(team.getTeamName())
                 .build();
     }
+
 
     @Override
     public ComplaintResponseDetails replyToComplaint(Long id, ComplaintReplyRequest replyRequest) {
@@ -237,7 +241,6 @@ public class ComplaintServiceImpl implements ComplaintService {
         return complaints.stream()
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
-                    Match match = matchTeam.getMatch();
                     validateMatchAndTeams(matchTeam);
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
