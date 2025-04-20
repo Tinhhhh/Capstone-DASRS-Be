@@ -147,6 +147,16 @@ public class ComplaintServiceImpl implements ComplaintService {
         MatchTeam matchTeam = matchTeamRepository.findById(matchTeamId)
                 .orElseThrow(() -> new ResourceNotFoundException("MatchTeam not found for ID: " + matchTeamId));
 
+        if (matchTeam.getTeam() == null) {
+            throw new IllegalArgumentException("MatchTeam is missing an associated Team for ID: " + matchTeamId);
+        }
+        if (matchTeam.getMatch() == null) {
+            throw new IllegalArgumentException("MatchTeam is missing an associated Match for ID: " + matchTeamId);
+        }
+        if (matchTeam.getAccount() == null) {
+            throw new IllegalArgumentException("MatchTeam is missing an associated Account for ID: " + matchTeamId);
+        }
+
         Complaint complaint = Complaint.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -158,6 +168,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         return mapToResponseDetails(matchTeamId, complaint);
     }
+
 
     private ComplaintResponseDetails mapToResponseDetails(Long matchTeamId, Complaint complaint) {
         MatchTeam matchTeam = matchTeamRepository.findById(matchTeamId)
@@ -208,7 +219,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         MatchTeam matchTeam = complaint.getMatchTeam();
         Match match = matchTeam.getMatch();
-        validateMatchAndTeams(matchTeam);
+//        validateMatchAndTeams(matchTeam);
 
         complaint.setReply(replyRequest.getReply());
         complaint.setStatus(replyRequest.getStatus());
@@ -226,7 +237,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         MatchTeam matchTeam = complaint.getMatchTeam();
         Match match = matchTeam.getMatch();
-        validateMatchAndTeams(matchTeam);
+//        validateMatchAndTeams(matchTeam);
 
         return mapToResponseDetails(matchTeam.getId(), complaint);
     }
@@ -241,7 +252,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         return complaints.stream()
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
-                    validateMatchAndTeams(matchTeam);
+//                    validateMatchAndTeams(matchTeam);
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
@@ -252,7 +263,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         Complaint complaint = complaintRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
 
-        validateMatchAndTeams(complaint.getMatchTeam());
+//        validateMatchAndTeams(complaint.getMatchTeam());
 
         complaintRepository.delete(complaint);
     }
@@ -268,7 +279,7 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
                     Match match = matchTeam.getMatch();
-                    validateMatchAndTeams(matchTeam);
+//                    validateMatchAndTeams(matchTeam);
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
@@ -285,7 +296,7 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
                     Match match = matchTeam.getMatch();
-                    validateMatchAndTeams(matchTeam);
+//                    validateMatchAndTeams(matchTeam);
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
@@ -302,7 +313,7 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
                     Match match = matchTeam.getMatch();
-                    validateMatchAndTeams(matchTeam);
+//                    validateMatchAndTeams(matchTeam);
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());
@@ -322,7 +333,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         MatchTeam matchTeam = complaint.getMatchTeam();
         Match match = matchTeam.getMatch();
-        validateMatchAndTeams(matchTeam);
+//        validateMatchAndTeams(matchTeam);
 
         complaint.setTitle(updateRequest.getTitle());
         complaint.setDescription(updateRequest.getDescription());
@@ -333,25 +344,25 @@ public class ComplaintServiceImpl implements ComplaintService {
         return mapToResponseDetails(matchTeam.getId(), complaint);
     }
 
-    private void validateMatchAndTeams(MatchTeam matchTeam) {
-        if (matchTeam == null) {
-            throw new ResourceNotFoundException("MatchTeam not found");
-        }
-        Match match = matchTeam.getMatch();
-        if (match == null) {
-            throw new ResourceNotFoundException("Match not found");
-        }
-        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
-        if (matchTeams.isEmpty()) {
-            throw new ResourceNotFoundException("No teams found for matchId: " + match.getId());
-        }
-
-        matchTeams.forEach(mt -> {
-            if (mt.getTeam() == null || mt.getAccount() == null) {
-                throw new ResourceNotFoundException("Invalid team or account for matchId: " + match.getId());
-            }
-        });
-    }
+//    private void validateMatchAndTeams(MatchTeam matchTeam) {
+//        if (matchTeam == null) {
+//            throw new ResourceNotFoundException("MatchTeam not found");
+//        }
+//        Match match = matchTeam.getMatch();
+//        if (match == null) {
+//            throw new ResourceNotFoundException("Match not found");
+//        }
+//        List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId());
+//        if (matchTeams.isEmpty()) {
+//            throw new ResourceNotFoundException("No teams found for matchId: " + match.getId());
+//        }
+//
+//        matchTeams.forEach(mt -> {
+//            if (mt.getTeam() == null || mt.getAccount() == null) {
+//                throw new ResourceNotFoundException("Invalid team or account for matchId: " + match.getId());
+//            }
+//        });
+//    }
 }
 
 
