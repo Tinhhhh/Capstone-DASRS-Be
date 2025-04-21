@@ -5,6 +5,7 @@ import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import com.sep490.dasrsbackend.model.payload.request.*;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
+import com.sep490.dasrsbackend.model.payload.response.PaginatedComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.RoundComplaintResponse;
 
 import java.util.List;
@@ -45,5 +46,5 @@ public interface ComplaintService {
 
     ComplaintResponseDetails updateComplaint(Long id, ComplaintUpdateRequest updateRequest);
 
-    List<ComplaintResponseDetails> getComplaintsByRoundId(Long roundId);
+    PaginatedComplaintResponse getComplaintsByRoundId(Long roundId, ComplaintStatus status, int page, int size, String sortBy, String sortDirection);
 }

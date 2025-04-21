@@ -7,10 +7,7 @@ import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.ResourceNotFoundException;
 import com.sep490.dasrsbackend.model.payload.request.*;
-import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
-import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
-import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseWithDetails;
-import com.sep490.dasrsbackend.model.payload.response.RoundComplaintResponse;
+import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.ComplaintService;
 import jakarta.persistence.EntityNotFoundException;
@@ -253,14 +250,12 @@ public class ComplaintServiceImpl implements ComplaintService {
         Page<Complaint> complaints = complaintRepository.findAll(spec, pageable);
 
         if (complaints.isEmpty()) {
-            throw new ResourceNotFoundException("No complaints found");
+            return new ArrayList<>();
         }
 
-        // Group complaints by rounds
         Map<Long, List<Complaint>> complaintsByRound = complaints.getContent().stream()
                 .collect(Collectors.groupingBy(complaint -> complaint.getMatchTeam().getMatch().getRound().getId()));
 
-        // Map to RoundComplaintResponse
         return complaintsByRound.entrySet().stream()
                 .map(entry -> {
                     Long roundId = entry.getKey();
@@ -349,27 +344,26 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public List<ComplaintResponseDetails> getComplaintsByRoundId(Long roundId) {
+    public PaginatedComplaintResponse getComplaintsByRoundId(Long roundId, ComplaintStatus status, int page, int size, String sortBy, String sortDirection) {
+
         if (roundId == null || roundId <= 0) {
             throw new IllegalArgumentException("Invalid roundId: " + roundId);
         }
 
-        // Fetch matches by roundId
         List<Match> matches = matchRepository.findByRound_Id(roundId);
         if (matches.isEmpty()) {
             throw new ResourceNotFoundException("No matches found for roundId: " + roundId);
         }
 
-        List<Long> matchIds = matches.stream()
-                .map(Match::getId)
-                .toList();
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
 
-        List<Complaint> complaints = complaintRepository.findByRoundId(roundId);
-        if (complaints.isEmpty()) {
-            throw new ResourceNotFoundException("No complaints found for roundId: " + roundId);
-        }
+        Specification<Complaint> spec = Specification.<Complaint>where((root, query, cb) ->
+                        cb.equal(root.get("matchTeam").get("match").get("round").get("id"), roundId))
+                .and(ComplaintSpecification.hasStatus(status));
 
-        return complaints.stream()
+        Page<Complaint> complaintsPage = complaintRepository.findAll(spec, pageable);
+
+        List<ComplaintResponseDetails> content = complaintsPage.getContent().stream()
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
                     if (matchTeam == null) {
@@ -378,7 +372,16 @@ public class ComplaintServiceImpl implements ComplaintService {
 
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
-                .collect(Collectors.toList());
+                .toList();
+
+        return PaginatedComplaintResponse.builder()
+                .content(content)
+                .pageNo(complaintsPage.getNumber())
+                .pageSize(complaintsPage.getSize())
+                .totalElements(complaintsPage.getTotalElements())
+                .totalPages(complaintsPage.getTotalPages())
+                .last(complaintsPage.isLast())
+                .build();
     }
 
     @Override

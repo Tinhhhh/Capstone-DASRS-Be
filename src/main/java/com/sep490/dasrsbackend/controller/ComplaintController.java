@@ -1,11 +1,13 @@
 package com.sep490.dasrsbackend.controller;
 
+import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.entity.Complaint;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.*;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
+import com.sep490.dasrsbackend.model.payload.response.PaginatedComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.RoundComplaintResponse;
 import com.sep490.dasrsbackend.service.ComplaintService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -168,10 +170,17 @@ public class ComplaintController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaint updated successfully", updatedComplaint);
     }
 
-    @Operation(summary = "Get complaints by round ID", description = "Fetch all complaints related to a specific round")
+    @Operation(summary = "Get complaints by round ID", description = "Retrieve complaints related to a specific round with pagination, sorting, and optional filtering by status.")
     @GetMapping("/round/{roundId}")
-    public ResponseEntity<Object> getComplaintsByRoundId(@PathVariable Long roundId) {
-        List<ComplaintResponseDetails> responses = complaintService.getComplaintsByRoundId(roundId);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
-    }
+    public ResponseEntity<Object> getComplaintsByRoundId(
+            @PathVariable Long roundId,
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection,
+            @RequestParam(name = "status", required = false) ComplaintStatus status
+    ) {
+            PaginatedComplaintResponse response = complaintService.getComplaintsByRoundId(roundId, status, pageNo, pageSize, sortBy, sortDirection);
+            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints retrieved successfully.", response);
+        }
 }
