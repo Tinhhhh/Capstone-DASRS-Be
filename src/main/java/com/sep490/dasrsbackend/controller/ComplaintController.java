@@ -6,6 +6,7 @@ import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.*;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
+import com.sep490.dasrsbackend.model.payload.response.RoundComplaintResponse;
 import com.sep490.dasrsbackend.service.ComplaintService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -120,14 +121,14 @@ public class ComplaintController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaint fetched successfully", response);
     }
 
-    @Operation(summary = "Get all complaints", description = "Fetch all complaints with optional status filtering and sorting")
-    @GetMapping
+    @Operation(summary = "Get all complaints grouped by rounds", description = "Fetch all complaints grouped by their respective rounds")
+    @GetMapping("/all")
     public ResponseEntity<Object> getAllComplaints(
             @RequestParam(required = false) ComplaintStatus status,
             @RequestParam(defaultValue = "createdDate") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection) {
-        List<ComplaintResponseDetails> responses = complaintService.getAllComplaints(status, sortBy, sortDirection);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
+        List<RoundComplaintResponse> responses = complaintService.getAllComplaints(status, sortBy, sortDirection);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints grouped by rounds fetched successfully", responses);
     }
 
     @Operation(summary = "Delete a complaint by ID", description = "Delete the complaint by its ID")

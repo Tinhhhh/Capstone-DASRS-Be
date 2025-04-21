@@ -10,6 +10,7 @@ import com.sep490.dasrsbackend.model.payload.request.*;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseWithDetails;
+import com.sep490.dasrsbackend.model.payload.response.RoundComplaintResponse;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.ComplaintService;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,10 +25,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -248,7 +246,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public List<ComplaintResponseDetails> getAllComplaints(ComplaintStatus status, String sortBy, String sortDirection) {
+    public List<RoundComplaintResponse> getAllComplaints(ComplaintStatus status, String sortBy, String sortDirection) {
         Pageable pageable = getPageable(0, Integer.MAX_VALUE, sortBy, sortDirection);
         Specification<Complaint> spec = Specification.where(ComplaintSpecification.hasStatus(status));
 
@@ -258,10 +256,26 @@ public class ComplaintServiceImpl implements ComplaintService {
             throw new ResourceNotFoundException("No complaints found");
         }
 
-        return complaints.getContent().stream()
-                .map(complaint -> {
-                    MatchTeam matchTeam = complaint.getMatchTeam();
-                    return mapToResponseDetails(matchTeam.getId(), complaint);
+        // Group complaints by rounds
+        Map<Long, List<Complaint>> complaintsByRound = complaints.getContent().stream()
+                .collect(Collectors.groupingBy(complaint -> complaint.getMatchTeam().getMatch().getRound().getId()));
+
+        // Map to RoundComplaintResponse
+        return complaintsByRound.entrySet().stream()
+                .map(entry -> {
+                    Long roundId = entry.getKey();
+                    List<Complaint> roundComplaints = entry.getValue();
+                    Round round = roundComplaints.get(0).getMatchTeam().getMatch().getRound();
+
+                    List<ComplaintResponseDetails> complaintDetails = roundComplaints.stream()
+                            .map(complaint -> mapToResponseDetails(complaint.getMatchTeam().getId(), complaint))
+                            .collect(Collectors.toList());
+
+                    return RoundComplaintResponse.builder()
+                            .roundId(roundId)
+                            .roundName(round.getRoundName())
+                            .complaints(complaintDetails)
+                            .build();
                 })
                 .collect(Collectors.toList());
     }

@@ -5,6 +5,7 @@ import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import com.sep490.dasrsbackend.model.payload.request.*;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
+import com.sep490.dasrsbackend.model.payload.response.RoundComplaintResponse;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,7 +33,7 @@ public interface ComplaintService {
 
     ComplaintResponseDetails getComplaintById(Long id);
 
-    List<ComplaintResponseDetails> getAllComplaints(ComplaintStatus status, String sortBy, String sortDirection);;
+    List<RoundComplaintResponse> getAllComplaints(ComplaintStatus status, String sortBy, String sortDirection);
 
     void deleteComplaint(Long id);
 
