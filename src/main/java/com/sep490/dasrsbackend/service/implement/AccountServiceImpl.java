@@ -173,7 +173,7 @@ public class AccountServiceImpl implements AccountService {
                     .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
         }
 
-        if (request.getRoleId() >= 4) {
+        if (request.getRoleId() >= 3) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Registration fails, invalid role");
         }
 
