@@ -30,7 +30,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -513,4 +517,93 @@ public class TournamentServiceImpl implements TournamentService {
             return response;
         }).toList();
     }
+
+    @Override
+    public TodayDashboard getDashboardByRange(LocalDateTime startDate, LocalDateTime endDate) {
+
+        Date start = DateUtil.convertToStartOfTheDay(DateUtil.convertToDate(startDate));
+        Date end = DateUtil.convertToEndOfTheDay(DateUtil.convertToDate(endDate));
+
+        if (end.before(start)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "End date must be after start date.");
+        }
+
+        TodayDashboard todayDashboard = getDashboard(start, end);
+
+        return todayDashboard;
+    }
+
+    private TodayDashboard getDashboard(Date start, Date end) {
+        int tournamentCount = tournamentRepository.countByCreatedDateBetween(start, end);
+        int roundCount = roundRepository.countByCreatedDateBetween(start, end);
+        int matchCount = matchRepository.countByCreatedDateBetween(start, end);
+        int teamCount = teamRepository.countByCreatedDateBetween(start, end);
+        int accountCount = accountRepository.countByCreatedDateBetween(start, end);
+
+        TodayDashboard todayDashboard = new TodayDashboard();
+        todayDashboard.setTournamentCount(tournamentCount);
+        todayDashboard.setRoundCount(roundCount);
+        todayDashboard.setMatchCount(matchCount);
+        todayDashboard.setTeamCount(teamCount);
+        todayDashboard.setPlayerCount(accountCount);
+        todayDashboard.setStartDate(DateUtil.formatTimestamp(start));
+        todayDashboard.setEndDate(DateUtil.formatTimestamp(end));
+        return todayDashboard;
+    }
+
+    @Override
+    public MonthlyDashboard getMonthlyDashboardByRange(LocalDateTime startDate, LocalDateTime endDate) {
+        Map<Integer, List<LocalDateTime>> result = new LinkedHashMap<>();
+
+        Date start = DateUtil.convertToStartOfTheDay(DateUtil.convertToDate(startDate));
+        Date end = DateUtil.convertToEndOfTheDay(DateUtil.convertToDate(endDate));
+
+        if (end.before(start)) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "End date must be after start date.");
+        }
+
+        LocalDate startLocalDate = DateUtil.convertToLocalDateTime(start).toLocalDate();
+        LocalDate endLocalDate = DateUtil.convertToLocalDateTime(end).toLocalDate();
+
+
+        // Tìm thứ Hai đầu tiên chứa start
+        LocalDate currentStart = startLocalDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        int weekIndex = 1;
+
+        while (!currentStart.isAfter(endLocalDate)) {
+            //Tìm ngày cuối cùng của tuần này
+            LocalDate currentEnd = currentStart.plusDays(6);
+
+            //Kiểm tra ngày cuối cùng tuần này có vượt quá end date không
+            if (currentEnd.isAfter(endLocalDate)) {
+                currentEnd = endLocalDate;
+            }
+
+            List<LocalDateTime> range = List.of(
+                    currentStart.atStartOfDay(),
+                    currentEnd.atTime(LocalTime.MAX)
+            );
+
+            result.put(weekIndex++, range);
+            currentStart = currentStart.plusWeeks(1);
+        }
+
+        MonthlyDashboard monthlyDashboard = new MonthlyDashboard();
+        List<TodayDashboard> todayDashboards = new ArrayList<>();
+        for (Map.Entry<Integer, List<LocalDateTime>> entry : result.entrySet()) {
+            int week = entry.getKey();
+            List<LocalDateTime> dateRange = entry.getValue();
+            Date startRange = DateUtil.convertToDate(dateRange.get(0));
+            Date endRange = DateUtil.convertToDate(dateRange.get(1));
+            TodayDashboard todayDashboard = getDashboard(startRange, endRange);
+            monthlyDashboard.setWeek(week);
+            todayDashboards.add(todayDashboard);
+        }
+
+        monthlyDashboard.setWeeklyDashboard(todayDashboards);
+
+        return monthlyDashboard;
+    }
+
+
 }
