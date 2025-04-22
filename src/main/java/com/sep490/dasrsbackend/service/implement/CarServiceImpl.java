@@ -93,6 +93,14 @@ public class CarServiceImpl implements CarService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift down RPM must be between min engine RPM and max torque as NM");
         }
 
+        if (newCar.getMaxTorqueAsNM() < newCar.getMinEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be greater than min engine RPM");
+        }
+
+        if (newCar.getMaxTorqueAsNM() > newCar.getMaxEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be smaller than max engine RPM");
+        }
+
         car.setEnabled(true);
         carRepository.save(car);
 
@@ -103,6 +111,23 @@ public class CarServiceImpl implements CarService {
 
         Car car = carRepository.findById(id)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Car not found"));
+
+        if (editCar.getShiftUpRPM() > editCar.getMaxTorqueAsNM() || editCar.getShiftUpRPM() < editCar.getMinEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift up RPM must be between min engine RPM and max torque as NM");
+        }
+
+        if (editCar.getShiftDownRPM() > editCar.getMaxTorqueAsNM() || editCar.getShiftDownRPM() < editCar.getMinEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift down RPM must be between min engine RPM and max torque as NM");
+        }
+
+        if (editCar.getMaxTorqueAsNM() < editCar.getMinEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be greater than min engine RPM");
+        }
+
+        if (editCar.getMaxTorqueAsNM() > editCar.getMaxEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be smaller than max engine RPM");
+        }
+
         modelMapper.map(editCar, car);
         carRepository.save(car);
 

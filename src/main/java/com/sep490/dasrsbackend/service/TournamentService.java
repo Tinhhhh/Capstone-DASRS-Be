@@ -5,10 +5,7 @@ import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatusFilter;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;
 import com.sep490.dasrsbackend.model.payload.request.NewTournament;
-import com.sep490.dasrsbackend.model.payload.response.ListTournament;
-import com.sep490.dasrsbackend.model.payload.response.TeamTournamentDetails;
-import com.sep490.dasrsbackend.model.payload.response.TournamentByTeamResponse;
-import com.sep490.dasrsbackend.model.payload.response.TournamentResponse;
+import com.sep490.dasrsbackend.model.payload.response.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,4 +28,10 @@ public interface TournamentService {
     void registerTeamToTournament(Long tournamentId, Long teamId);
 
     List<TournamentByTeamResponse> getTournamentsByTeamId(Long teamId);
+
+    TodayDashboard getDashboardByRange(LocalDateTime startDate, LocalDateTime endDate);
+
+    MonthlyDashboard getMonthlyDashboardByRange(LocalDateTime startDate, LocalDateTime endDate);
+
+
 }

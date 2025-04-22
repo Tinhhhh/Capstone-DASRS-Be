@@ -31,4 +31,6 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long>, J
 
     @Query("SELECT tt.tournament FROM TournamentTeam tt WHERE tt.team.id = :teamId")
     List<Tournament> findTournamentsByTeamId(Long teamId);
+
+    int countByCreatedDateBetween(Date startDate, Date endDate);
 }

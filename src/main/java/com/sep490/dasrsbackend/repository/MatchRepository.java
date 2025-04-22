@@ -38,4 +38,5 @@ public interface MatchRepository extends JpaRepository<Match, Long>, JpaSpecific
 
     List<Match> findByRound_Id(Long roundId);
 
+    int countByCreatedDateBetween(Date start, Date end);
 }

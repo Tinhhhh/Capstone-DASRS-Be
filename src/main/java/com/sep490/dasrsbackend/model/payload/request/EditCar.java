@@ -19,8 +19,6 @@ public class EditCar {
     private String carName;
 
     @JsonProperty("maximum_torque")
-    @DecimalMax(value = "1000.0", message = "maximum_torque must be less than or equal to 1000")
-    @DecimalMin(value = "100.0", message = "maximum_torque must be greater than or equal to 100")
     private double maxTorqueAsNM;
 
     @JsonProperty("minimum_engine_rpm")

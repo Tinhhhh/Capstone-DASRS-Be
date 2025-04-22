@@ -39,4 +39,6 @@ public interface RoundRepository extends JpaRepository<Round, Long>, JpaSpecific
     Optional<Round> findByMatchTypeId(Long id);
 
     Optional<Round> findByScoredMethodId(Long scoredMethodId);
+
+    int countByCreatedDateBetween(Date start, Date end);
 }
