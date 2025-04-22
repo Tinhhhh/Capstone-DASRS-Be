@@ -293,17 +293,31 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public List<ComplaintResponseDetails> getComplaintsByStatus(ComplaintStatus status) {
-        List<Complaint> complaints = complaintRepository.findByStatus(status);
+    public List<ComplaintResponseDetails> getComplaintsByRoundIdAndStatus(Long roundId, ComplaintStatus status) {
+        if (roundId == null || roundId <= 0) {
+            throw new IllegalArgumentException("Invalid roundId: " + roundId);
+        }
+
+        List<Match> matches = matchRepository.findByRound_Id(roundId);
+        if (matches.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Specification<Complaint> spec = Specification.<Complaint>where((root, query, cb) ->
+                        cb.equal(root.get("matchTeam").get("match").get("round").get("id"), roundId))
+                .and(ComplaintSpecification.hasStatus(status));
+
+        List<Complaint> complaints = complaintRepository.findAll(spec);
         if (complaints.isEmpty()) {
-            throw new ResourceNotFoundException("No complaints found with status: " + status);
+            return Collections.emptyList();
         }
 
         return complaints.stream()
                 .map(complaint -> {
                     MatchTeam matchTeam = complaint.getMatchTeam();
-                    Match match = matchTeam.getMatch();
-//                    validateMatchAndTeams(matchTeam);
+                    if (matchTeam == null) {
+                        throw new IllegalStateException("Complaint ID " + complaint.getId() + " is not associated with any MatchTeam.");
+                    }
                     return mapToResponseDetails(matchTeam.getId(), complaint);
                 })
                 .collect(Collectors.toList());

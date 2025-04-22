@@ -140,11 +140,12 @@ public class ComplaintController {
         return ResponseBuilder.responseBuilder(HttpStatus.NO_CONTENT, "Complaint deleted successfully");
     }
 
-    @Operation(summary = "Get complaints by status", description = "Fetch complaints filtered by their status")
-    @GetMapping("/status/{status}")
-    public ResponseEntity<Object> getComplaintsByStatus(@PathVariable ComplaintStatus status) {
-        List<ComplaintResponseDetails> responses = complaintService.getComplaintsByStatus(status);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
+    @Operation(summary = "Get complaints by round ID and status", description = "Retrieve complaints filtered by round ID and status")
+    @GetMapping("/round/{roundId}/status/{status}")
+    public ResponseEntity<Object> getComplaintsByRoundIdAndStatus(@PathVariable Long roundId, @PathVariable ComplaintStatus status) {
+        List<ComplaintResponseDetails> complaints = complaintService.getComplaintsByRoundIdAndStatus(roundId, status);
+        String message = complaints.isEmpty() ? "No complaints found for roundId: " + roundId + " and status: " + status : "Complaints retrieved successfully.";
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, message, complaints);
     }
 
     @Operation(summary = "Get complaints by match ID", description = "Fetch all complaints related to a specific match")

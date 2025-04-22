@@ -38,7 +38,7 @@ public interface ComplaintService {
 
     void deleteComplaint(Long id);
 
-    List<ComplaintResponseDetails> getComplaintsByStatus(ComplaintStatus status);
+    List<ComplaintResponseDetails> getComplaintsByRoundIdAndStatus(Long roundId, ComplaintStatus status);
 
     List<ComplaintResponseDetails> getComplaintsByMatchId(Long matchId);
 
