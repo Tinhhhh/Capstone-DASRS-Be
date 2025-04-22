@@ -200,7 +200,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         String formattedCreatedDate = sdf.format(createdDate);
         String formattedLastModifiedDate = sdf.format(lastModifiedDate);
 
-        boolean hasRematch = matchTeam.getAttempt() == 1;
+        boolean hasRematch = matchTeam.getAttempt() == 0;
 
         return ComplaintResponseDetails.builder()
                 .id(complaint.getId())
