@@ -27,4 +27,6 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>, Jpa
             "JOIN mt.match m " +
             "WHERE m.round.id = :roundId")
     List<Complaint> findByRoundId(@Param("roundId") Long roundId);
+
+    List<Complaint> findByMatchTeam_Id(Long matchTeamId);
 }
