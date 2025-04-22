@@ -50,4 +50,6 @@ public class ComplaintResponseDetails {
     @JsonProperty("team_name")
     private String teamName;
 
+    @JsonProperty("has_rematch")
+    private Boolean hasRematch;
 }

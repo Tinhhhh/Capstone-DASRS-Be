@@ -183,8 +183,6 @@ public class ComplaintServiceImpl implements ComplaintService {
         return mapToResponseDetails(matchTeamId, complaint);
     }
 
-
-
     private ComplaintResponseDetails mapToResponseDetails(Long matchTeamId, Complaint complaint) {
         MatchTeam matchTeam = matchTeamRepository.findById(matchTeamId)
                 .orElseThrow(() -> new ResourceNotFoundException("MatchTeam not found for ID: " + matchTeamId));
@@ -202,6 +200,8 @@ public class ComplaintServiceImpl implements ComplaintService {
         String formattedCreatedDate = sdf.format(createdDate);
         String formattedLastModifiedDate = sdf.format(lastModifiedDate);
 
+        boolean hasRematch = matchTeam.getAttempt() == 1;
+
         return ComplaintResponseDetails.builder()
                 .id(complaint.getId())
                 .title(complaint.getTitle())
@@ -217,9 +217,9 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .matchName(match.getMatchName())
                 .teamName(team.getTeamName())
                 .fullName(account.fullName())
+                .hasRematch(hasRematch)
                 .build();
     }
-
 
     @Override
     public ComplaintResponseDetails replyToComplaint(Long id, ComplaintReplyRequest replyRequest) {
