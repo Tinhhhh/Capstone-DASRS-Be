@@ -378,11 +378,6 @@ public class RoundUtilityService {
             startTime = LocalDateTime.now().plusDays(1).withHour(Schedule.WORKING_HOURS_START).withMinute(0).withSecond(0).withNano(0);
 
             LocalDate endDate = DateUtil.convertToLocalDateTime(round.getEndDate()).toLocalDate();
-            if (matchEndTime.isAfter(LocalDateTime.now())) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +
-                        "last matches need to be completed before rematch can be created. last match end time: " +
-                        DateUtil.formatTimestamp(lastMatch.getTimeEnd(), DateUtil.DATE_TIME_FORMAT));
-            }
 
             if (!endDate.isAfter(today)) {
                 throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, " +

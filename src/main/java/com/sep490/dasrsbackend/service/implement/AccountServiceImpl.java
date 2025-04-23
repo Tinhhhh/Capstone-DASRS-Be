@@ -10,15 +10,13 @@ import com.sep490.dasrsbackend.model.entity.Team;
 import com.sep490.dasrsbackend.model.enums.EmailTemplateName;
 import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.enums.RoleEnum;
+import com.sep490.dasrsbackend.model.enums.RoleFilter;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
-import com.sep490.dasrsbackend.model.payload.response.AccountInfoResponse;
-import com.sep490.dasrsbackend.model.payload.response.ListPlayersResponse;
-import com.sep490.dasrsbackend.model.payload.response.PlayerResponse;
-import com.sep490.dasrsbackend.model.payload.response.UpdateAccountResponse;
+import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.AccountRepository;
 import com.sep490.dasrsbackend.repository.RoleRepository;
 import com.sep490.dasrsbackend.repository.TeamRepository;
@@ -343,5 +341,29 @@ public class AccountServiceImpl implements AccountService {
                 .pageSize(playersPage.getSize())
                 .last(playersPage.isLast())
                 .build();
+    }
+
+    @Override
+    public ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, String sortBy, String sortDirection, String keyword, RoleFilter role) {
+        Sort sort = sortDirection.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        Specification<Account> spec = Specification.where((AccountSpecification.hasName(keyword)
+                    .or(AccountSpecification.hasEmail(keyword))).and(AccountSpecification.hasRoleName(role)));
+
+        Page<Account> accountsPage = accountRepository.findAll(spec, pageable);
+        List<Account> accounts = accountsPage.getContent();
+        List<AccountInfoResponse> accountInfoResponses = accounts.stream()
+                .map(accountConverter::convertToAccountInfoResponse)
+                .toList();
+
+        ListAccountInfoResponse response = new ListAccountInfoResponse();
+        response.setContent(accountInfoResponses);
+        response.setTotalPages(accountsPage.getTotalPages());
+        response.setTotalElements(accountsPage.getTotalElements());
+        response.setPageNo(accountsPage.getNumber());
+        response.setPageSize(accountsPage.getSize());
+        response.setLast(accountsPage.isLast());
+        return response;
+
     }
 }

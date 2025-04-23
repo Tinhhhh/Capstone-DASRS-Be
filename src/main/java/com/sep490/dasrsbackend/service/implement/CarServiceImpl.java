@@ -83,7 +83,6 @@ public class CarServiceImpl implements CarService {
     @Transactional
     @Override
     public void createCar(NewCar newCar) {
-        Car car = modelMapper.map(newCar, Car.class);
 
         if (newCar.getShiftUpRPM() > newCar.getMaxTorqueAsNM() || newCar.getShiftUpRPM() < newCar.getMinEngineRPM()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift up RPM must be between min engine RPM and max torque as NM");
@@ -100,7 +99,7 @@ public class CarServiceImpl implements CarService {
         if (newCar.getMaxTorqueAsNM() > newCar.getMaxEngineRPM()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be smaller than max engine RPM");
         }
-
+        Car car = modelMapper.map(newCar, Car.class);
         car.setEnabled(true);
         carRepository.save(car);
 

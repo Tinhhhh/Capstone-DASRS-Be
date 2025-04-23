@@ -35,4 +35,6 @@ public interface MatchService {
     List<LeaderboardDetails> getMatchScoreDetails(Long matchId, Long teamId);
 
     void createMatch(List<Long> matchTeamIds);
+
+    List<MatchResponse> getMatchByTeamIdAndRoundId(Long teamId, Long roundId);
 }
