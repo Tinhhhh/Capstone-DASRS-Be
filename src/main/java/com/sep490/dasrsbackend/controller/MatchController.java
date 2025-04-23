@@ -136,4 +136,12 @@ public class MatchController {
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully create match");
     }
 
+    @Operation(summary = "Get match by round id and team id", description = "Get match by round id and team id")
+    @GetMapping("/round/{roundId}/team/{teamId}")
+    public ResponseEntity<Object> getMatchByRoundIdAndTeamId(@PathVariable Long roundId, @PathVariable Long teamId) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK, "Successfully retrieved match",
+                matchService.getMatchByTeamIdAndRoundId(teamId, roundId));
+    }
+
 }

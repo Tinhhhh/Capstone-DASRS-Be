@@ -3,6 +3,7 @@ package com.sep490.dasrsbackend.controller;
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.enums.PlayerSort;
+import com.sep490.dasrsbackend.model.enums.RoleFilter;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.*;
@@ -44,7 +45,6 @@ public class AccountController {
     private final AccountService accountService;
     private final ExcelImportService excelImportService;
     private final JwtTokenProvider jwtTokenProvider;
-    private final AccountCarService accountCarService;
 
     @Operation(summary = "Register a new account by importing an Excel file", description = "Register new accounts by importing an Excel file. All required fields must be filled. A confirmation email will be sent after successful registration.")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -194,4 +194,17 @@ public class AccountController {
 //    public ResponseEntity<Object> updateCarLoadout(@PathVariable Long carId, @PathVariable UUID accountId, @RequestBody @Valid UpdateCarCustomization customization) {
 //        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Car loadout updated successfully.", accountCarService.updateCarLoadout(carId, accountId, customization));
 //    }
+
+    @Operation(summary = "Get all accounts by admin", description = "Retrieve all accounts with pagination, sorting, and optional filtering by keyword and role")
+    @GetMapping("/admin")
+    public ResponseEntity<Object> getAllAccountByAdmin(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
+            @RequestParam(name = "sortBy", defaultValue = "accountId") String sortBy,
+            @RequestParam(name = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION) String sortDir,
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "role", required = false) RoleFilter role
+    ) {
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Account list retrieved successfully.", accountService.getAllAccount(pageNo, pageSize, sortBy, sortDir, keyword, role));
+    }
 }

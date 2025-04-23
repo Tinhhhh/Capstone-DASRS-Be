@@ -3,15 +3,14 @@ package com.sep490.dasrsbackend.model.enums;
 import lombok.Getter;
 
 @Getter
-public enum RoleEnum {
+public enum RoleFilter {
     PLAYER("PLAYER"),
     ORGANIZER("ORGANIZER"),
-    ADMIN("ADMIN");
+    ALL("ALL");
 
     private final String role;
 
-    RoleEnum(String role) {
+    RoleFilter(String role) {
         this.role = role;
     }
-
 }

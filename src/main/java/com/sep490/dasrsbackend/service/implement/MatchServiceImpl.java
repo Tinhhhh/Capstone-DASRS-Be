@@ -822,4 +822,24 @@ public class MatchServiceImpl implements MatchService {
 
     }
 
+    @Override
+    public List<MatchResponse> getMatchByTeamIdAndRoundId(Long teamId, Long roundId) {
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
+
+        List<Match> matches = matchRepository.findByRoundId(roundId).stream()
+                .filter(match -> match.getStatus() != MatchStatus.TERMINATED).toList();
+
+        List<MatchResponse> matchResponses = new ArrayList<>();
+        for (Match match : matches) {
+            List<MatchTeam> matchTeams = matchTeamRepository.findByTeamIdAndMatchId(teamId, match.getId());
+
+            if (!matchTeams.isEmpty()) {
+                MatchResponse matchResponse = getMatchResponse(match);
+                matchResponses.add(matchResponse);
+            }
+        }
+        return matchResponses;
+    }
+
 }
