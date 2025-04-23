@@ -10,8 +10,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class LeaderboardData {
-
+public class LeaderboardTournamentChild {
     @JsonProperty("leaderboard_id")
     private Long id;
 
@@ -26,10 +25,4 @@ public class LeaderboardData {
 
     @JsonProperty("team_id")
     private Long teamId;
-
-    @JsonProperty("round_id")
-    private Long roundId;
-
-    @JsonProperty("tournament_id")
-    private Long tournamentId;
 }

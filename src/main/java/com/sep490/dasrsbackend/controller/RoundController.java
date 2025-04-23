@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.enums.RoundSort;
+import com.sep490.dasrsbackend.model.enums.RoundStatusFilter;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
@@ -56,11 +57,12 @@ public class RoundController {
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(name = "sortBy") RoundSort sortBy,
+            @RequestParam(name = "status") RoundStatusFilter status,
             @RequestParam(name = "keyword", required = false) String keyword
     ) {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK, "Successfully retrieved data",
-                roundService.findAllRounds(pageNo, pageSize, sortBy, keyword));
+                roundService.findAllRounds(pageNo, pageSize, sortBy, keyword, status));
     }
 
     @Operation(summary = "Terminate round", description = "Terminate the round with the specified ID and update its status.")

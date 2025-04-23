@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.entity.Leaderboard;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,10 +12,10 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ListLeaderboardResponse {
+public class LeaderboardResponseForTournament {
 
     @JsonProperty(value = "content", index = 1)
-    private List<LeaderboardResponse> content;
+    private List<LeaderboardTournament> content;
 
     @JsonProperty(value = "page_no", index = 2)
     private int pageNo;

@@ -369,12 +369,19 @@ public class RoundServiceImpl implements RoundService {
 
 
     @Override
-    public ListRoundResponseDetails findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword) {
+    public ListRoundResponseDetails findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword, RoundStatusFilter status) {
 
         Sort sort = Sort.by(sortBy.getField()).descending();
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Specification<Round> spec = Specification.where(RoundSpecification.hasRoundName(keyword));
+        Specification<Round> spec;
+                if (status== RoundStatusFilter.ALL) {
+                    spec = Specification.where(RoundSpecification.hasRoundName(keyword));
+                } else {
+                    spec = Specification.where(RoundSpecification.hasRoundName(keyword).and(
+                                    RoundSpecification.hasStatus(RoundStatus.valueOf(status.getStatus()))
+                            ));
+                }
 
         Page<Round> roundPage = roundRepository.findAll(spec, pageable);
 

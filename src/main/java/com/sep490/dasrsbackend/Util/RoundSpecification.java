@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.model.entity.Round;
 import com.sep490.dasrsbackend.model.entity.Tournament;
 import com.sep490.dasrsbackend.model.entity.TournamentTeam;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
+import com.sep490.dasrsbackend.model.enums.RoundStatusFilter;
 import jakarta.persistence.criteria.Join;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.jpa.domain.Specification;
@@ -70,6 +71,15 @@ public class RoundSpecification {
     public static Specification<Round> belongsToTournament(Long tournamentId) {
         return (root, query, criteriaBuilder) -> {
             return criteriaBuilder.equal(root.get("tournament").get("id"), tournamentId);
+        };
+    }
+
+    public Specification<Round> hasFilterStatus(RoundStatusFilter status) {
+        return (root, query, cb) -> {
+            if (status == null) {
+                return null;
+            }
+            return cb.equal(root.get("status"), status);
         };
     }
 }
