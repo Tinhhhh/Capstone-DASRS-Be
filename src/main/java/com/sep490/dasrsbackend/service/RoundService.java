@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.model.enums.RoundSort;
+import com.sep490.dasrsbackend.model.enums.RoundStatusFilter;
 import com.sep490.dasrsbackend.model.payload.request.EditRound;
 import com.sep490.dasrsbackend.model.payload.request.NewRound;
 import com.sep490.dasrsbackend.model.payload.response.*;
@@ -16,7 +17,7 @@ public interface RoundService {
 
     List<RoundResponseDetails> findRoundByTournamentId(Long id);
 
-    ListRoundResponseDetails findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword);
+    ListRoundResponseDetails findAllRounds(int pageNo, int pageSize, RoundSort sortBy, String keyword, RoundStatusFilter status);
 
     void editRound(EditRound request);
 
