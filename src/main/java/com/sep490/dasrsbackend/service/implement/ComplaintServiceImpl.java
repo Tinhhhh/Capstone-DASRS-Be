@@ -138,13 +138,13 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Override
     public ComplaintResponseDetails createComplaint(Long matchTeamId, ComplaintRequest request) {
+        // Validate request data
         if (request.getTitle() == null || request.getTitle().isEmpty()) {
             throw new IllegalArgumentException("Title must not be empty");
         }
         if (request.getDescription() == null || request.getDescription().isEmpty()) {
             throw new IllegalArgumentException("Description must not be empty");
         }
-
         MatchTeam matchTeam = matchTeamRepository.findById(matchTeamId)
                 .orElseThrow(() -> new ResourceNotFoundException("MatchTeam not found for ID: " + matchTeamId));
 
@@ -158,6 +158,19 @@ public class ComplaintServiceImpl implements ComplaintService {
             throw new IllegalArgumentException("MatchTeam is missing an associated Account for ID: " + matchTeamId);
         }
 
+        List<Complaint> existingComplaints = complaintRepository.findByMatchTeam_Id(matchTeamId);
+
+        if (!existingComplaints.isEmpty()) {
+            Complaint lastComplaint = existingComplaints.get(existingComplaints.size() - 1);
+
+            if (lastComplaint.getStatus() == ComplaintStatus.PENDING) {
+                throw new IllegalStateException("A complaint is already pending for this match. You cannot create another one.");
+            }
+            if (lastComplaint.getStatus() == ComplaintStatus.APPROVED) {
+                throw new IllegalStateException("A complaint has already been approved for this match. You cannot create another one.");
+            }
+        }
+
         Complaint complaint = Complaint.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
@@ -169,7 +182,6 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         return mapToResponseDetails(matchTeamId, complaint);
     }
-
 
     private ComplaintResponseDetails mapToResponseDetails(Long matchTeamId, Complaint complaint) {
         MatchTeam matchTeam = matchTeamRepository.findById(matchTeamId)
@@ -188,6 +200,8 @@ public class ComplaintServiceImpl implements ComplaintService {
         String formattedCreatedDate = sdf.format(createdDate);
         String formattedLastModifiedDate = sdf.format(lastModifiedDate);
 
+        boolean hasRematch = matchTeam.getAttempt() == 1;
+
         return ComplaintResponseDetails.builder()
                 .id(complaint.getId())
                 .title(complaint.getTitle())
@@ -202,6 +216,8 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .matchTeamId(matchTeam.getId())
                 .matchName(match.getMatchName())
                 .teamName(team.getTeamName())
+                .fullName(account.fullName())
+                .hasRematch(hasRematch)
                 .build();
     }
 
