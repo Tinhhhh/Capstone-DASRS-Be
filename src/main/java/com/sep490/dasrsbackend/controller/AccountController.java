@@ -206,4 +206,11 @@ public class AccountController {
     ) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Account list retrieved successfully.", accountService.getAllAccount(pageNo, pageSize, sortBy, keyword, role));
     }
+
+    @Operation(summary = "Lock account by admin", description = "Allows admin to lock an account, preventing the user from logging in.")
+    @PutMapping("/lock/{accountId}")
+    public ResponseEntity<Object> lockAccountByAdmin(@PathVariable UUID accountId) {
+        accountService.lockAccountByAdmin(accountId);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account locked successfully.");
+    }
 }

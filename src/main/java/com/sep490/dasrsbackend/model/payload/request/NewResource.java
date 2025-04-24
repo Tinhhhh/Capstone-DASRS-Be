@@ -29,6 +29,7 @@ public class NewResource {
     @JsonProperty("resource_type")
     private ResourceType resourceType;
 
+    @Size(max = 500, message = "Map description no more than 500 characters")
     private String description;
 
 }
