@@ -200,11 +200,10 @@ public class AccountController {
     public ResponseEntity<Object> getAllAccountByAdmin(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
-            @RequestParam(name = "sortBy", defaultValue = "accountId") String sortBy,
-            @RequestParam(name = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION) String sortDir,
+            @RequestParam(name = "sortBy") PlayerSort sortBy,
             @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "role", required = false) RoleFilter role
     ) {
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Account list retrieved successfully.", accountService.getAllAccount(pageNo, pageSize, sortBy, sortDir, keyword, role));
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Account list retrieved successfully.", accountService.getAllAccount(pageNo, pageSize, sortBy, keyword, role));
     }
 }

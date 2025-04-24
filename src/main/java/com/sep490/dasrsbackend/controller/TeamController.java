@@ -156,4 +156,24 @@ public class TeamController {
         );
     }
 
+    @Operation(summary = "Get teams by round ID", description = "Retrieve all teams associated with a specific round.")
+    @GetMapping("/round/{roundId}")
+    public ResponseEntity<Object> getTeamsByRoundId(@PathVariable Long roundId) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Teams retrieved successfully",
+                teamService.getTeamsByRoundId(roundId)
+        );
+    }
+
+    @Operation(summary = "Get teams by tournament ID", description = "Retrieve all teams associated with a specific tournament.")
+    @GetMapping("/tournament/{tournamentId}")
+    public ResponseEntity<Object> getTeamsByTournamentId(@PathVariable Long tournamentId) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Teams retrieved successfully",
+                teamService.getTeamsByTournamentId(tournamentId)
+        );
+    }
+
 }
