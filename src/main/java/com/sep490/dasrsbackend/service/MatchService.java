@@ -36,5 +36,5 @@ public interface MatchService {
 
     void createMatch(List<Long> matchTeamIds);
 
-    List<MatchResponse> getMatchByTeamIdAndRoundId(Long teamId, Long roundId);
+    List<MatchResponseForTeam> getMatchByTeamIdAndRoundId(Long teamId, Long roundId);
 }

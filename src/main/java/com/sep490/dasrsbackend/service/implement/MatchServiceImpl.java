@@ -65,8 +65,20 @@ public class MatchServiceImpl implements MatchService {
         List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(team.getId()).stream()
                 .filter(matchTeam -> matchTeam.getMatch().getStatus() != MatchStatus.TERMINATED).toList();
 
-        List<Match> matches = matchTeams.stream().map(MatchTeam::getMatch).distinct().toList();
+        List<Match> matches = new ArrayList<>();
+        if (!matchTeams.isEmpty()){
+            matches = matchTeams.stream().map(MatchTeam::getMatch).distinct().toList();
+        }
         List<MatchResponseForTeam> matchesResponse = new ArrayList<>();
+
+        if (!matches.isEmpty()){
+            matchesResponse = getMatchResponseForTeamList(matches, team);
+        }
+
+        return matchesResponse;
+    }
+
+    private List<MatchResponseForTeam> getMatchResponseForTeamList(List<Match> matches, Team team) {
 
         modelMapper.getConfiguration().setFieldMatchingEnabled(true)
                 .setFieldAccessLevel(Configuration.AccessLevel.PRIVATE)
@@ -74,10 +86,11 @@ public class MatchServiceImpl implements MatchService {
                 .setSkipNullEnabled(false)
                 .setMatchingStrategy(MatchingStrategies.STRICT);
 
+        List<MatchResponseForTeam> matchesResponse = new ArrayList<>();
         for (Match match : matches) {
             MatchResponseForTeam matchResponse = modelMapper.map(match, MatchResponseForTeam.class);
             matchResponse.setMatchId(match.getId());
-            matchResponse.setTeamId(teamId);
+            matchResponse.setTeamId(team.getId());
             matchResponse.setTeamName(team.getTeamName());
             matchResponse.setTeamTag(team.getTeamTag());
             matchResponse.setTimeStart(DateUtil.formatTimestamp(match.getTimeStart(), DateUtil.DATE_TIME_FORMAT));
@@ -102,7 +115,6 @@ public class MatchServiceImpl implements MatchService {
             matchResponse.setMatchTeam(matchTeamResponses);
             matchesResponse.add(matchResponse);
         }
-
         return matchesResponse;
     }
 
@@ -823,22 +835,29 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
-    public List<MatchResponse> getMatchByTeamIdAndRoundId(Long teamId, Long roundId) {
+    public List<MatchResponseForTeam> getMatchByTeamIdAndRoundId(Long teamId, Long roundId) {
         Round round = roundRepository.findById(roundId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Round not found"));
 
-        List<Match> matches = matchRepository.findByRoundId(roundId).stream()
-                .filter(match -> match.getStatus() != MatchStatus.TERMINATED).toList();
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Team not found"));
 
-        List<MatchResponse> matchResponses = new ArrayList<>();
-        for (Match match : matches) {
-            List<MatchTeam> matchTeams = matchTeamRepository.findByTeamIdAndMatchId(teamId, match.getId());
-
-            if (!matchTeams.isEmpty()) {
-                MatchResponse matchResponse = getMatchResponse(match);
-                matchResponses.add(matchResponse);
-            }
+        List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(teamId).stream()
+                .filter(matchTeam -> matchTeam.getMatch().getRound().getId() == roundId).toList();
+        List<Match> matches= new ArrayList<>();
+        if (!matchTeams.isEmpty()){
+            matches = matchTeams.stream()
+                    .map(MatchTeam::getMatch)
+                    .filter(Match -> Match.getStatus()!=MatchStatus.TERMINATED)
+                    .distinct().toList();
         }
+
+        List<MatchResponseForTeam> matchResponses = new ArrayList<>();
+
+        if (!matches.isEmpty()) {
+            matchResponses = getMatchResponseForTeamList(matches, team);
+        }
+
         return matchResponses;
     }
 
