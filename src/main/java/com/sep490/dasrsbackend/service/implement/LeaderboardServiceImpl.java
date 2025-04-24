@@ -227,7 +227,9 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                         child.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
                         return child;
                     }).toList();
-            modelMapper.map(round, leaderboardTournament);
+
+            leaderboardTournament.setRoundId(round.getId());
+
             leaderboardTournament.setContent(childrenContent);
             Result result = getFastestLapTimeAndTopSpeed(round);
             leaderboardTournament.setFastestLapTime(result.fastestLapTime());
