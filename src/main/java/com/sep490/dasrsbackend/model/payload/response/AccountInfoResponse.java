@@ -17,37 +17,49 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AccountInfoResponse {
 
-    @JsonProperty("account_id")
+    @JsonProperty(value = "account_id", index = 1)
     private UUID accountId;
 
-    @JsonProperty("first_name")
-    private String firstName;
-
-    @JsonProperty("last_name")
+    @JsonProperty(value = "last_name", index = 2)
     private String lastName;
 
+    @JsonProperty(value = "first_name", index = 3)
+    private String firstName;
+
+    @JsonProperty(value = "email", index = 4)
     private String email;
 
-    private String address;
-
+    @JsonProperty(value = "gender", index = 5)
     private String gender;
 
-    private String dob;
-
+    @JsonProperty(value = "phone", index = 6)
     private String phone;
 
+    @JsonProperty(value = "avatar", index = 7)
     private String avatar;
 
-    @JsonProperty("is_locked")
-    private boolean isLocked;
+    @JsonProperty(value = "address", index = 8)
+    private String address;
 
-    @JsonProperty("is_leader")
+    @JsonProperty(value = "dob", index = 9)
+    private String dob;
+
+    @JsonProperty(value = "is_leader", index = 10)
     private boolean isLeader;
 
-    @JsonProperty("role_id")
+    @JsonProperty(value = "is_locked", index = 11)
+    private boolean isLocked;
+
+    @JsonProperty(value = "team_id", index = 12)
+    private Long teamId;
+
+    @JsonProperty(value = "team_name", index = 13)
+    private String teamName;
+
+    @JsonProperty(value = "role_id", index = 14)
     private Long roleId;
 
-    @JsonProperty("role_Name")
+    @JsonProperty(value = "role_name", index = 15)
     private String roleName;
 
 }

@@ -254,6 +254,8 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         Page<LeaderboardTournament> leaderboard = new PageImpl<>(pagedList, pageable, leaderboardTournaments.size());
 
         LeaderboardResponseForTournament response = new LeaderboardResponseForTournament();
+        response.setId(tournament.getId());
+        response.setTournamentName(tournament.getTournamentName());
         response.setContent(leaderboard.getContent());
         response.setTotalPages(leaderboard.getTotalPages());
         response.setTotalElements(leaderboard.getTotalElements());

@@ -14,17 +14,23 @@ import java.util.List;
 @NoArgsConstructor
 public class LeaderboardResponseForTournament {
 
-    @JsonProperty(value = "content", index = 1)
+    @JsonProperty(value = "tournament_id", index = 1)
+    private Long id;
+
+    @JsonProperty(value = "tournament_name", index = 2)
+    private String tournamentName;
+
+    @JsonProperty(value = "content", index = 3)
     private List<LeaderboardTournament> content;
 
-    @JsonProperty(value = "page_no", index = 2)
+    @JsonProperty(value = "page_no", index = 4)
     private int pageNo;
-    @JsonProperty(value = "page_size", index = 3)
+    @JsonProperty(value = "page_size", index = 5)
     private int pageSize;
-    @JsonProperty(value = "total_elements", index = 4)
+    @JsonProperty(value = "total_elements", index = 6)
     private long totalElements;
-    @JsonProperty(value = "total_pages", index = 5)
+    @JsonProperty(value = "total_pages", index = 7)
     private int totalPages;
-    @JsonProperty(value = "last", index = 6)
+    @JsonProperty(value = "last", index = 8)
     private boolean last;
 }

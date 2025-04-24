@@ -1,10 +1,7 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
-import com.sep490.dasrsbackend.model.entity.Account;
-import com.sep490.dasrsbackend.model.entity.Match;
-import com.sep490.dasrsbackend.model.entity.MatchTeam;
-import com.sep490.dasrsbackend.model.entity.Team;
+import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import com.sep490.dasrsbackend.model.exception.*;
@@ -37,6 +34,8 @@ public class TeamServiceImpl implements TeamService {
     private final TournamentTeamRepository tournamentTeamRepository;
     private static final Logger logger = Logger.getLogger(TeamServiceImpl.class.getName());
     private final LeaderboardRepository leaderboardRepository;
+    private final RoundRepository roundRepository;
+    private final TournamentRepository tournamentRepository;
 
     @Override
     public List<MatchResponse> getMatches(Long teamId) {
@@ -424,4 +423,49 @@ public class TeamServiceImpl implements TeamService {
         teamRepository.save(team);
         accountRepository.save(player);
     }
+
+    @Override
+    public List<TeamResponse> getTeamsByRoundId(Long roundId) {
+
+        Round round = roundRepository.findById(roundId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Round not found"));
+
+        List<Team> teams = leaderboardRepository.findByRoundId(roundId)
+                .stream()
+                .map(Leaderboard::getTeam)
+                .toList();
+
+        List<TeamResponse> teamResponses = new ArrayList<>();
+        for (Team team : teams) {
+            TeamResponse teamResponse = modelMapper.map(team, TeamResponse.class);
+            teamResponse.setMemberCount(team.getAccountList() != null ? team.getAccountList().size() : 0);
+            teamResponses.add(teamResponse);
+        }
+
+        return teamResponses;
+    }
+
+    @Override
+    public List<TeamResponse> getTeamsByTournamentId(Long tournamentId) {
+
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Tournament not found"));
+
+        List<Team> teams = tournamentTeamRepository.findByTournamentId(tournamentId)
+                .stream()
+                .map(TournamentTeam::getTeam)
+                .distinct()
+                .toList();
+
+        List<TeamResponse> teamResponses = new ArrayList<>();
+        for (Team team : teams){
+            TeamResponse teamResponse = modelMapper.map(team, TeamResponse.class);
+            teamResponse.setMemberCount(team.getAccountList() != null ? team.getAccountList().size() : 0);
+            teamResponses.add(teamResponse);
+        }
+
+        return teamResponses;
+    }
+
+
 }

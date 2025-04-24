@@ -39,4 +39,8 @@ public interface TeamService {
     void deleteTeam(Long teamId, UUID leaderId);
 
     void createTeam(UUID playerId, String teamName, String teamTag);
+
+    List<TeamResponse> getTeamsByRoundId(Long roundId);
+
+    List<TeamResponse> getTeamsByTournamentId(Long tournamentId);
 }

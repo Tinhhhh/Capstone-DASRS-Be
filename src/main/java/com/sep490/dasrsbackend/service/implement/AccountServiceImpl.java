@@ -344,8 +344,8 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, String sortBy, String sortDirection, String keyword, RoleFilter role) {
-        Sort sort = sortDirection.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+    public ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, PlayerSort sortBy, String keyword, RoleFilter role) {
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
         Specification<Account> spec = Specification.where((AccountSpecification.hasName(keyword)
                     .or(AccountSpecification.hasEmail(keyword))).and(AccountSpecification.hasRoleName(role)));

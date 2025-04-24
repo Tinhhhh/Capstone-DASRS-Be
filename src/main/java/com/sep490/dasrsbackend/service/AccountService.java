@@ -44,7 +44,7 @@ public interface AccountService {
     ListPlayersResponse getPlayers(int pageNo, int pageSize, PlayerSort sortBy, String keyword);
 
     //For admin
-    ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, String sortBy, String sortDirection, String keyword, RoleFilter role);
+    ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, PlayerSort sortBy, String keyword, RoleFilter role);
 
 
 }
