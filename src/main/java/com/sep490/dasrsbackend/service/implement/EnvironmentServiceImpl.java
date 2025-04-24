@@ -71,11 +71,6 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Environment not found"));
 
         environment.setName(request.getName());
-        environment.setFriction(request.getFriction());
-        environment.setVisibility(request.getVisibility());
-        environment.setBrakeEfficiency(request.getBrakeEfficiency());
-        environment.setSlipAngle(request.getSlipAngle());
-        environment.setReactionDelay(request.getReactionDelay());
         // Optionally update status if needed
         environmentRepository.save(environment);
     }

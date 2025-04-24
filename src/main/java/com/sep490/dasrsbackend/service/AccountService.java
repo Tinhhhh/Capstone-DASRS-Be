@@ -46,5 +46,7 @@ public interface AccountService {
     //For admin
     ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, PlayerSort sortBy, String keyword, RoleFilter role);
 
+    void lockAccountByAdmin(UUID accountId);
+
 
 }

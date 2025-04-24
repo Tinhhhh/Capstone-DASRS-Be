@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,7 @@ import lombok.Setter;
 public class EditCar {
 
     @JsonProperty("car_name")
+    @Size(max = 50, message = "car_name must be less than or equal to 50 characters")
     private String carName;
 
     @JsonProperty("maximum_torque")

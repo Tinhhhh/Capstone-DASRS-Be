@@ -192,6 +192,7 @@ public class AccountServiceImpl implements AccountService {
                 .password(passwordEncoder.encode(password))
                 .isLocked(false)
                 .isLeader(false)
+                .studentIdentifier(request.getStudentIdentifier())
                 .role(role)
                 .team(null)
                 .build();
@@ -365,5 +366,18 @@ public class AccountServiceImpl implements AccountService {
         response.setLast(accountsPage.isLast());
         return response;
 
+    }
+
+    @Override
+    public void lockAccountByAdmin(UUID accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Account not found"));
+
+        if (account.isLocked()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Account is already locked");
+        }
+
+        account.setLocked(true);
+        accountRepository.save(account);
     }
 }

@@ -27,21 +27,6 @@ public class Environment {
     @Column(name = "environment_name")
     private String name;
 
-    @Column(name = "friction")
-    private double friction;
-
-    @Column(name = "visibility")
-    private double visibility;
-
-    @Column(name = "brake_efficiency")
-    private double brakeEfficiency;
-
-    @Column(name = "slip_angle")
-    private double slipAngle;
-
-    @Column(name = "reaction_delay")
-    private double reactionDelay;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private EnvironmentStatus status;
