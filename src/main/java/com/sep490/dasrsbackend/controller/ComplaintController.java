@@ -155,11 +155,11 @@ public class ComplaintController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
     }
 
-    @Operation(summary = "Get complaints by team ID", description = "Fetch all complaints related to a specific team")
+    @Operation(summary = "Get complaints by team ID", description = "Fetch all complaints grouped by round for a specific team")
     @GetMapping("/team/{teamId}")
     public ResponseEntity<Object> getComplaintsByTeamId(@PathVariable Long teamId) {
-        List<ComplaintResponseDetails> responses = complaintService.getComplaintsByTeamId(teamId);
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
+        List<RoundComplaintResponse> responses = complaintService.getComplaintsByTeamId(teamId);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints grouped by round fetched successfully", responses);
     }
 
     @Operation(summary = "Update a complaint", description = "Allows players to update the title or description of an existing complaint.")

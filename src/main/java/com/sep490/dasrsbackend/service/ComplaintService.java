@@ -42,7 +42,7 @@ public interface ComplaintService {
 
     List<ComplaintResponseDetails> getComplaintsByMatchId(Long matchId);
 
-    List<ComplaintResponseDetails> getComplaintsByTeamId(Long teamId);
+    List<RoundComplaintResponse> getComplaintsByTeamId(Long teamId);
 
     ComplaintResponseDetails updateComplaint(Long id, ComplaintUpdateRequest updateRequest);
 
