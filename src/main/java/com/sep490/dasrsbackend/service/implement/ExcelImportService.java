@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +42,14 @@ public class ExcelImportService {
     private final AccountCarRepository accountCarRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(ExcelImportService.class);
+
+    private static final int FIRST_NAME_MAX_LENGTH = 50;
+    private static final String NAME_PATTERN_REGEX = "^[^0-9]*$";
+    private static final String NAME_PATTERN_MESSAGE = "must not contain numbers";
+    private static final int LAST_NAME_MAX_LENGTH = 50;
+    private static final int ADDRESS_MAX_LENGTH = 100;
+    private static final String PHONE_PATTERN_REGEX = "(84|0[3|5|7|8|9])([0-9]{8})\\b";
+    private static final String PHONE_PATTERN_MESSAGE = "Please enter a valid(+84) phone number";
 
     public List<AccountDTO> importAccountsFromExcel(InputStream inputStream, List<String> errorMessages) throws IOException {
         List<AccountDTO> accountDTOs = new ArrayList<>();
@@ -110,13 +119,13 @@ public class ExcelImportService {
             if (email == null || email.trim().isEmpty()) {
                 throw new IllegalArgumentException("Email cannot be null or empty.");
             }
-            accountDTO.setEmail(validateEmail(email));
-            accountDTO.setFirstName(validateNonEmpty(getCellValueAsString(row.getCell(1)), "First Name"));
-            accountDTO.setLastName(validateNonEmpty(getCellValueAsString(row.getCell(2)), "Last Name"));
-            accountDTO.setAddress(validateNonEmpty(getCellValueAsString(row.getCell(3)), "Address"));
-            accountDTO.setGender(validateGender(getCellValueAsString(row.getCell(4))));
-            accountDTO.setDob(validateDate(row.getCell(5)));
-            accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6))));
+            accountDTO.setEmail(validateEmail(getCellValueAsString(row.getCell(0)), "Email"));
+            accountDTO.setFirstName(validateName(getCellValueAsString(row.getCell(1)), "First Name", FIRST_NAME_MAX_LENGTH));
+            accountDTO.setLastName(validateName(getCellValueAsString(row.getCell(2)), "Last Name", LAST_NAME_MAX_LENGTH));
+            accountDTO.setAddress(validateAddress(getCellValueAsString(row.getCell(3)), "Address"));
+            accountDTO.setGender(validateGender(getCellValueAsString(row.getCell(4)), "Gender"));
+            accountDTO.setDob(validateDateOfBirth(row.getCell(5), "Date of Birth"));
+            accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6)), "Phone"));
             accountDTO.setStudentIdentifier(validateNonEmpty(getCellValueAsString(row.getCell(7)), "Student Identifier"));
             accountDTO.setSchool(validateNonEmpty(getCellValueAsString(row.getCell(8)), "School"));
 
@@ -188,19 +197,23 @@ public class ExcelImportService {
         return cell != null && cell.getBooleanCellValue();
     }
 
-    private String validateEmail(String email) {
-        if (email == null || email.trim().isEmpty()) {
-            throw new IllegalArgumentException("Email cannot be null or empty");
-        }
+    private String validateEmail(String email, String fieldName) {
+        String trimmedEmail = validateRequiredString(email, fieldName);
 
-        String emailRegex = "^(?=.{1,254}$)(?=.{1,64}@.{1,255}$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
 
-        if (!email.matches(emailRegex)) {
-            throw new IllegalArgumentException("Invalid email format: " + email);
+        if (!Pattern.matches(emailRegex, trimmedEmail)) {
+            throw new IllegalArgumentException("Invalid email format for " + fieldName + ": " + email);
         }
-        return email;
+        return trimmedEmail;
     }
 
+    private String validateRequiredString(String value, String fieldName) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " cannot be blank.");
+        }
+        return value.trim();
+    }
 
     private Long getCellValueAsLong(Cell cell) {
         if (cell == null || cell.getCellType() == CellType.BLANK) {
@@ -213,6 +226,13 @@ public class ExcelImportService {
         }
     }
 
+    private String validateAddress(String value, String fieldName) {
+        String trimmedValue = validateRequiredString(value, fieldName);
+        if (trimmedValue.length() > ADDRESS_MAX_LENGTH) {
+            throw new IllegalArgumentException(fieldName + " must be less than " + ADDRESS_MAX_LENGTH + " characters.");
+        }
+        return trimmedValue;
+    }
 
     private String validateNonEmpty(String value, String fieldName) {
         if (value == null || value.trim().isEmpty()) {
@@ -221,25 +241,55 @@ public class ExcelImportService {
         return value;
     }
 
-    private String validateGender(String gender) {
-        if (gender == null || (!gender.equalsIgnoreCase("Male") && !gender.equalsIgnoreCase("Female"))) {
-            throw new IllegalArgumentException("Invalid gender: " + gender);
+    private String validateName(String value, String fieldName, int maxLength) {
+        String trimmedValue = validateRequiredString(value, fieldName);
+        if (trimmedValue.length() > maxLength) {
+            throw new IllegalArgumentException(fieldName + " must be less than " + maxLength + " characters.");
         }
-        return gender;
+        if (!trimmedValue.matches(NAME_PATTERN_REGEX)) {
+            throw new IllegalArgumentException(fieldName + " " + NAME_PATTERN_MESSAGE + ".");
+        }
+        return trimmedValue;
     }
 
-    private LocalDate validateDate(Cell cell) {
-        if (cell == null || cell.getCellType() != CellType.NUMERIC || !DateUtil.isCellDateFormatted(cell)) {
-            throw new IllegalArgumentException("Invalid date format.");
+    private String validateGender(String gender, String fieldName) {
+        String trimmedGender = validateRequiredString(gender, fieldName);
+        if (!trimmedGender.equalsIgnoreCase("Male") && !trimmedGender.equalsIgnoreCase("Female")) {
+            throw new IllegalArgumentException("Invalid " + fieldName + ": '" + gender + "'. Must be 'Male' or 'Female'.");
         }
-        return cell.getLocalDateTimeCellValue().toLocalDate();
+        return trimmedGender.substring(0, 1).toUpperCase() + trimmedGender.substring(1).toLowerCase();
     }
 
-    private String validatePhone(String phone) {
-        if (phone == null || !phone.matches("^\\d{10,15}$")) {
-            throw new IllegalArgumentException("Invalid phone number: " + phone);
+    private LocalDate validateDateOfBirth(Cell cell, String fieldName) {
+        if (cell == null || (cell.getCellType() != CellType.NUMERIC || !DateUtil.isCellDateFormatted(cell))) {
+            if (cell != null && cell.getCellType() == CellType.STRING) {
+                try {
+                    LocalDate date = LocalDate.parse(cell.getStringCellValue().trim());
+                    validatePastDate(date, fieldName);
+                    return date;
+                } catch (Exception e) {
+                    throw new IllegalArgumentException("Invalid date format for " + fieldName + ". Use a valid date cell format or 'YYYY-MM-DD' string.");
+                }
+            }
+            throw new IllegalArgumentException("Invalid date format for " + fieldName + ". Use a cell formatted as Date.");
         }
-        return phone;
+        LocalDate date = cell.getLocalDateTimeCellValue().toLocalDate();
+        validatePastDate(date, fieldName);
+        return date;
+    }
+
+    private void validatePastDate(LocalDate date, String fieldName) {
+        if (!date.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException(fieldName + " must be in the past.");
+        }
+    }
+
+    private String validatePhone(String phone, String fieldName) {
+        String trimmedPhone = validateRequiredString(phone, fieldName);
+        if (!trimmedPhone.matches(PHONE_PATTERN_REGEX)) {
+            throw new IllegalArgumentException("Invalid " + fieldName + ": '" + phone + "'. " + PHONE_PATTERN_MESSAGE + ".");
+        }
+        return trimmedPhone;
     }
 
     public String generateRandomPassword(int length) {
