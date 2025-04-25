@@ -358,15 +358,18 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Override
     public List<RoundComplaintResponse> getComplaintsByTeamId(Long teamId, ComplaintStatus status, String sortBy, String sortDirection) {
+        if (teamId == null || teamId <= 0) {
+            throw new IllegalArgumentException("Invalid teamId: " + teamId);
+        }
+
         Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
 
         Specification<Complaint> spec = Specification.where(ComplaintSpecification.hasTeamId(teamId))
                 .and(ComplaintSpecification.hasStatus(status));
 
         List<Complaint> complaints = complaintRepository.findAll(spec, sort);
-
         if (complaints.isEmpty()) {
-            throw new ResourceNotFoundException("No complaints found for teamId: " + teamId);
+            return Collections.emptyList();
         }
 
         Map<Long, List<Complaint>> complaintsByRound = complaints.stream()

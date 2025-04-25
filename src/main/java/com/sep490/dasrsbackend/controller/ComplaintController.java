@@ -155,7 +155,7 @@ public class ComplaintController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints fetched successfully", responses);
     }
 
-    @Operation(summary = "Get complaints grouped by rounds for a specific team", description = "Fetch all complaints for a specific team, grouped by rounds with optional status, pagination, and sorting")
+    @Operation(summary = "Get complaints by team ID", description = "Retrieve complaints filtered by team ID, status, sort field, and direction")
     @GetMapping("/team/{teamId}")
     public ResponseEntity<Object> getComplaintsByTeamId(
             @PathVariable Long teamId,
@@ -163,13 +163,15 @@ public class ComplaintController {
             @RequestParam(defaultValue = "createdDate") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection) {
 
-        // Log the parameters to check if any are missing
-        System.out.println("teamId: " + teamId + ", status: " + status + ", sortBy: " + sortBy + ", sortDirection: " + sortDirection);
+        List<RoundComplaintResponse> complaints = complaintService.getComplaintsByTeamId(teamId, status, sortBy, sortDirection);
 
-        List<RoundComplaintResponse> responses = complaintService.getComplaintsByTeamId(teamId, status, sortBy, sortDirection);
+        String message = complaints.isEmpty()
+                ? "No complaints found for teamId: " + teamId + " and status: " + status
+                : "Complaints retrieved successfully.";
 
-        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints grouped by rounds fetched successfully", responses);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, message, complaints);
     }
+
 
     @Operation(summary = "Update a complaint", description = "Allows players to update the title or description of an existing complaint.")
     @PutMapping("/update/{id}")
