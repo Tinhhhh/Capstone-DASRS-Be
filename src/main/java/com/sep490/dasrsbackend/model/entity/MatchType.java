@@ -22,19 +22,19 @@ public class MatchType {
     @JsonProperty("match_type_id")
     private Long id;
 
-    @Column(name = "match_type_name")
+    @Column(name = "match_type_name", nullable = false)
     private String matchTypeName;
 
-    @Column(name = "match_type_code")
+    @Column(name = "match_type_code", nullable = false)
     private String matchTypeCode;
 
-    @Column(name = "match_duration")
+    @Column(name = "match_duration", nullable = false)
     private double matchDuration;
 
-    @Column(name = "player_number")
+    @Column(name = "player_number", nullable = false)
     private int playerNumber;
 
-    @Column(name = "team_number")
+    @Column(name = "team_number", nullable = false)
     private int teamNumber;
 
     @Enumerated(EnumType.STRING)

@@ -27,23 +27,23 @@ public class Tournament {
     @Column(name = "tournament_id")
     private Long id;
 
-    @Column(name = "tournament_name")
+    @Column(name = "tournament_name", nullable = false)
     private String tournamentName;
 
-    @Column(name = "context")
+    @Column(name = "context", nullable = false)
     private String context;
 
-    @Column(name = "team_number")
+    @Column(name = "team_number", nullable = false)
     private int teamNumber;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private TournamentStatus status;
 
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
     private Date startDate;
 
-    @Column(name = "end_date")
+    @Column(name = "end_date", nullable = false)
     private Date endDate;
 
     @JsonIgnore

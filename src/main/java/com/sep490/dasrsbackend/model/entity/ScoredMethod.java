@@ -28,33 +28,33 @@ public class ScoredMethod {
     @Column(name = "scored_method_id")
     private Long id;
 
-    @Column(name = "lap")
+    @Column(name = "lap", nullable = false)
     private double lap;
 
-    @Column(name = "collision")
+    @Column(name = "collision", nullable = false)
     private double collision;
 
-    @Column(name = "off_track")
+    @Column(name = "off_track", nullable = false)
     private double offTrack;
 
-    @Column(name = "total_race_time")
+    @Column(name = "total_race_time", nullable = false)
     private double totalRaceTime;
 
-    @Column(name = "assist_usage")
+    @Column(name = "assist_usage", nullable = false)
     private double assistUsageCount;
 
-    @Column(name = "average_speed")
+    @Column(name = "average_speed", nullable = false)
     private double averageSpeed;
 
-    @Column(name = "total_distance")
+    @Column(name = "total_distance", nullable = false)
     private double totalDistance;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "match_finish_type")
+    @Column(name = "match_finish_type", nullable = false)
     private FinishType matchFinishType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private ScoredMethodStatus status;
 
     @LastModifiedDate

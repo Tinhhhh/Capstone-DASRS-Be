@@ -23,32 +23,31 @@ public class ScoreAttribute {
     @Column(name = "score_attribute_id")
     private Long id;
 
-    @Column(name = "lap")
+    @Column(name = "lap", nullable = false)
     private int lap;
 
-    @Column(name = "fastest_lap_time")
+    @Column(name = "fastest_lap_time", nullable = false)
     private double fastestLapTime;
 
-    @JsonProperty("collision")
-    @Column(name = "collision")
+    @Column(name = "collision", nullable = false)
     private int collision;
 
-    @Column(name = "total_race_time")
+    @Column(name = "total_race_time", nullable = false)
     private double totalRaceTime;
 
-    @Column(name = "off_track")
+    @Column(name = "off_track", nullable = false)
     private int offTrack;
 
-    @Column(name = "assist_usage")
+    @Column(name = "assist_usage", nullable = false)
     private int assistUsageCount;
 
-    @Column(name = "top_speed")
+    @Column(name = "top_speed", nullable = false)
     private double topSpeed;
 
-    @Column(name = "average_speed")
+    @Column(name = "average_speed", nullable = false)
     private double averageSpeed;
 
-    @Column(name = "total_distance")
+    @Column(name = "total_distance", nullable = false)
     private double totalDistance;
 
     @OneToMany(mappedBy = "scoreAttribute")

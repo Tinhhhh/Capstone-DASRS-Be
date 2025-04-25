@@ -26,7 +26,7 @@ public class TournamentTeam {
     @Column(name = "created_date", nullable = false, updatable = false)
     private Date createdDate;
 
-    @Column(name = "is_active")
+    @Column(name = "is_active", nullable = false)
     private boolean isActive;
 
     @ManyToOne

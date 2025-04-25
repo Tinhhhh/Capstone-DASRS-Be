@@ -24,10 +24,10 @@ public class Leaderboard {
     @Column(name = "leaderboard_id")
     private Long id;
 
-    @Column(name = "ranking")
+    @Column(name = "ranking", nullable = false)
     private int ranking;
 
-    @Column(name = "team_score")
+    @Column(name = "team_score", nullable = false)
     private double teamScore;
 
     @JsonIgnore
