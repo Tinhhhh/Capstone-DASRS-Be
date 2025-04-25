@@ -176,4 +176,16 @@ public class TeamController {
         );
     }
 
+    @Operation(summary = "Get team members by team ID and match ID", description = "Retrieve members of a specific team who participated in a specific match.")
+    @GetMapping("/{teamId}/{matchId}/members")
+    public ResponseEntity<Object> getTeamMembersByTeamIdAndMatchId(
+            @PathVariable Long teamId,
+            @PathVariable Long matchId) {
+        List<TeamMemberResponse> teamMembers = teamService.getTeamMembersByTeamIdAndMatchId(teamId, matchId);
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Team members retrieved successfully",
+                teamMembers
+        );
+    }
 }

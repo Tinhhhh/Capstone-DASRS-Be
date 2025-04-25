@@ -43,4 +43,6 @@ public interface TeamService {
     List<TeamResponse> getTeamsByRoundId(Long roundId);
 
     List<TeamResponse> getTeamsByTournamentId(Long tournamentId);
+
+    List<TeamMemberResponse> getTeamMembersByTeamIdAndMatchId(Long teamId, Long matchId);
 }

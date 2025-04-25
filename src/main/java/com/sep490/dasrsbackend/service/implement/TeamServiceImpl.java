@@ -467,5 +467,30 @@ public class TeamServiceImpl implements TeamService {
         return teamResponses;
     }
 
+    @Override
+    public List<TeamMemberResponse> getTeamMembersByTeamIdAndMatchId(Long teamId, Long matchId) {
+        if (teamId == null || matchId == null) {
+            throw new IllegalArgumentException("Team ID and Match ID cannot be null");
+        }
+
+        matchRepository.findById(matchId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Match not found"));
+
+        List<MatchTeam> matchTeams = matchTeamRepository.findByTeamIdAndMatchId(teamId, matchId);
+        if (matchTeams.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "No members found for the specified team and match");
+        }
+
+        return matchTeams.stream()
+                .map(matchTeam -> {
+                    Account account = matchTeam.getAccount();
+                    return new TeamMemberResponse(
+                            account.getAccountId(),
+                            account.fullName(),
+                            account.isLeader()
+                    );
+                })
+                .collect(Collectors.toList());
+    }
 
 }
