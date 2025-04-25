@@ -30,13 +30,13 @@ public class Account {
     @Column(name = "account_id")
     private UUID accountId;
 
-    @Column(name = "first_name")
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @Column(name = "last_name")
+    @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(name = "email", unique = true)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
     @Column(name = "address")
@@ -52,16 +52,16 @@ public class Account {
     private String phone;
 
     @JsonIgnore
-    @Column(name = "password")
+    @Column(name = "password", nullable = false)
     private String password;
 
     @Column(name = "avatar")
     private String avatar;
 
-    @Column(name = "is_locked")
+    @Column(name = "is_locked", nullable = false)
     private boolean isLocked;
 
-    @Column(name = "is_leader")
+    @Column(name = "is_leader", nullable = false)
     private boolean isLeader;
 
     @Column(name = "student_identifier")

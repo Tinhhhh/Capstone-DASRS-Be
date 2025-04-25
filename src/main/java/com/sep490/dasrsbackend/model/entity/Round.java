@@ -26,39 +26,39 @@ public class Round {
     @Column(name = "round_id")
     private Long id;
 
-    @Column(name = "round_name")
+    @Column(name = "round_name", nullable = false)
     private String roundName;
 
-    @Column(name = "round_duration")
+    @Column(name = "round_duration",    nullable = false)
     private int roundDuration;
 
-    @Column(name = "lap_number")
+    @Column(name = "lap_number", nullable = false)
     private int lapNumber;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "finish_type")
+    @Column(name = "finish_type", nullable = false)
     private FinishType finishType;
 
-    @Column(name = "team_limit")
+    @Column(name = "team_limit", nullable = false)
     private int teamLimit;
 
-    @Column(name = "is_last")
+    @Column(name = "is_last", nullable = false)
     private boolean isLast;
 
-    @Column(name = "is_latest")
+    @Column(name = "is_latest", nullable = false)
     private boolean isLatest;
 
-    @Column(name = "description")
+    @Column(name = "description", nullable = false)
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private RoundStatus status;
 
-    @Column(name = "start_date")
+    @Column(name = "start_date", nullable = false)
     private Date startDate;
 
-    @Column(name = "end_date")
+    @Column(name = "end_date", nullable = false)
     private Date endDate;
 
     @LastModifiedDate

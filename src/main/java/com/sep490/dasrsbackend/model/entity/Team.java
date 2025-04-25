@@ -23,17 +23,17 @@ public class Team {
     @Column(name = "team_id")
     private Long id;
 
-    @Column(name = "team_name")
+    @Column(name = "team_name", nullable = false)
     private String teamName;
 
-    @Column(name = "team_tag", unique = true)
+    @Column(name = "team_tag", unique = true,nullable = false)
     private String teamTag;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status",nullable = false)
     private TeamStatus status;
 
-    @Column(name = "is_disqualified")
+    @Column(name = "is_disqualified", nullable = false)
     private boolean isDisqualified;
 
     @JsonIgnore

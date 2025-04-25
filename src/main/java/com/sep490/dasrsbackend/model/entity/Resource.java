@@ -26,19 +26,19 @@ public class Resource {
     @Column(name = "resource_id")
     private Long id;
 
-    @Column(name = "resource_name")
+    @Column(name = "resource_name", nullable = false)
     private String resourceName;
 
-    @Column(name = "resource_image")
+    @Column(name = "resource_image", nullable = false)
     private String resourceImg;
 
-    @Column(name = "resource_type")
+    @Column(name = "resource_type", nullable = false)
     private ResourceType resourceType;
 
-    @Column(name = "description")
+    @Column(name = "description", nullable = false)
     private String description;
 
-    @Column(name = "is_enable")
+    @Column(name = "is_enable", nullable = false)
     private boolean isEnable;
 
     @LastModifiedDate

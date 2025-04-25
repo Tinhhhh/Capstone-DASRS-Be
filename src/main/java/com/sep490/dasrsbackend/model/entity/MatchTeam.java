@@ -54,14 +54,14 @@ public class MatchTeam {
     @Column(name = "rear_ssd")
     private Double rearSSD;
 
-    @Column(name = "score")
+    @Column(name = "score", nullable = false)
     private double score;
 
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
     private MatchTeamStatus status;
 
-    @Column(name = "attempt")
+    @Column(name = "attempt", nullable = false)
     private int attempt;
 
     @ManyToOne

@@ -24,11 +24,11 @@ public class Environment {
     @Column(name = "environment_id")
     private Long id;
 
-    @Column(name = "environment_name")
+    @Column(name = "environment_name", nullable = false)
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name = "status", nullable = false)
     private EnvironmentStatus status;
 
     @OneToMany(mappedBy = "environment")
