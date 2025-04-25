@@ -1,16 +1,14 @@
 package com.sep490.dasrsbackend.service;
 
 import com.sep490.dasrsbackend.dto.AccountDTO;
-import com.sep490.dasrsbackend.model.entity.Account;
+import com.sep490.dasrsbackend.model.enums.AccountSort;
 import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.enums.RoleFilter;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
-import com.sep490.dasrsbackend.model.payload.request.ChangePasswordRequest;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.model.payload.request.NewAccountByStaff;
 import com.sep490.dasrsbackend.model.payload.response.*;
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.InputStream;
 import java.util.List;
@@ -44,7 +42,7 @@ public interface AccountService {
     ListPlayersResponse getPlayers(int pageNo, int pageSize, PlayerSort sortBy, String keyword);
 
     //For admin
-    ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, PlayerSort sortBy, String keyword, RoleFilter role);
+    ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, AccountSort sortBy, String keyword, RoleFilter role);
 
     void lockAccountByAdmin(UUID accountId);
 

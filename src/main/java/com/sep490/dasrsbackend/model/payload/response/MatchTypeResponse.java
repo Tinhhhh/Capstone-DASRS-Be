@@ -32,8 +32,5 @@ public class MatchTypeResponse {
     @JsonProperty("team_number")
     private int teamNumber;
 
-    @JsonProperty("finish_type")
-    private FinishType finishType;
-
     private MatchTypeStatus status;
 }
