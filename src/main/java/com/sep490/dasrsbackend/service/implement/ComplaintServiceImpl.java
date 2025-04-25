@@ -357,18 +357,39 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public List<ComplaintResponseDetails> getComplaintsByTeamId(Long teamId) {
-        List<Complaint> complaints = complaintRepository.findByMatchTeam_Team_Id(teamId);
-        if (complaints.isEmpty()) {
-            throw new ResourceNotFoundException("No complaints found for teamId: " + teamId);
+    public List<RoundComplaintResponse> getComplaintsByTeamId(Long teamId, ComplaintStatus status, String sortBy, String sortDirection) {
+        if (teamId == null || teamId <= 0) {
+            throw new IllegalArgumentException("Invalid teamId: " + teamId);
         }
 
-        return complaints.stream()
-                .map(complaint -> {
-                    MatchTeam matchTeam = complaint.getMatchTeam();
-                    Match match = matchTeam.getMatch();
-//                    validateMatchAndTeams(matchTeam);
-                    return mapToResponseDetails(matchTeam.getId(), complaint);
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+
+        Specification<Complaint> spec = Specification.where(ComplaintSpecification.hasTeamId(teamId))
+                .and(ComplaintSpecification.hasStatus(status));
+
+        List<Complaint> complaints = complaintRepository.findAll(spec, sort);
+        if (complaints.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, List<Complaint>> complaintsByRound = complaints.stream()
+                .collect(Collectors.groupingBy(complaint -> complaint.getMatchTeam().getMatch().getRound().getId()));
+
+        return complaintsByRound.entrySet().stream()
+                .map(entry -> {
+                    Long roundId = entry.getKey();
+                    List<Complaint> roundComplaints = entry.getValue();
+                    Round round = roundComplaints.get(0).getMatchTeam().getMatch().getRound();
+
+                    List<ComplaintResponseDetails> complaintDetails = roundComplaints.stream()
+                            .map(complaint -> mapToResponseDetails(complaint.getMatchTeam().getId(), complaint))
+                            .collect(Collectors.toList());
+
+                    return RoundComplaintResponse.builder()
+                            .roundId(roundId)
+                            .roundName(round.getRoundName())
+                            .complaints(complaintDetails)
+                            .build();
                 })
                 .collect(Collectors.toList());
     }

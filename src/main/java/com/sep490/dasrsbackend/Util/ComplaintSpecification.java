@@ -17,4 +17,8 @@ public class ComplaintSpecification {
             return cb.equal(root.get("status"), status);
         };
     }
+
+    public Specification<Complaint> hasTeamId(Long teamId) {
+        return (root, query, cb) -> cb.equal(root.get("matchTeam").get("team").get("id"), teamId);
+    }
 }
