@@ -71,10 +71,12 @@ public class AccountDTO {
     @JsonProperty("student_identifier")
     @Schema(description = "Account's student identifier", example = "12345678")
     @NotBlank(message = "Student identifier cannot be blank")
+    @Size(max = 50, message = "Student identifier must be less than 50 characters")
     private String studentIdentifier;
 
     @Schema(description = "Account's school name", example = "Springfield High School")
     @NotBlank(message = "School cannot be blank")
+    @Size(max = 50, message = "Student identifier must be less than 50 characters")
     private String school;
 
     @JsonProperty("role_id")
