@@ -357,15 +357,20 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public List<RoundComplaintResponse> getComplaintsByTeamId(Long teamId) {
-        List<Complaint> complaints = complaintRepository.findByMatchTeam_Team_Id(teamId);
+    public List<RoundComplaintResponse> getComplaintsByTeamId(Long teamId, ComplaintStatus status, String sortBy, String sortDirection) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDirection), sortBy);
+
+        Specification<Complaint> spec = Specification.where(ComplaintSpecification.hasTeamId(teamId))
+                .and(ComplaintSpecification.hasStatus(status));
+
+        List<Complaint> complaints = complaintRepository.findAll(spec, sort);
+
         if (complaints.isEmpty()) {
             throw new ResourceNotFoundException("No complaints found for teamId: " + teamId);
         }
 
         Map<Long, List<Complaint>> complaintsByRound = complaints.stream()
-                .collect(Collectors.groupingBy(complaint ->
-                        complaint.getMatchTeam().getMatch().getRound().getId()));
+                .collect(Collectors.groupingBy(complaint -> complaint.getMatchTeam().getMatch().getRound().getId()));
 
         return complaintsByRound.entrySet().stream()
                 .map(entry -> {
@@ -385,7 +390,6 @@ public class ComplaintServiceImpl implements ComplaintService {
                 })
                 .collect(Collectors.toList());
     }
-
 
     @Override
     public PaginatedComplaintResponse getComplaintsByRoundId(Long roundId, ComplaintStatus status, int page, int size, String sortBy, String sortDirection) {

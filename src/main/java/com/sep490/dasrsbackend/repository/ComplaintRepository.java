@@ -2,6 +2,9 @@ package com.sep490.dasrsbackend.repository;
 
 import com.sep490.dasrsbackend.model.entity.Complaint;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -20,7 +23,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>, Jpa
 
     List<Complaint> findByMatchTeam_Match_Id(Long matchId);
 
-    List<Complaint> findByMatchTeam_Team_Id(Long teamId);
+    Page<Complaint> findByMatchTeam_Team_Id(Long teamId, Specification<Complaint> spec, Pageable pageable);
 
     @Query("SELECT c FROM Complaint c " +
             "JOIN c.matchTeam mt " +
