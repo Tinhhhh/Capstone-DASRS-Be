@@ -31,6 +31,4 @@ public class NewMatchType {
     @DecimalMax(value = "0.75", message = "matchDuration must not exceed 0.75")
     private double matchDuration;
 
-
-
 }

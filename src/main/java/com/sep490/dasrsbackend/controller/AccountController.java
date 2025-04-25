@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.dto.AccountDTO;
+import com.sep490.dasrsbackend.model.enums.AccountSort;
 import com.sep490.dasrsbackend.model.enums.PlayerSort;
 import com.sep490.dasrsbackend.model.enums.RoleFilter;
 import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
@@ -200,7 +201,7 @@ public class AccountController {
     public ResponseEntity<Object> getAllAccountByAdmin(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
-            @RequestParam(name = "sortBy") PlayerSort sortBy,
+            @RequestParam(name = "sortBy") AccountSort sortBy,
             @RequestParam(name = "keyword", required = false) String keyword,
             @RequestParam(name = "role", required = false) RoleFilter role
     ) {

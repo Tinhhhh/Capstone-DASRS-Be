@@ -7,10 +7,7 @@ import com.sep490.dasrsbackend.dto.AccountDTO;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.Role;
 import com.sep490.dasrsbackend.model.entity.Team;
-import com.sep490.dasrsbackend.model.enums.EmailTemplateName;
-import com.sep490.dasrsbackend.model.enums.PlayerSort;
-import com.sep490.dasrsbackend.model.enums.RoleEnum;
-import com.sep490.dasrsbackend.model.enums.RoleFilter;
+import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.exception.RegisterAccountExistedException;
 import com.sep490.dasrsbackend.model.payload.request.AccountProfile;
@@ -345,7 +342,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, PlayerSort sortBy, String keyword, RoleFilter role) {
+    public ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, AccountSort sortBy, String keyword, RoleFilter role) {
         Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
         Specification<Account> spec = Specification.where((AccountSpecification.hasName(keyword)
