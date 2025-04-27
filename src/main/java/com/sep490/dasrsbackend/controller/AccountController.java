@@ -95,7 +95,6 @@ public class AccountController {
             @RequestBody ChangePasswordRequest request) {
         jwtTokenProvider.validateToken(token.replace("Bearer ", "")); // Validate the JWT
         String username = jwtTokenProvider.getUsernameFromJwt(token.replace("Bearer ", ""));
-
         accountService.changePassword(username, request.getOldPassword(), request.getNewPassword());
 
         return ResponseEntity.ok("Password updated successfully");

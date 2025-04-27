@@ -56,14 +56,14 @@ public class TournamentController {
 
     @Operation(summary = "Terminate a tournament, this api will force delete tournament if needed", description = "Terminate a tournament by its ID.")
     @PutMapping("/terminate/{tournamentId}")
-    public ResponseEntity<Object> changeTournamentStatus(@PathVariable Long tournamentId) {
+    public ResponseEntity<Object> terminateTournament(@PathVariable Long tournamentId) {
         tournamentService.terminateTournament(tournamentId);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament status updated successfully");
     }
 
     @Operation(summary = "Update a tournament", description = "Update the details of an existing tournament.")
     @PutMapping("/{tournamentId}")
-    public ResponseEntity<Object> updateTournament(@PathVariable Long tournamentId, @RequestBody @Valid EditTournament request) {
+    public ResponseEntity<Object> editTournament(@PathVariable Long tournamentId, @RequestBody @Valid EditTournament request) {
         tournamentService.editTournament(tournamentId, request);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Tournament updated successfully");
     }
