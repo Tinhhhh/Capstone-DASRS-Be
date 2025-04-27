@@ -84,11 +84,11 @@ public class CarServiceImpl implements CarService {
     @Override
     public void createCar(NewCar newCar) {
 
-        if (newCar.getShiftUpRPM() > newCar.getMaxTorqueAsNM() || newCar.getShiftUpRPM() < newCar.getMinEngineRPM()) {
+        if (newCar.getShiftUpRPM() > newCar.getMaxEngineRPM() || newCar.getShiftUpRPM() < newCar.getMinEngineRPM()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift up RPM must be between min engine RPM and max engine RPM");
         }
 
-        if (newCar.getShiftDownRPM() > newCar.getMaxTorqueAsNM() || newCar.getShiftDownRPM() < newCar.getMinEngineRPM()) {
+        if (newCar.getShiftDownRPM() > newCar.getMaxEngineRPM() || newCar.getShiftDownRPM() < newCar.getMinEngineRPM()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift down RPM must be between min engine RPM and max engine RPM");
         }
 
@@ -111,11 +111,11 @@ public class CarServiceImpl implements CarService {
         Car car = carRepository.findById(id)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Car not found"));
 
-        if (editCar.getShiftUpRPM() > editCar.getMaxTorqueAsNM() || editCar.getShiftUpRPM() < editCar.getMinEngineRPM()) {
+        if (editCar.getShiftUpRPM() > editCar.getMaxEngineRPM() || editCar.getShiftUpRPM() < editCar.getMinEngineRPM()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift up RPM must be between min engine RPM and max engine RPM");
         }
 
-        if (editCar.getShiftDownRPM() > editCar.getMaxTorqueAsNM() || editCar.getShiftDownRPM() < editCar.getMinEngineRPM()) {
+        if (editCar.getShiftDownRPM() > editCar.getMaxEngineRPM() || editCar.getShiftDownRPM() < editCar.getMinEngineRPM()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift down RPM must be between min engine RPM and max engine RPM");
         }
 
