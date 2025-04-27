@@ -292,6 +292,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                     fastestLapTime.setTeamName(matchTeams.get(i).getTeam().getTeamName());
                     fastestLapTime.setTeamTag(matchTeams.get(i).getTeam().getTeamTag());
                     fastestLapTime.setAccountId(matchTeams.get(i).getAccount().getAccountId());
+                    fastestLapTime.setFullName(matchTeams.get(i).getAccount().fullName());
                     fastestLapTime.setFastestLapTime(fastestLapTimeValue);
                     break;
                 }

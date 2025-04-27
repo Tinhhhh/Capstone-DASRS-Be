@@ -29,4 +29,7 @@ public class FastestLapTimeTeam {
     @JsonProperty("account_id")
     private UUID accountId;
 
+    @JsonProperty("full_name")
+    private String fullName;
+
 }
