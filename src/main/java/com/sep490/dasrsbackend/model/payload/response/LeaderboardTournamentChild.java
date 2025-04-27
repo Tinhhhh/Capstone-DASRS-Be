@@ -25,4 +25,10 @@ public class LeaderboardTournamentChild {
 
     @JsonProperty("team_id")
     private Long teamId;
+
+    @JsonProperty("team_name")
+    private String teamName;
+
+    @JsonProperty("team_tag")
+    private String teamTag;
 }

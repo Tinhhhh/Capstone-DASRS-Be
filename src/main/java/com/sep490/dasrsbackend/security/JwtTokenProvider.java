@@ -88,7 +88,8 @@ public class JwtTokenProvider {
 
         String teamId = account.getTeam() != null ? account.getTeam().getId().toString() : null;
         boolean isLeader = account.isLeader();
-
+        String teamName = account.getTeam() != null ? account.getTeam().getTeamName() : null;
+        String teamTag = account.getTeam() != null ? account.getTeam().getTeamTag() : null;
         String token = Jwts.builder()
                 .setHeader(header)
                 .setSubject(username)
@@ -98,6 +99,9 @@ public class JwtTokenProvider {
                 .claim("role", authentication.getAuthorities().toArray()[0].toString())
                 .claim("isLeader", isLeader)
                 .claim("teamId", teamId)
+                .claim("teamName", teamName)
+                .claim("teamTag", teamTag)
+                .claim("fullName", account.fullName())
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
         return token;

@@ -225,6 +225,8 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                     .map(leaderboard -> {
                         LeaderboardTournamentChild child = modelMapper.map(leaderboard, LeaderboardTournamentChild.class);
                         child.setTeamId(leaderboard.getTeam().getId());
+                        child.setTeamName(leaderboard.getTeam().getTeamName());
+                        child.setTeamTag(leaderboard.getTeam().getTeamTag());
                         child.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
                         return child;
                     }).toList();
