@@ -85,19 +85,19 @@ public class CarServiceImpl implements CarService {
     public void createCar(NewCar newCar) {
 
         if (newCar.getShiftUpRPM() > newCar.getMaxTorqueAsNM() || newCar.getShiftUpRPM() < newCar.getMinEngineRPM()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift up RPM must be between min engine RPM and max torque as NM");
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift up RPM must be between min engine RPM and max engine RPM");
         }
 
         if (newCar.getShiftDownRPM() > newCar.getMaxTorqueAsNM() || newCar.getShiftDownRPM() < newCar.getMinEngineRPM()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift down RPM must be between min engine RPM and max torque as NM");
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift down RPM must be between min engine RPM and max engine RPM");
         }
 
-        if (newCar.getMaxTorqueAsNM() < newCar.getMinEngineRPM()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be greater than min engine RPM");
+        if (newCar.getMaxTorqueAsNM() < newCar.getMinEngineRPM() || newCar.getMaxTorqueAsNM() > newCar.getMaxEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be between min engine RPM and max engine RPM");
         }
 
-        if (newCar.getMaxTorqueAsNM() > newCar.getMaxEngineRPM()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be smaller than max engine RPM");
+        if (newCar.getMaxBrakeTorque() < newCar.getMinEngineRPM() || newCar.getMaxBrakeTorque() > newCar.getMaxEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be between min engine RPM and max engine RPM");
         }
         Car car = modelMapper.map(newCar, Car.class);
         car.setEnabled(true);
@@ -112,19 +112,19 @@ public class CarServiceImpl implements CarService {
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Car not found"));
 
         if (editCar.getShiftUpRPM() > editCar.getMaxTorqueAsNM() || editCar.getShiftUpRPM() < editCar.getMinEngineRPM()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift up RPM must be between min engine RPM and max torque as NM");
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift up RPM must be between min engine RPM and max engine RPM");
         }
 
         if (editCar.getShiftDownRPM() > editCar.getMaxTorqueAsNM() || editCar.getShiftDownRPM() < editCar.getMinEngineRPM()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift down RPM must be between min engine RPM and max torque as NM");
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Shift down RPM must be between min engine RPM and max engine RPM");
         }
 
-        if (editCar.getMaxTorqueAsNM() < editCar.getMinEngineRPM()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be greater than min engine RPM");
+        if (editCar.getMaxTorqueAsNM() < editCar.getMinEngineRPM() || editCar.getMaxTorqueAsNM() > editCar.getMaxEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be between min engine RPM and max engine RPM");
         }
 
-        if (editCar.getMaxTorqueAsNM() > editCar.getMaxEngineRPM()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be smaller than max engine RPM");
+        if (editCar.getMaxBrakeTorque() < editCar.getMinEngineRPM() || editCar.getMaxBrakeTorque() > editCar.getMaxEngineRPM()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Max torque as NM must be between min engine RPM and max engine RPM");
         }
 
         modelMapper.map(editCar, car);

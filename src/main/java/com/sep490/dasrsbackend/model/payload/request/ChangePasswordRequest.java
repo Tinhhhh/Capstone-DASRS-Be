@@ -15,11 +15,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Request object for changing password")
 public class ChangePasswordRequest {
 
-    @Schema(description = "User's email address", example = "john.doe@example.com")
-    @NotBlank(message = "Email cannot be blank")
-    @Email(message = "Invalid email format")
-    private String email;
-
     @Schema(description = "User's old password", example = "Password1")
     @NotBlank(message = "Password cannot be blank")
     private String oldPassword;
