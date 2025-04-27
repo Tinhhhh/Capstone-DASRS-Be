@@ -29,5 +29,8 @@ public class TopSpeedTeam {
     @JsonProperty("account_id")
     private UUID accountId;
 
+    @JsonProperty("full_name")
+    private String fullName;
+
 
 }
