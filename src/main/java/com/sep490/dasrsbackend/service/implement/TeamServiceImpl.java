@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
 import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
+import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import com.sep490.dasrsbackend.model.exception.*;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamMemberResponse;
@@ -278,8 +279,9 @@ public class TeamServiceImpl implements TeamService {
         Account player = accountRepository.findById(playerId)
                 .orElseThrow(() -> new PlayerNotFoundException("Player not found"));
 
-        if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(team).isEmpty()) {
-            throw new InvalidOperationException("Cannot join a team currently participating in a tournament");
+        boolean isTeamInActiveTournament = tournamentTeamRepository.existsByTeamAndActiveTournament(team);
+        if (isTeamInActiveTournament) {
+            throw new InvalidOperationException("Cannot join a team currently participating in an active tournament");
         }
 
         if (player.getTeam() != null) {
@@ -335,8 +337,9 @@ public class TeamServiceImpl implements TeamService {
             throw new InvalidOperationException("Player is not part of the specified team");
         }
 
-        if (!tournamentTeamRepository.findByTeamAndTournamentNotNull(team).isEmpty()) {
-            throw new InvalidOperationException("Cannot leave a team currently in a tournament");
+        boolean isTeamInActiveTournament = tournamentTeamRepository.existsByTeamAndActiveTournament(team);
+        if (isTeamInActiveTournament) {
+            throw new InvalidOperationException("Cannot leave a team currently in an active tournament");
         }
 
         if (player.isLeader() && team.getAccountList().size() > 1) {
@@ -359,11 +362,14 @@ public class TeamServiceImpl implements TeamService {
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Leader not found for the specified team"));
 
+            boolean hasActiveTournament = tournamentTeamRepository.existsByTeamAndActiveTournament(team);
+            if (hasActiveTournament) {
+                throw new IllegalArgumentException("Cannot delete a team currently participating in an active tournament");
+            }
+
             boolean isSoleLeader = team.getAccountList().size() == 1;
 
-            boolean hasParticipated = tournamentTeamRepository.existsByTeam(team);
-
-            if (isSoleLeader && !hasParticipated) {
+            if (isSoleLeader) {
                 leaderboardRepository.deleteAllByTeam(team);
                 matchTeamRepository.deleteAllByTeam(team);
                 tournamentTeamRepository.deleteAllByTeam(team);
@@ -376,18 +382,8 @@ public class TeamServiceImpl implements TeamService {
 
                 teamRepository.delete(team);
                 logger.info("Team with only one member successfully deleted.");
-            } else if (isSoleLeader && hasParticipated) {
-                leader.setTeam(null);
-                leader.setLeader(false);
-                accountRepository.save(leader);
-
-                team.setStatus(TeamStatus.INACTIVE);
-                teamRepository.save(team);
-                logger.info("Team has been marked as INACTIVE, and the leader has been dissociated.");
             } else if (team.getAccountList().size() > 1) {
                 throw new IllegalArgumentException("Cannot delete a team with more than one member.");
-            } else {
-                throw new IllegalArgumentException("Cannot delete a team that is currently participating in a tournament.");
             }
         } catch (IllegalArgumentException e) {
             logger.severe("Validation error: " + e.getMessage());

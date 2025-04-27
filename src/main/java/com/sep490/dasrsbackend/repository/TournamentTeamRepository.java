@@ -32,4 +32,7 @@ public interface TournamentTeamRepository extends JpaRepository<TournamentTeam, 
     boolean existsByTournamentIdAndAccount_AccountId(Long tournamentId, UUID accountId);
 
     List<TournamentTeam> findByTeamId(Long id);
+
+    @Query("SELECT CASE WHEN COUNT(tt) > 0 THEN TRUE ELSE FALSE END FROM TournamentTeam tt WHERE tt.team = :team AND tt.tournament.status = 'ACTIVE'")
+    boolean existsByTeamAndActiveTournament(@Param("team") Team team);
 }
