@@ -154,6 +154,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 .toList();
 
         leaderboardList.setRoundId(round.getId());
+        leaderboardList.setRoundName(round.getRoundName());
         leaderboardList.setFinishType(round.getFinishType());
 
         leaderboardList.setContent(leaderboardData);
@@ -229,7 +230,9 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                     }).toList();
 
             leaderboardTournament.setRoundId(round.getId());
-
+            leaderboardTournament.setRoundName(round.getRoundName());
+            leaderboardTournament.setDescription(round.getDescription());
+            leaderboardTournament.setFinishType(round.getFinishType());
             leaderboardTournament.setContent(childrenContent);
             Result result = getFastestLapTimeAndTopSpeed(round);
             leaderboardTournament.setFastestLapTime(result.fastestLapTime());
