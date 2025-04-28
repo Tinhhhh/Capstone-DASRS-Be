@@ -366,15 +366,15 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public void lockAccountByAdmin(UUID accountId) {
+    public void lockAccountByAdmin(UUID accountId, boolean lock) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Account not found"));
 
-        if (account.isLocked()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Account is already locked");
+        if (account.isLocked() == lock) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Account is already in the desired state");
         }
 
-        account.setLocked(true);
+        account.setLocked(lock);
         accountRepository.save(account);
     }
 }

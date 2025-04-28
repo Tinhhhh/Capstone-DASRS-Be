@@ -209,8 +209,8 @@ public class AccountController {
 
     @Operation(summary = "Lock account by admin", description = "Allows admin to lock an account, preventing the user from logging in.")
     @PutMapping("/lock/{accountId}")
-    public ResponseEntity<Object> lockAccountByAdmin(@PathVariable UUID accountId) {
-        accountService.lockAccountByAdmin(accountId);
+    public ResponseEntity<Object> lockAccountByAdmin(@PathVariable UUID accountId, @RequestParam boolean lock) {
+        accountService.lockAccountByAdmin(accountId, lock);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account locked successfully.");
     }
 }
