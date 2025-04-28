@@ -115,12 +115,12 @@ public class RoundController {
                 roundService.findAllRoundsByDate(pageNo, pageSize, sortBy, keyword, startDate, endDate));
     }
 
-    @Operation(summary = "This API is a test case when new team join in tournament", description = "A team join in a tournament, and the team will be injected to the round of tournament")
-    @PutMapping("/join/{tournamentId}/{teamId}")
-    public ResponseEntity<Object> injectTeamToRound(@PathVariable Long tournamentId, @PathVariable Long teamId) {
-        roundService.injectTeamToTournament(tournamentId, teamId);
-        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Team injected successfully");
-    }
+//    @Operation(summary = "This API is a test case when new team join in tournament", description = "A team join in a tournament, and the team will be injected to the round of tournament")
+//    @PutMapping("/join/{tournamentId}/{teamId}")
+//    public ResponseEntity<Object> injectTeamToRound(@PathVariable Long tournamentId, @PathVariable Long teamId) {
+//        roundService.injectTeamToTournament(tournamentId, teamId);
+//        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Team injected successfully");
+//    }
 
     @Operation(summary = "Extend round end date", description = "Extend the end date of the round with the specified ID.")
     @PutMapping("/extend/{roundId}")
