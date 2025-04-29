@@ -133,6 +133,7 @@ public class SecurityCofig {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/cars/**").permitAll()
                                 .requestMatchers("/api/v1/cars/**").hasAuthority("ADMIN")
                                 //Round
+                                .requestMatchers("/api/v1/rounds/landing").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/v1/rounds",
                                         "/api/v1/rounds/{roundId}",
                                         "/api/v1/rounds/tournament/{tournamentId}",
