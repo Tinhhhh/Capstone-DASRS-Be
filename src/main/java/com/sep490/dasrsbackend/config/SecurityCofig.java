@@ -59,7 +59,7 @@ public class SecurityCofig {
                                 .requestMatchers(
                                         HttpMethod.GET,
                                         "/api/v1/match-types/*",
-                                        "/api/v1/match-types").hasAuthority("ORGANIZER")
+                                        "/api/v1/match-types").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 .requestMatchers("/api/v1/match-types/**").hasAuthority("ADMIN")
                                 //Tournament
                                 .requestMatchers(
@@ -82,7 +82,7 @@ public class SecurityCofig {
                                         "/api/v1/tournaments/dashboard/**").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 //Leaderboard
                                 .requestMatchers(
-                                        "/api/v1/leaderboards/**").hasAnyAuthority("PLAYER", "ORGANIZER", "ADMIN")
+                                        "/api/v1/leaderboards/**").hasAnyAuthority("ORGANIZER", "ADMIN","PLAYER")
                                 //Complaint
                                 .requestMatchers(
                                         "/api/v1/complaints/create").hasAuthority("PLAYER")
@@ -104,10 +104,11 @@ public class SecurityCofig {
                                 //resource
                                 .requestMatchers("/api/v1/resources/map").permitAll()
                                 .requestMatchers("/api/v1/resources/map/round/{roundId}").hasAnyAuthority("PLAYER", "ORGANIZER", "ADMIN")
+                                .requestMatchers(HttpMethod.GET, "/api/v1/resources/admin").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 .requestMatchers(HttpMethod.GET,"/api/v1/resources/{resourceId}").hasAuthority("ORGANIZER")
                                 .requestMatchers(HttpMethod.PUT,"/api/v1/resources/{resourceId}", "/api/v1/resources/change-status/{resourceId}").hasAuthority("ADMIN")
                                 .requestMatchers(HttpMethod.POST, "/api/v1/resources").hasAuthority("ADMIN")
-                                .requestMatchers(HttpMethod.GET, "/api/v1/resources", "/api/v1/resources/admin").hasAnyAuthority("ORGANIZER", "ADMIN")
+                                .requestMatchers(HttpMethod.GET, "/api/v1/resources").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 //Match
                                 .requestMatchers("/api/v1/matches/assign/{matchId}",
                                         "/api/v1/matches/tournament/{tournamentId}",

@@ -189,7 +189,9 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 .map(leaderboard -> {
                     LeaderboardData lbr = modelMapper.map(leaderboard, LeaderboardData.class);
                     lbr.setRoundId(leaderboard.getRound().getId());
+                    lbr.setRoundName(leaderboard.getRound().getRoundName());
                     lbr.setTournamentId(leaderboard.getRound().getTournament().getId());
+                    lbr.setTournamentName(leaderboard.getRound().getTournament().getTournamentName());
                     lbr.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
                     return lbr;
                 })
