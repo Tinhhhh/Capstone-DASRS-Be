@@ -25,46 +25,46 @@ public class RecordController {
 
     private final RecordService recordService;
 
-    @Operation(summary = "Submit a record with video", description = "Submit a record video against another team for review.")
-    @PostMapping("/upload")
-    public ResponseEntity<Object> submitRecord(
-            @RequestParam Long matchId,
-            @RequestParam("videoFile") MultipartFile videoFile) throws IOException {
-
-        Record record = recordService.submitRecord(matchId, videoFile);
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Record submitted successfully.");
-        response.put("record", record);
-        response.put("videoSize", videoFile.getSize());
-        response.put("videoType", videoFile.getContentType());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-    @GetMapping
-    public ResponseEntity<List<Record>> getAllRecords() {
-        List<Record> records = recordService.getAllRecords();
-        return ResponseEntity.ok(records);
-    }
-
-    @GetMapping("/by-id")
-    public ResponseEntity<Record> getRecordById(@RequestParam Long recordId) {
-        Record record = recordService.getRecordById(recordId);
-        return ResponseEntity.ok(record);
-    }
-
-    @GetMapping("/by-match")
-    public ResponseEntity<List<Record>> getRecordsByMatchId(@RequestParam Long matchId) {
-        List<Record> records = recordService.getRecordsByMatchId(matchId);
-        return ResponseEntity.ok(records);
-    }
-    @PatchMapping("/update-status")
-    public ResponseEntity<Record> updateRecordStatus(@RequestParam Long recordId, @RequestParam RecordStatus status) {
-        Record updatedRecord = recordService.updateRecordStatus(recordId, status);
-        return ResponseEntity.ok(updatedRecord);
-    }
-
-    @DeleteMapping("/delete")
-    public ResponseEntity<String> deleteRecord(@RequestParam Long recordId) {
-        recordService.deleteRecord(recordId);
-        return ResponseEntity.ok("Record deleted successfully");
-    }
+//    @Operation(summary = "Submit a record with video", description = "Submit a record video against another team for review.")
+//    @PostMapping("/upload")
+//    public ResponseEntity<Object> submitRecord(
+//            @RequestParam Long matchId,
+//            @RequestParam("videoFile") MultipartFile videoFile) throws IOException {
+//
+//        Record record = recordService.submitRecord(matchId, videoFile);
+//        Map<String, Object> response = new HashMap<>();
+//        response.put("message", "Record submitted successfully.");
+//        response.put("record", record);
+//        response.put("videoSize", videoFile.getSize());
+//        response.put("videoType", videoFile.getContentType());
+//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+//    }
+//    @GetMapping
+//    public ResponseEntity<List<Record>> getAllRecords() {
+//        List<Record> records = recordService.getAllRecords();
+//        return ResponseEntity.ok(records);
+//    }
+//
+//    @GetMapping("/by-id")
+//    public ResponseEntity<Record> getRecordById(@RequestParam Long recordId) {
+//        Record record = recordService.getRecordById(recordId);
+//        return ResponseEntity.ok(record);
+//    }
+//
+//    @GetMapping("/by-match")
+//    public ResponseEntity<List<Record>> getRecordsByMatchId(@RequestParam Long matchId) {
+//        List<Record> records = recordService.getRecordsByMatchId(matchId);
+//        return ResponseEntity.ok(records);
+//    }
+//    @PatchMapping("/update-status")
+//    public ResponseEntity<Record> updateRecordStatus(@RequestParam Long recordId, @RequestParam RecordStatus status) {
+//        Record updatedRecord = recordService.updateRecordStatus(recordId, status);
+//        return ResponseEntity.ok(updatedRecord);
+//    }
+//
+//    @DeleteMapping("/delete")
+//    public ResponseEntity<String> deleteRecord(@RequestParam Long recordId) {
+//        recordService.deleteRecord(recordId);
+//        return ResponseEntity.ok("Record deleted successfully");
+//    }
 }
