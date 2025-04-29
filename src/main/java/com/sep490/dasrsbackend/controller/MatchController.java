@@ -40,6 +40,7 @@ public class MatchController {
                 matchService.getMatches(teamId));
     }
 
+    @Operation(summary = "Assign member to match", description = "Assign member to match")
     @PutMapping("/assign/{matchTeamId}")
     public ResponseEntity<Object> assignMemberToMatch(@PathVariable Long matchTeamId, @RequestParam UUID assigner, @RequestParam UUID assignee) {
         matchService.assignMemberToMatch(matchTeamId, assigner, assignee);

@@ -30,6 +30,12 @@ public class LeaderboardData {
     @JsonProperty("round_id")
     private Long roundId;
 
+    @JsonProperty("round_name")
+    private String roundName;
+
     @JsonProperty("tournament_id")
     private Long tournamentId;
+
+    @JsonProperty("tournament_name")
+    private String tournamentName;
 }
