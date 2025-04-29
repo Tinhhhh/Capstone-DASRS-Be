@@ -105,7 +105,7 @@ public class SecurityCofig {
                                 .requestMatchers("/api/v1/resources/map").permitAll()
                                 .requestMatchers("/api/v1/resources/map/round/{roundId}").hasAnyAuthority("PLAYER", "ORGANIZER", "ADMIN")
                                 .requestMatchers(HttpMethod.GET, "/api/v1/resources/admin").hasAnyAuthority("ORGANIZER", "ADMIN")
-                                .requestMatchers(HttpMethod.GET,"/api/v1/resources/{resourceId}").hasAuthority("ORGANIZER")
+                                .requestMatchers(HttpMethod.GET, "/api/v1/resources/{resourceId}").permitAll()
                                 .requestMatchers(HttpMethod.PUT,"/api/v1/resources/{resourceId}", "/api/v1/resources/change-status/{resourceId}").hasAuthority("ADMIN")
                                 .requestMatchers(HttpMethod.POST, "/api/v1/resources").hasAuthority("ADMIN")
                                 .requestMatchers(HttpMethod.GET, "/api/v1/resources").hasAnyAuthority("ORGANIZER", "ADMIN")
@@ -146,6 +146,7 @@ public class SecurityCofig {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/environments/**").permitAll()
                                 .requestMatchers("/api/v1/environments/**").hasAuthority("ADMIN")
                                 //Scored Method
+                                .requestMatchers(HttpMethod.GET, "/api/v1/scored-methods/{scoredMethodId}").permitAll()
                                 .requestMatchers("/api/v1/scored-methods/**").hasAuthority("ORGANIZER")
                                 .anyRequest().authenticated()
                 )
