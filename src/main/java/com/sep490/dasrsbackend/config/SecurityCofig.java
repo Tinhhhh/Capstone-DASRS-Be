@@ -62,10 +62,10 @@ public class SecurityCofig {
                                         "/api/v1/match-types").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 .requestMatchers("/api/v1/match-types/**").hasAuthority("ADMIN")
                                 //Tournament
+                                .requestMatchers(HttpMethod.GET, "/api/v1/tournaments").permitAll()
                                 .requestMatchers(
                                         HttpMethod.GET,
                                         "/api/v1/tournaments/*",
-                                        "/api/v1/tournaments",
                                         "/api/v1/tournaments/teams/*").hasAnyAuthority("PLAYER", "ORGANIZER", "ADMIN")
                                 .requestMatchers(
                                         "/api/v1/tournaments/register-team/**",
@@ -133,8 +133,9 @@ public class SecurityCofig {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/cars/**").permitAll()
                                 .requestMatchers("/api/v1/cars/**").hasAuthority("ADMIN")
                                 //Round
+                                .requestMatchers(HttpMethod.GET, "/api/v1/rounds").permitAll()
                                 .requestMatchers("/api/v1/rounds/landing").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/v1/rounds",
+                                .requestMatchers(HttpMethod.GET,
                                         "/api/v1/rounds/{roundId}",
                                         "/api/v1/rounds/tournament/{tournamentId}",
                                         "/api/v1/rounds/team/{teamId}/tournament/{tournamentId}").hasAnyAuthority("ORGANIZER", "PLAYER", "ADMIN")
