@@ -82,7 +82,7 @@ public class SecurityCofig {
                                         "/api/v1/tournaments/dashboard/**").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 //Leaderboard
                                 .requestMatchers(
-                                        "/api/v1/leaderboards/**").hasAnyAuthority("ORGANIZER", "ADMIN","PLAYER")
+                                        "/api/v1/leaderboards/**").permitAll()
                                 //Complaint
                                 .requestMatchers(
                                         "/api/v1/complaints/create").hasAuthority("PLAYER")
