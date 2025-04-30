@@ -134,9 +134,9 @@ public class SecurityCofig {
                                 .requestMatchers("/api/v1/cars/**").hasAuthority("ADMIN")
                                 //Round
                                 .requestMatchers(HttpMethod.GET, "/api/v1/rounds").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/rounds/{roundId}").permitAll()
                                 .requestMatchers("/api/v1/rounds/landing").permitAll()
                                 .requestMatchers(HttpMethod.GET,
-                                        "/api/v1/rounds/{roundId}",
                                         "/api/v1/rounds/tournament/{tournamentId}",
                                         "/api/v1/rounds/team/{teamId}/tournament/{tournamentId}").hasAnyAuthority("ORGANIZER", "PLAYER", "ADMIN")
                                 .requestMatchers(HttpMethod.PUT, "/api/v1/rounds",
