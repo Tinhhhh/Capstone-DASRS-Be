@@ -44,7 +44,7 @@ public class SecurityCofig {
                                 .requestMatchers("/api/v1/accounts/change-password",
                                         "/api/v1/accounts/update-info").hasAnyAuthority("PLAYER", "ORGANIZER", "ADMIN")
                                 .requestMatchers(
-                                        "/api/v1/accounts/update-profile-picture").hasAuthority("PLAYER")
+                                        "/api/v1/accounts/update-profile-picture").hasAnyAuthority("PLAYER", "ORGANIZER")
                                 .requestMatchers(
                                         "/api/v1/accounts/staff-create",
                                         "/api/v1/accounts/import",
