@@ -24,7 +24,7 @@ public class NewResource {
     private String mapName;
 
     @JsonProperty("resource_image")
-    private String mapImage;
+    private String resourceImg;
 
     @JsonProperty("resource_type")
     private ResourceType resourceType;
