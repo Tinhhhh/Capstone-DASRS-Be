@@ -21,7 +21,7 @@ public class ResourceResponse {
     private String resourceName;
 
     @JsonProperty("resource_image")
-    private String resourceImage;
+    private String resourceImg;
 
     @JsonProperty("resource_type")
     private ResourceType resourceType;
