@@ -107,11 +107,11 @@ public class ScoredMethodServiceImpl implements ScoredMethodService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Scored Method already in the same status");
         }
 
-        Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.ACTIVE, DateUtil.getCurrentTimestamp());
+        List<Round> rounds = roundRepository.findByStatusAndStartDateBefore(RoundStatus.ACTIVE, DateUtil.getCurrentTimestamp());
 
-        if (round.isPresent()) {
-            if (round.get().getScoredMethod().getId().equals(scoredMethodId)) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "ScoredMethod's status can't be change while there is a round using it");
+        for (Round round : rounds) {
+            if (round.getScoredMethod().getId().equals(scoredMethodId)) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "ScoredMethod's status can't be changed while there is a round using it");
             }
         }
 

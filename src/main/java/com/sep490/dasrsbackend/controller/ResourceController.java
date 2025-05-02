@@ -62,7 +62,9 @@ public class ResourceController {
     @PutMapping("/change-status/{resourceId}")
     public ResponseEntity<Object> changeResourceStatus(@PathVariable Long resourceId, @RequestParam boolean enable) {
         resourceService.changeResourceStatus(resourceId, enable);
-        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Resource disabled successfully");
+
+        String message = enable ? "Resource enabled successfully" : "Resource disabled successfully";
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, message);
     }
 
     @Operation(summary = "Get all ressources type = map")

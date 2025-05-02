@@ -70,11 +70,11 @@ public class ResourceServiceImpl implements ResourceService {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource already " + enable);
         }
 
-        Optional<Round> round = roundRepository.findByStatusAndStartDateBefore(RoundStatus.ACTIVE, DateUtil.getCurrentTimestamp());
+        List<Round> activeRounds = roundRepository.findByStatusAndStartDateBefore(RoundStatus.ACTIVE, DateUtil.getCurrentTimestamp());
 
-        if (round.isPresent()) {
-            if (round.get().getResource().getId().equals(id)) {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource's status can't be change while there is a round using it");
+        for (Round r : activeRounds) {
+            if (r.getResource().getId().equals(id)) {
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Resource's status can't be changed while it is used in an active round");
             }
         }
 
