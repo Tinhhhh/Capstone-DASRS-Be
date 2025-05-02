@@ -45,6 +45,7 @@ public class MatchTypeServiceImpl implements MatchTypeService {
                 .status(MatchTypeStatus.ACTIVE)
                 .playerNumber(newMatchType.getPlayerNumber())
                 .teamNumber(newMatchType.getTeamNumber())
+                .matchDuration(newMatchType.getMatchDuration())
                 .build();
         matchTypeRepository.save(matchType);
     }
@@ -82,10 +83,10 @@ public class MatchTypeServiceImpl implements MatchTypeService {
         MatchType matchType = matchTypeRepository.findById(id)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Match type not found"));
 
-        Optional<Round> roundOtp = roundRepository.findByMatchTypeId(id);
+        List<Round> roundList = roundRepository.findAllByMatchTypeId(id);
 
-        if (roundOtp.isPresent()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Can't edit a match type has used in a round");
+        if (!roundList.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Can't edit a match type that is used in a round");
         }
 
         String matchTypeCode = newMatchType.getPlayerNumber() + "P" + newMatchType.getTeamNumber() + "T";
@@ -98,8 +99,8 @@ public class MatchTypeServiceImpl implements MatchTypeService {
         matchType.setMatchTypeCode(matchTypeCode);
         matchType.setPlayerNumber(newMatchType.getPlayerNumber());
         matchType.setTeamNumber(newMatchType.getTeamNumber());
-        matchType.setStatus(MatchTypeStatus.ACTIVE);
-
+        matchType.setMatchDuration(newMatchType.getMatchDuration());
+        matchType.setStatus(newMatchType.getStatus());
         matchTypeRepository.save(matchType);
     }
 

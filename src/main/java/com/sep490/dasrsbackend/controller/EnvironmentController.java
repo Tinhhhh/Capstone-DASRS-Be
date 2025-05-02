@@ -2,6 +2,7 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
+import com.sep490.dasrsbackend.model.payload.request.EditEnvironment;
 import com.sep490.dasrsbackend.model.payload.request.NewEnvironment;
 import com.sep490.dasrsbackend.service.EnvironmentService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -44,7 +45,9 @@ public class EnvironmentController {
     }
 
     @PutMapping("/{environmentId}")
-    public ResponseEntity<Object> updateEnvironment(@PathVariable Long environmentId, @RequestBody @Valid NewEnvironment request) {
+    public ResponseEntity<Object> updateEnvironment(
+            @PathVariable Long environmentId,
+            @RequestBody @Valid EditEnvironment request) {
         environmentService.updateEnvironment(environmentId, request);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Environment updated successfully");
     }

@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.model.entity.Environment;
 import com.sep490.dasrsbackend.model.entity.ScoredMethod;
 import com.sep490.dasrsbackend.model.enums.EnvironmentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
+import com.sep490.dasrsbackend.model.payload.request.EditEnvironment;
 import com.sep490.dasrsbackend.model.payload.request.NewEnvironment;
 import com.sep490.dasrsbackend.model.payload.response.EnvironmentResponse;
 import com.sep490.dasrsbackend.model.payload.response.ListEnvironment;
@@ -66,12 +67,16 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     }
 
     @Override
-    public void updateEnvironment(Long id, NewEnvironment request) {
+    public void updateEnvironment(Long id, EditEnvironment request) {
         Environment environment = environmentRepository.findById(id)
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Environment not found"));
 
-        environment.setName(request.getName());
-        // Optionally update status if needed
+        environment.setName(request.getName().trim());
+
+        if (request.getStatus() != null) {
+            environment.setStatus(request.getStatus());
+        }
+
         environmentRepository.save(environment);
     }
 
