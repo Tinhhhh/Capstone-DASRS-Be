@@ -32,12 +32,24 @@ public class AccountConverter {
         return modelMapper.map(accountDTO, Account.class);
     }
 
-    // Convert Account to AccountInfoResponse
     public AccountInfoResponse convertToAccountInfoResponse(Account account) {
-        if (account == null) {
-            return null;
-        }
-        return modelMapper.map(account, AccountInfoResponse.class);
+        return AccountInfoResponse.builder()
+                .accountId(account.getAccountId())
+                .firstName(account.getFirstName())
+                .lastName(account.getLastName())
+                .email(account.getEmail())
+                .gender(account.getGender())
+                .phone(account.getPhone())
+                .avatar(account.getAvatar())
+                .address(account.getAddress())
+                .dob(account.getDob() != null ? account.getDob().toString() : null)
+                .isLeader(account.isLeader())
+                .isLocked(account.isLocked())
+                .teamId(account.getTeam() != null ? account.getTeam().getId() : null)
+                .teamName(account.getTeam() != null ? account.getTeam().getTeamName() : null)
+                .roleId(account.getRole() != null ? account.getRole().getId() : null)
+                .roleName(account.getRole() != null ? account.getRole().getRoleName() : null)
+                .build();
     }
 
     // Convert AccountProfile to Account entity (for updating)

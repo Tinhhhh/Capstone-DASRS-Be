@@ -345,8 +345,11 @@ public class AccountServiceImpl implements AccountService {
     public ListAccountInfoResponse getAllAccount(int pageNo, int pageSize, AccountSort sortBy, String keyword, RoleFilter role) {
         Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        Specification<Account> spec = Specification.where((AccountSpecification.hasName(keyword)
-                    .or(AccountSpecification.hasEmail(keyword))).and(AccountSpecification.hasRoleName(role)));
+        Specification<Account> spec = Specification
+                .where(AccountSpecification.fetchRole())
+                .and(AccountSpecification.hasName(keyword)
+                        .or(AccountSpecification.hasEmail(keyword)))
+                .and(AccountSpecification.hasRoleName(role));
 
         Page<Account> accountsPage = accountRepository.findAll(spec, pageable);
         List<Account> accounts = accountsPage.getContent();
