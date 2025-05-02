@@ -84,25 +84,25 @@ public class MatchTypeServiceImpl implements MatchTypeService {
                 .orElseThrow(() -> new DasrsException(HttpStatus.NOT_FOUND, "Match type not found"));
 
         List<Round> roundList = roundRepository.findAllByMatchTypeId(id);
-
         if (!roundList.isEmpty()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Can't edit a match type that is used in a round");
         }
 
         String matchTypeCode = newMatchType.getPlayerNumber() + "P" + newMatchType.getTeamNumber() + "T";
 
-        if (matchType.getStatus() == newMatchType.getStatus()) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, Can't edit a match type has same status");
-        }
-
         matchType.setMatchTypeName(newMatchType.getMatchTypeName().trim());
         matchType.setMatchTypeCode(matchTypeCode);
         matchType.setPlayerNumber(newMatchType.getPlayerNumber());
         matchType.setTeamNumber(newMatchType.getTeamNumber());
         matchType.setMatchDuration(newMatchType.getMatchDuration());
-        matchType.setStatus(newMatchType.getStatus());
+
+        if (newMatchType.getStatus() != null && newMatchType.getStatus() != matchType.getStatus()) {
+            matchType.setStatus(newMatchType.getStatus());
+        }
+
         matchTypeRepository.save(matchType);
     }
+
 
     @Override
     public void deleteMatchType(Long id) {

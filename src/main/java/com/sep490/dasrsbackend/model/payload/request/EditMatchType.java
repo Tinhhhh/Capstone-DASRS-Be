@@ -34,6 +34,7 @@ public class EditMatchType {
     @DecimalMax(value = "0.75", message = "matchDuration must not exceed 0.75")
     private double matchDuration;
 
+    @JsonProperty("status")
     private MatchTypeStatus status;
 
 }
