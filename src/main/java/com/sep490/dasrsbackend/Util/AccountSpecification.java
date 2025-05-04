@@ -4,6 +4,7 @@ import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.Role;
 import com.sep490.dasrsbackend.model.enums.RoleFilter;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import lombok.experimental.UtilityClass;
 import org.checkerframework.checker.units.qual.A;
 import org.springframework.boot.autoconfigure.rsocket.RSocketProperties;
@@ -18,11 +19,13 @@ public class AccountSpecification {
             }
             String likeKeyword = "%" + keyword.toLowerCase() + "%";
 
+            Join<Object, Object> teamJoin = root.join("team", JoinType.LEFT);
+
             return cb.or(
                     cb.like(cb.lower(root.get("firstName")), likeKeyword),
                     cb.like(cb.lower(root.get("lastName")), likeKeyword),
                     cb.like(cb.lower(root.get("email")), likeKeyword),
-                    cb.like(cb.lower(cb.coalesce(root.get("team").get("teamName"), "")), likeKeyword)
+                    cb.like(cb.lower(cb.coalesce(teamJoin.get("teamName"), "")), likeKeyword)
             );
         };
     }
