@@ -310,10 +310,12 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public ListPlayersResponse getPlayers(int pageNo, int pageSize, PlayerSort sortBy, String keyword) {
         Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
-
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        Specification<Account> spec = Specification.where(AccountSpecification.hasKeyword(keyword));
+        Specification<Account> spec = Specification
+                .where(AccountSpecification.fetchRole())
+                .and(AccountSpecification.hasKeyword(keyword))
+                .and((root, query, cb) -> cb.equal(root.get("role").get("roleName"), RoleEnum.PLAYER.name()));
 
         Page<Account> playersPage = accountRepository.findAll(spec, pageable);
         List<Account> players = playersPage.getContent();
@@ -331,7 +333,7 @@ public class AccountServiceImpl implements AccountService {
                         account.getTeam() != null ? account.getTeam().getId() : null,
                         account.getTeam() != null ? account.getTeam().getTeamName() : null
                 ))
-                .collect(Collectors.toList());
+                .toList();
 
         return ListPlayersResponse.builder()
                 .players(playerResponses)
