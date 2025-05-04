@@ -43,7 +43,7 @@ public class SecurityCofig {
                                 //Account
                                 .requestMatchers(
                                         "/api/v1/accounts/landing/player-template",
-                                        "/api/v1/accounts/landing/organizer-contact"
+                                        "/api/v1/accounts/landing/organizer-contacts"
                                 ).permitAll()
                                 .requestMatchers("/api/v1/accounts/change-password",
                                         "/api/v1/accounts/update-info").hasAnyAuthority("PLAYER", "ORGANIZER", "ADMIN")

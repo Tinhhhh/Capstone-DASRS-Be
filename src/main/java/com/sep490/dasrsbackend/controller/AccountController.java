@@ -245,13 +245,21 @@ public class AccountController {
         );
     }
 
-    @Operation(summary = "Get one organizer contact info", description = "Returns the first found organizer account as a contact person on the landing page.")
-    @GetMapping("/landing/organizer-contact")
-    public ResponseEntity<Object> getOrganizerContact() {
+    @Operation(
+            summary = "Get list of organizer contact accounts",
+            description = "Returns a paginated and searchable list of unlocked organizer accounts for public contact on the landing page."
+    )
+    @GetMapping("/landing/organizer-contacts")
+    public ResponseEntity<Object> getOrganizerContacts(
+            @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE) int pageSize,
+            @RequestParam(name = "sortBy", defaultValue = "SORT_BY_FIRSTNAME_ASC") AccountSort sortBy,
+            @RequestParam(name = "keyword", required = false) String keyword
+    ) {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK,
-                "Organizer contact retrieved successfully.",
-                accountService.getOrganizerContactForLanding()
+                "Organizer contacts retrieved successfully.",
+                accountService.getOrganizerContacts(pageNo, pageSize, sortBy, keyword)
         );
     }
 

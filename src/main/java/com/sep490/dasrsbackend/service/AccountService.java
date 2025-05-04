@@ -49,6 +49,6 @@ public interface AccountService {
 
     Map<String, String> getPlayerRegistrationTemplate();
 
-    AccountInfoResponse getOrganizerContactForLanding();
+    ListAccountInfoResponse getOrganizerContacts(int pageNo, int pageSize, AccountSort sortBy, String keyword);
 
 }

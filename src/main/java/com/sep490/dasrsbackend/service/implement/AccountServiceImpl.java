@@ -399,22 +399,29 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountInfoResponse getOrganizerContactForLanding() {
-        Pageable limitOne = PageRequest.of(0, 1);
-        Page<Account> organizerAccounts = accountRepository.findAll(
-                (root, query, cb) -> cb.and(
-                        cb.equal(root.get("role").get("roleName"), RoleEnum.ORGANIZER.getRole()),
-                        cb.isFalse(root.get("isLocked"))
-                ),
-                limitOne
-        );
+    public ListAccountInfoResponse getOrganizerContacts(int pageNo, int pageSize, AccountSort sortBy, String keyword) {
+        Sort sort = Sort.by(sortBy.getDirection(), sortBy.getField());
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        if (organizerAccounts.isEmpty()) {
-            throw new DasrsException(HttpStatus.NOT_FOUND, "No unlocked organizer account found");
-        }
+        Specification<Account> spec = Specification
+                .where(AccountSpecification.fetchRole())
+                .and(AccountSpecification.hasName(keyword)
+                        .or(AccountSpecification.hasEmail(keyword)))
+                .and((root, query, cb) -> cb.equal(root.get("role").get("roleName"), RoleEnum.ORGANIZER.name()))
+                .and((root, query, cb) -> cb.isFalse(root.get("isLocked")));
 
-        Account organizer = organizerAccounts.getContent().get(0);
-        return accountConverter.convertToAccountInfoResponse(organizer);
+        Page<Account> accountsPage = accountRepository.findAll(spec, pageable);
+        List<AccountInfoResponse> accountInfoResponses = accountsPage.getContent().stream()
+                .map(accountConverter::convertToAccountInfoResponse)
+                .toList();
+
+        return ListAccountInfoResponse.builder()
+                .content(accountInfoResponses)
+                .totalPages(accountsPage.getTotalPages())
+                .totalElements(accountsPage.getTotalElements())
+                .pageNo(accountsPage.getNumber())
+                .pageSize(accountsPage.getSize())
+                .last(accountsPage.isLast())
+                .build();
     }
-
 }
