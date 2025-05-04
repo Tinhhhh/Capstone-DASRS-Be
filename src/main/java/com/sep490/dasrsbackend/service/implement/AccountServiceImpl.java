@@ -401,15 +401,20 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountInfoResponse getOrganizerContactForLanding() {
         Pageable limitOne = PageRequest.of(0, 1);
-        Page<Account> organizerAccounts = accountRepository.findAccountsByRole(RoleEnum.ORGANIZER.getRole(), limitOne);
+        Page<Account> organizerAccounts = accountRepository.findAll(
+                (root, query, cb) -> cb.and(
+                        cb.equal(root.get("role").get("roleName"), RoleEnum.ORGANIZER.getRole()),
+                        cb.isFalse(root.get("isLocked"))
+                ),
+                limitOne
+        );
 
         if (organizerAccounts.isEmpty()) {
-            throw new DasrsException(HttpStatus.NOT_FOUND, "No organizer account found");
+            throw new DasrsException(HttpStatus.NOT_FOUND, "No unlocked organizer account found");
         }
 
         Account organizer = organizerAccounts.getContent().get(0);
         return accountConverter.convertToAccountInfoResponse(organizer);
     }
-
 
 }
