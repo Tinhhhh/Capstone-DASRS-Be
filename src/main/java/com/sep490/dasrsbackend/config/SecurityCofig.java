@@ -114,19 +114,18 @@ public class SecurityCofig {
                                 .requestMatchers(HttpMethod.POST, "/api/v1/resources").hasAuthority("ADMIN")
                                 .requestMatchers(HttpMethod.GET, "/api/v1/resources").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 //Match
+                                .requestMatchers("/api/v1/matches/available").hasAnyAuthority("ORGANIZER", "PLAYER")
                                 .requestMatchers("/api/v1/matches/assign/{matchId}",
                                         "/api/v1/matches/tournament/{tournamentId}",
                                         "/api/v1/matches/team/{teamId}",
                                         "/api/v1/matches/round/{roundId}/team/{teamId}",
                                         "/api/v1/matches/by-round-and-player",
                                         "/api/v1/matches/round/{roundId}",
-                                        "/api/v1/matches/score-details/{matchId}/{teamId}",
-                                        "/api/v1/matches/available").hasAuthority("PLAYER")
+                                        "/api/v1/matches/score-details/{matchId}/{teamId}").hasAuthority("PLAYER")
                                 .requestMatchers("/api/v1/matches/slot/{matchId}",
                                         "/api/v1/matches/round/{roundId}").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 .requestMatchers("/api/v1/matches/rematch",
-                                        "/api/v1/matches/score-details/{matchId}/{teamId}",
-                                        "/api/v1/matches/available").hasAuthority("ORGANIZER")
+                                        "/api/v1/matches/score-details/{matchId}/{teamId}").hasAuthority("ORGANIZER")
                                 .requestMatchers("/api/v1/matches/score-data",
                                         "/api/v1/matches/car-data",
                                         "/api/v1/matches/unity").permitAll()
