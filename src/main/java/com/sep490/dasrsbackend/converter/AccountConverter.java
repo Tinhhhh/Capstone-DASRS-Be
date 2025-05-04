@@ -16,7 +16,6 @@ public class AccountConverter {
         this.modelMapper = modelMapper;
     }
 
-    // Convert Account to AccountDTO
     public AccountDTO convertToDTO(Account account) {
         if (account == null) {
             return null;
@@ -24,12 +23,12 @@ public class AccountConverter {
         return modelMapper.map(account, AccountDTO.class);
     }
 
-    // Convert AccountDTO to Account
-    public Account convertToEntity(AccountDTO accountDTO) {
-        if (accountDTO == null) {
-            return null;
-        }
-        return modelMapper.map(accountDTO, Account.class);
+    public Account convertToEntity(AccountDTO dto) {
+        if (dto == null) return null;
+
+        Account account = modelMapper.map(dto, Account.class);
+        account.setRole(dto.getRoleId());
+        return account;
     }
 
     public AccountInfoResponse convertToAccountInfoResponse(Account account) {
