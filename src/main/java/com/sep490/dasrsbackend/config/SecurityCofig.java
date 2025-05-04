@@ -41,6 +41,10 @@ public class SecurityCofig {
                         //Authenticate
                         request.requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api/v1/auth/**").permitAll()
                                 //Account
+                                .requestMatchers(
+                                        "/api/v1/accounts/landing/player-template",
+                                        "/api/v1/accounts/landing/organizer-contact"
+                                ).permitAll()
                                 .requestMatchers("/api/v1/accounts/change-password",
                                         "/api/v1/accounts/update-info").hasAnyAuthority("PLAYER", "ORGANIZER", "ADMIN")
                                 .requestMatchers(
