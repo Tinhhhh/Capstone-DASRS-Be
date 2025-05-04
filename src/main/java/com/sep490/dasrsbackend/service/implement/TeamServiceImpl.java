@@ -2,10 +2,11 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
-import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
-import com.sep490.dasrsbackend.model.enums.TournamentStatus;
-import com.sep490.dasrsbackend.model.exception.*;
+import com.sep490.dasrsbackend.model.exception.DasrsException;
+import com.sep490.dasrsbackend.model.exception.InvalidTeamDataException;
+import com.sep490.dasrsbackend.model.exception.PlayerNotFoundException;
+import com.sep490.dasrsbackend.model.exception.TeamNotFoundException;
 import com.sep490.dasrsbackend.model.payload.response.MatchResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamMemberResponse;
 import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
@@ -18,7 +19,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -27,13 +31,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TeamServiceImpl implements TeamService {
 
+    private static final Logger logger = Logger.getLogger(TeamServiceImpl.class.getName());
     private final TeamRepository teamRepository;
     private final ModelMapper modelMapper;
     private final MatchTeamRepository matchTeamRepository;
     private final AccountRepository accountRepository;
     private final MatchRepository matchRepository;
     private final TournamentTeamRepository tournamentTeamRepository;
-    private static final Logger logger = Logger.getLogger(TeamServiceImpl.class.getName());
     private final LeaderboardRepository leaderboardRepository;
     private final RoundRepository roundRepository;
     private final TournamentRepository tournamentRepository;
@@ -241,6 +245,7 @@ public class TeamServiceImpl implements TeamService {
                 .memberCount(team.getAccountList() != null ? team.getAccountList().size() : 0)
                 .build();
     }
+
     @Override
     public List<TeamResponse> getAllTeams() {
         List<Team> teams = teamRepository.findAll();
@@ -454,7 +459,7 @@ public class TeamServiceImpl implements TeamService {
                 .toList();
 
         List<TeamResponse> teamResponses = new ArrayList<>();
-        for (Team team : teams){
+        for (Team team : teams) {
             TeamResponse teamResponse = modelMapper.map(team, TeamResponse.class);
             teamResponse.setMemberCount(team.getAccountList() != null ? team.getAccountList().size() : 0);
             teamResponses.add(teamResponse);

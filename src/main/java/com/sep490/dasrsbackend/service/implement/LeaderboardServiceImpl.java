@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +33,11 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     private final MatchTeamRepository matchTeamRepository;
     private final TournamentRepository tournamentRepository;
     private final RoundUtilityService roundUtilityService;
+
+    private static Pageable getPageable(int pageNo, int pageSize, String sortBy, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        return PageRequest.of(pageNo, pageSize, sort);
+    }
 
     @Override
     public void updateLeaderboard(Long roundId) {
@@ -200,11 +204,6 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         return leaderboardData;
     }
 
-    private static Pageable getPageable(int pageNo, int pageSize, String sortBy, String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        return PageRequest.of(pageNo, pageSize, sort);
-    }
-
     @Override
     public LeaderboardResponseForTournament getLeaderboardByTournamentId(Long tournamentId, int pageNo, int pageSize, String sortBy, String sortDir) {
 
@@ -332,9 +331,6 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         return result;
     }
 
-    private record Result(FastestLapTimeTeam fastestLapTime, TopSpeedTeam topSpeed) {
-    }
-
     private Comparator<? super LeaderboardTournament> getComparator(String sortBy, String sortDir) {
 
         Comparator<LeaderboardTournament> comparator;
@@ -358,6 +354,9 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         }
 
         return sortDir.equalsIgnoreCase("desc") ? comparator.reversed() : comparator;
+    }
+
+    private record Result(FastestLapTimeTeam fastestLapTime, TopSpeedTeam topSpeed) {
     }
 
 

@@ -1,16 +1,8 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.entity.Round;
 import com.sep490.dasrsbackend.model.enums.ScoredMethodStatus;
-import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-
-import java.util.Date;
-import java.util.List;
 
 @Getter
 @Setter

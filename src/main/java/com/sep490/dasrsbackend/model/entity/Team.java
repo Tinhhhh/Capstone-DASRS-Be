@@ -3,7 +3,10 @@ package com.sep490.dasrsbackend.model.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -26,11 +29,11 @@ public class Team {
     @Column(name = "team_name", nullable = false)
     private String teamName;
 
-    @Column(name = "team_tag", unique = true,nullable = false)
+    @Column(name = "team_tag", unique = true, nullable = false)
     private String teamTag;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status",nullable = false)
+    @Column(name = "status", nullable = false)
     private TeamStatus status;
 
     @Column(name = "is_disqualified", nullable = false)

@@ -6,8 +6,6 @@ import com.sep490.dasrsbackend.model.enums.RoleFilter;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import lombok.experimental.UtilityClass;
-import org.checkerframework.checker.units.qual.A;
-import org.springframework.boot.autoconfigure.rsocket.RSocketProperties;
 import org.springframework.data.jpa.domain.Specification;
 
 @UtilityClass
@@ -53,7 +51,7 @@ public class AccountSpecification {
         };
     }
 
-    public Specification<Account> hasRoleName(RoleFilter role){
+    public Specification<Account> hasRoleName(RoleFilter role) {
         return (root, query, cb) -> {
             Join<Account, Role> roleJoin = root.join("role"); // Tên biến trong entity Account (kiểu Role)
 
@@ -67,6 +65,7 @@ public class AccountSpecification {
             );
         };
     }
+
     public static Specification<Account> fetchRole() {
         return (root, query, cb) -> {
             root.join("role", jakarta.persistence.criteria.JoinType.LEFT);

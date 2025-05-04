@@ -12,12 +12,12 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**").allowedOrigins(
-                "http://localhost:5173",
-                "https://dasrs-frontend.vercel.app",
-                "http://192.168.1.54:5173"
-            )
-            .allowedHeaders("*")
-            .allowedHeaders("*")
-            .allowedMethods("*");
+                        "http://localhost:5173",
+                        "https://dasrs-frontend.vercel.app",
+                        "http://192.168.1.54:5173"
+                )
+                .allowedHeaders("*")
+                .allowedHeaders("*")
+                .allowedMethods("*");
     }
 }

@@ -2,7 +2,6 @@ package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sep490.dasrsbackend.model.enums.FinishType;
-import com.sep490.dasrsbackend.model.enums.MatchTypeStatus;
 import com.sep490.dasrsbackend.model.enums.ScoredMethodStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -58,7 +57,7 @@ public class ScoredMethod {
     private ScoredMethodStatus status;
 
     @LastModifiedDate
-    @Column(name = "last_modified_date",  nullable = false)
+    @Column(name = "last_modified_date", nullable = false)
     private Date lastModifiedDate;
 
     @JsonIgnore
