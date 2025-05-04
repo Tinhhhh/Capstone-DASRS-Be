@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.FutureOrPresent;
 import lombok.*;
 
 @Getter

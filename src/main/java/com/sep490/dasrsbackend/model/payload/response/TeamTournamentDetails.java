@@ -16,18 +16,14 @@ import java.util.List;
 @Setter
 public class TeamTournamentDetails {
 
-    @JsonProperty("team_id")
-    private Long id;
-
-    @JsonProperty("team_name")
-    private String teamName;
-
-    @JsonProperty("team_tag")
-    private String teamTag;
-
-    private TeamStatus status;
-
     @JsonProperty("team_members")
     List<ParticipantDTO> teamMembers;
+    @JsonProperty("team_id")
+    private Long id;
+    @JsonProperty("team_name")
+    private String teamName;
+    @JsonProperty("team_tag")
+    private String teamTag;
+    private TeamStatus status;
 
 }

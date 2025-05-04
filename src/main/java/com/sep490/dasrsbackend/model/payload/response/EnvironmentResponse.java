@@ -2,7 +2,6 @@ package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.EnvironmentStatus;
-import jakarta.persistence.*;
 import lombok.*;
 
 @Getter

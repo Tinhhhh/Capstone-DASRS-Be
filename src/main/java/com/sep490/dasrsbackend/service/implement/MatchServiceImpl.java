@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MatchServiceImpl implements MatchService {
 
+    private final static Logger logger = org.slf4j.LoggerFactory.getLogger(MatchServiceImpl.class);
     private final TeamRepository teamRepository;
     private final ModelMapper modelMapper;
     private final MatchTeamRepository matchTeamRepository;
@@ -48,10 +49,7 @@ public class MatchServiceImpl implements MatchService {
     private final MatchTypeRepository matchTypeRepository;
     private final TournamentRepository tournamentRepository;
     private final LeaderboardRepository leaderboardRepository;
-
     private final LeaderboardService leaderboardService;
-
-    private final static Logger logger = org.slf4j.LoggerFactory.getLogger(MatchServiceImpl.class);
     private final TournamentTeamRepository tournamentTeamRepository;
     private final RoundUtilityService roundUtilityService;
     private final LeaderboardServiceImpl leaderboardServiceImpl;
@@ -66,12 +64,12 @@ public class MatchServiceImpl implements MatchService {
                 .filter(matchTeam -> matchTeam.getMatch().getStatus() != MatchStatus.TERMINATED).toList();
 
         List<Match> matches = new ArrayList<>();
-        if (!matchTeams.isEmpty()){
+        if (!matchTeams.isEmpty()) {
             matches = matchTeams.stream().map(MatchTeam::getMatch).distinct().toList();
         }
         List<MatchResponseForTeam> matchesResponse = new ArrayList<>();
 
-        if (!matches.isEmpty()){
+        if (!matches.isEmpty()) {
             matchesResponse = getMatchResponseForTeamList(matches, team);
         }
 
@@ -844,11 +842,11 @@ public class MatchServiceImpl implements MatchService {
 
         List<MatchTeam> matchTeams = matchTeamRepository.findByTeamId(teamId).stream()
                 .filter(matchTeam -> matchTeam.getMatch().getRound().getId() == roundId).toList();
-        List<Match> matches= new ArrayList<>();
-        if (!matchTeams.isEmpty()){
+        List<Match> matches = new ArrayList<>();
+        if (!matchTeams.isEmpty()) {
             matches = matchTeams.stream()
                     .map(MatchTeam::getMatch)
-                    .filter(Match -> Match.getStatus()!=MatchStatus.TERMINATED)
+                    .filter(Match -> Match.getStatus() != MatchStatus.TERMINATED)
                     .distinct().toList();
         }
 

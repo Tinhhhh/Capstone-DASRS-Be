@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.dto.AccountImportResponseDTO;
 import lombok.Data;
 
-import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
 
 @Data
 public class AccountImportResponse {

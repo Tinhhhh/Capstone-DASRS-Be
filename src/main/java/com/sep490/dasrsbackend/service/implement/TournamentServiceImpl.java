@@ -42,59 +42,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TournamentServiceImpl implements TournamentService {
 
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(TournamentServiceImpl.class);
     private final TournamentRepository tournamentRepository;
     private final RoundRepository roundRepository;
     private final MatchRepository matchRepository;
     private final ModelMapper modelMapper;
     private final TeamRepository teamRepository;
-    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(TournamentServiceImpl.class);
     private final TeamConverter teamConverter;
     private final CarRepository carRepository;
     private final AccountRepository accountRepository;
-    private final AccountCarRepository accountCarRepository;
     private final TournamentTeamRepository tournamentTeamRepository;
     private final RoundUtilityService roundUtilityService;
     private final RoundServiceImpl roundService;
-
-
-    @Override
-    public void createTournament(NewTournament newTournament) {
-
-        if (newTournament.getTeamNumber() <= 1) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team number must be at least 2");
-        }
-
-        //Đưa start date về 0h, end date về 23h59
-        Date begin = DateUtil.convertToStartOfTheDay(newTournament.getStartDate());
-        Date end = DateUtil.convertToEndOfTheDay(newTournament.getEndDate());
-
-        tournamentValidation(begin, end, newTournament.getTeamNumber());
-
-        Tournament tournament = Tournament.builder().tournamentName(newTournament.getTournamentName()).context(newTournament.getTournamentContext()).teamNumber(newTournament.getTeamNumber()).startDate(begin).endDate(end).status(TournamentStatus.ACTIVE).build();
-
-        tournamentRepository.save(tournament);
-//        generateAccountCar(tournament);
-    }
-
-    private void generateAccountCar(Tournament tournament) {
-        List<Car> cars = carRepository.findCarsByEnabled();
-//        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.getId(), TeamStatus.ACTIVE);
-        List<Team> teams = null;
-        for (Team team : teams) {
-            List<Account> accounts = accountRepository.findByTeamIdAndIsLocked(team.getId(), false);
-            if (!accounts.isEmpty()) {
-                for (Account account : accounts) {
-                    for (Car car : cars) {
-                        AccountCar accountCar = AccountCar.builder().account(account).car(car).build();
-                        modelMapper.map(car, accountCar);
-                        accountCarRepository.save(accountCar);
-                    }
-                }
-            } else {
-                throw new DasrsException(HttpStatus.BAD_REQUEST, "Team " + team.getTeamName() + " has no members.");
-            }
-        }
-    }
 
     private static void tournamentValidation(Date begin, Date end, int teamNumber) {
         Calendar calendar = Calendar.getInstance();
@@ -129,6 +88,45 @@ public class TournamentServiceImpl implements TournamentService {
         if (end.before(minEnd) || end.after(maxEnd)) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament duration is at least " + atLeastDay + " days and no more than 12 weeks after the start date.");
         }
+    }
+
+//    private void generateAccountCar(Tournament tournament) {
+//        List<Car> cars = carRepository.findCarsByEnabled();
+////        List<Team> teams = teamRepository.getTeamByTournamentIdAndStatus(tournament.getId(), TeamStatus.ACTIVE);
+//        List<Team> teams = null;
+//        for (Team team : teams) {
+//            List<Account> accounts = accountRepository.findByTeamIdAndIsLocked(team.getId(), false);
+//            if (!accounts.isEmpty()) {
+//                for (Account account : accounts) {
+//                    for (Car car : cars) {
+//                        AccountCar accountCar = AccountCar.builder().account(account).car(car).build();
+//                        modelMapper.map(car, accountCar);
+//                        accountCarRepository.save(accountCar);
+//                    }
+//                }
+//            } else {
+//                throw new DasrsException(HttpStatus.BAD_REQUEST, "Team " + team.getTeamName() + " has no members.");
+//            }
+//        }
+//    }
+
+    @Override
+    public void createTournament(NewTournament newTournament) {
+
+        if (newTournament.getTeamNumber() <= 1) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Team number must be at least 2");
+        }
+
+        //Đưa start date về 0h, end date về 23h59
+        Date begin = DateUtil.convertToStartOfTheDay(newTournament.getStartDate());
+        Date end = DateUtil.convertToEndOfTheDay(newTournament.getEndDate());
+
+        tournamentValidation(begin, end, newTournament.getTeamNumber());
+
+        Tournament tournament = Tournament.builder().tournamentName(newTournament.getTournamentName()).context(newTournament.getTournamentContext()).teamNumber(newTournament.getTeamNumber()).startDate(begin).endDate(end).status(TournamentStatus.ACTIVE).build();
+
+        tournamentRepository.save(tournament);
+//        generateAccountCar(tournament);
     }
 
     @Transactional

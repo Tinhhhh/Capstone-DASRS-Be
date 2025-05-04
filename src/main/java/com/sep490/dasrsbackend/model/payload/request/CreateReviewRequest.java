@@ -1,6 +1,5 @@
 package com.sep490.dasrsbackend.model.payload.request;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;

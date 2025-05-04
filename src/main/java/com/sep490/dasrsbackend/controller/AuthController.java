@@ -1,12 +1,8 @@
 package com.sep490.dasrsbackend.controller;
 
-import com.sep490.dasrsbackend.dto.AccountDTO;
-import com.sep490.dasrsbackend.model.exception.ExceptionResponse;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.request.AuthenticationRequest;
-import com.sep490.dasrsbackend.model.payload.request.NewAccountByAdmin;
 import com.sep490.dasrsbackend.service.AuthenService;
-import com.sep490.dasrsbackend.service.implement.ExcelImportService;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
@@ -14,7 +10,6 @@ import io.swagger.v3.oas.annotations.info.Contact;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -29,11 +24,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 
 @RestController
 @OpenAPIDefinition(info = @Info(
@@ -53,15 +46,15 @@ public class AuthController {
 
     @Operation(summary = "Login in to the system", description = "Login into the system requires all information to be provided, " + "and validations will be performed. The response will include an access token and a refresh token")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Successfully Login", content = @Content(examples = @ExampleObject(value = """
-            {
-               "http_status": 200,
-               "time_stamp": "10/29/2024 11:20:03",
-               "message": "Successfully SignIn",
-               "data": {
-                 "access_token": "xxxx.yyyy.zzzz",
-                 "refresh_token": "xxxx.yyyy.zzzz"
-            }
-        """))),})
+                {
+                   "http_status": 200,
+                   "time_stamp": "10/29/2024 11:20:03",
+                   "message": "Successfully SignIn",
+                   "data": {
+                     "access_token": "xxxx.yyyy.zzzz",
+                     "refresh_token": "xxxx.yyyy.zzzz"
+                }
+            """))),})
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<Object> SignIn(@RequestBody @Valid AuthenticationRequest request) {
@@ -70,11 +63,11 @@ public class AuthController {
 
     @Operation(summary = "Refresh token if expired", description = "If the current JWT Refresh Token has expired or been revoked, you can refresh it using this method")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Generate new Refresh Token and Access Token successfully", content = @Content(examples = @ExampleObject(value = """
-            {
-             "access_token": "xxxx.yyyy.zzzz",
-             "refresh_token": "xxxx.yyyy.zzzz"
-           }
-        """))), @ApiResponse(responseCode = "401", description = "No JWT token found in the request header"), @ApiResponse(responseCode = "401", description = "JWT token has expired and revoked")})
+                {
+                 "access_token": "xxxx.yyyy.zzzz",
+                 "refresh_token": "xxxx.yyyy.zzzz"
+               }
+            """))), @ApiResponse(responseCode = "401", description = "No JWT token found in the request header"), @ApiResponse(responseCode = "401", description = "JWT token has expired and revoked")})
     @PostMapping("/refresh-token")
     public ResponseEntity<Object> refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Generate new Refresh Token and Access Token successfully", authService.refreshToken(request, response));

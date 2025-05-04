@@ -110,7 +110,7 @@ public class SecurityCofig {
                                 .requestMatchers("/api/v1/resources/map/round/{roundId}").hasAnyAuthority("PLAYER", "ORGANIZER", "ADMIN")
                                 .requestMatchers(HttpMethod.GET, "/api/v1/resources/admin").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 .requestMatchers(HttpMethod.GET, "/api/v1/resources/{resourceId}").permitAll()
-                                .requestMatchers(HttpMethod.PUT,"/api/v1/resources/{resourceId}", "/api/v1/resources/change-status/{resourceId}").hasAuthority("ADMIN")
+                                .requestMatchers(HttpMethod.PUT, "/api/v1/resources/{resourceId}", "/api/v1/resources/change-status/{resourceId}").hasAuthority("ADMIN")
                                 .requestMatchers(HttpMethod.POST, "/api/v1/resources").hasAuthority("ADMIN")
                                 .requestMatchers(HttpMethod.GET, "/api/v1/resources").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 //Match

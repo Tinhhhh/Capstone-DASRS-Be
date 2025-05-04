@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import lombok.*;
 
-import java.util.UUID;
-
 @Getter
 @Setter
 @Builder

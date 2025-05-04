@@ -45,6 +45,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class AuthenServiceImpl implements AuthenService {
+    private final static Logger logger = org.slf4j.LoggerFactory.getLogger(AuthenServiceImpl.class);
     private final AccountRepository accountRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
@@ -54,8 +55,6 @@ public class AuthenServiceImpl implements AuthenService {
     private final EmailService emailService;
     private final UserDetailsService userDetailsService;
     private final PasswordResetTokenRepository resetPasswordTokenRepository;
-    private final static Logger logger = org.slf4j.LoggerFactory.getLogger(AuthenServiceImpl.class);
-
     @Value("${application.email.url}")
     private String forgotPasswordUrl;
 

@@ -44,10 +44,10 @@ public class GenerateCode {
     }
 
     public String generateRandomPassword(int length) {
-         final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
-         final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-         final String DIGITS = "0123456789";
-         final String ALL_CHARACTERS = LOWERCASE + UPPERCASE + DIGITS;
+        final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+        final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        final String DIGITS = "0123456789";
+        final String ALL_CHARACTERS = LOWERCASE + UPPERCASE + DIGITS;
 
         SecureRandom random = new SecureRandom();
         StringBuilder password = new StringBuilder(length);

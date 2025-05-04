@@ -13,5 +13,6 @@ import java.util.Optional;
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
 
     Optional<Resource> findByIdAndIsEnable(Long id, boolean enable);
+
     Page<Resource> findByIsEnable(boolean b, Pageable pageable);
 }

@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.model.payload.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.FinishType;
 import jakarta.validation.constraints.*;
 import lombok.*;
 

@@ -38,6 +38,7 @@ import static java.util.stream.Collectors.toList;
 @AllArgsConstructor
 public class RoundServiceImpl implements RoundService {
 
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(RoundServiceImpl.class);
     private final TournamentRepository tournamentRepository;
     private final RoundRepository roundRepository;
     private final MatchTypeRepository matchTypeRepository;
@@ -51,8 +52,6 @@ public class RoundServiceImpl implements RoundService {
     private final MatchTeamRepository matchTeamRepository;
     private final ResourceRepository resourceRepository;
     private final AccountRepository accountRepository;
-
-    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(RoundServiceImpl.class);
     private final TournamentTeamRepository tournamentTeamRepository;
     private final RoundUtilityService roundUtilityService;
     private final MatchServiceImpl matchServiceImpl;
@@ -375,13 +374,13 @@ public class RoundServiceImpl implements RoundService {
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
         Specification<Round> spec;
-                if (status== RoundStatusFilter.ALL) {
-                    spec = Specification.where(RoundSpecification.hasRoundName(keyword));
-                } else {
-                    spec = Specification.where(RoundSpecification.hasRoundName(keyword).and(
-                                    RoundSpecification.hasStatus(RoundStatus.valueOf(status.getStatus()))
-                            ));
-                }
+        if (status == RoundStatusFilter.ALL) {
+            spec = Specification.where(RoundSpecification.hasRoundName(keyword));
+        } else {
+            spec = Specification.where(RoundSpecification.hasRoundName(keyword).and(
+                    RoundSpecification.hasStatus(RoundStatus.valueOf(status.getStatus()))
+            ));
+        }
 
         Page<Round> roundPage = roundRepository.findAll(spec, pageable);
 

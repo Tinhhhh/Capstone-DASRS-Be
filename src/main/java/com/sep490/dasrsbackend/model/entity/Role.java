@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +12,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor

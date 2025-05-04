@@ -24,7 +24,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +32,12 @@ public class ResourceServiceImpl implements ResourceService {
     private final ResourceRepository resourceRepository;
     private final ModelMapper modelMapper;
     private final RoundRepository roundRepository;
+
+    private static Pageable getPageable(int pageNo, int pageSize, String sortBy, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
+        return pageable;
+    }
 
     @Override
     public void newResource(NewResource request) {
@@ -54,12 +59,6 @@ public class ResourceServiceImpl implements ResourceService {
 
         Resource resource = resourceRepository.findById(id).orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Resource not found"));
         return modelMapper.map(resource, ResourceResponse.class);
-    }
-
-    private static Pageable getPageable(int pageNo, int pageSize, String sortBy, String sortDir) {
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-        return pageable;
     }
 
     @Override

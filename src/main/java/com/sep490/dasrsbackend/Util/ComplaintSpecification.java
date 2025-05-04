@@ -2,7 +2,6 @@ package com.sep490.dasrsbackend.Util;
 
 import com.sep490.dasrsbackend.model.entity.Complaint;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
-import jakarta.persistence.criteria.Predicate;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.jpa.domain.Specification;
 

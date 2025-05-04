@@ -3,16 +3,7 @@ package com.sep490.dasrsbackend.model.payload.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.FinishType;
 import com.sep490.dasrsbackend.model.enums.RoundStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.*;
-
-import java.util.Date;
 
 @Getter
 @Setter

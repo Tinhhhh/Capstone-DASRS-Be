@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import lombok.*;
 
-import java.util.List;
-
 @Getter
 @Setter
 @AllArgsConstructor

@@ -1,14 +1,12 @@
 package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.model.entity.Environment;
-import com.sep490.dasrsbackend.model.entity.ScoredMethod;
 import com.sep490.dasrsbackend.model.enums.EnvironmentStatus;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.request.EditEnvironment;
 import com.sep490.dasrsbackend.model.payload.request.NewEnvironment;
 import com.sep490.dasrsbackend.model.payload.response.EnvironmentResponse;
 import com.sep490.dasrsbackend.model.payload.response.ListEnvironment;
-import com.sep490.dasrsbackend.model.payload.response.ScoredMethodResponse;
 import com.sep490.dasrsbackend.repository.EnvironmentRepository;
 import com.sep490.dasrsbackend.service.EnvironmentService;
 import lombok.RequiredArgsConstructor;
