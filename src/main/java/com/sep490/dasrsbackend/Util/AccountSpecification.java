@@ -66,10 +66,7 @@ public class AccountSpecification {
     }
     public static Specification<Account> fetchRole() {
         return (root, query, cb) -> {
-            if (query.getResultType() != Long.class && query.getResultType() != long.class) {
-                root.fetch("role", jakarta.persistence.criteria.JoinType.LEFT);
-                query.distinct(true);
-            }
+            root.join("role", jakarta.persistence.criteria.JoinType.LEFT);
             return cb.conjunction();
         };
     }
