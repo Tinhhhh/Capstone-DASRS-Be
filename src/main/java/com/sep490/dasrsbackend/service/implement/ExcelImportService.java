@@ -112,36 +112,86 @@ public class ExcelImportService {
     }
 
     private AccountDTO parseRowToAccountDTO(Row row) {
+        List<String> rowErrors = new ArrayList<>();
         AccountDTO accountDTO = new AccountDTO();
 
         try {
             String email = getCellValueAsString(row.getCell(0));
             if (email == null || email.trim().isEmpty()) {
-                throw new IllegalArgumentException("Email cannot be null or empty.");
+                rowErrors.add("Email cannot be null or empty.");
+            } else {
+                try {
+                    accountDTO.setEmail(validateEmail(email, "Email"));
+                } catch (IllegalArgumentException e) {
+                    rowErrors.add(e.getMessage());
+                }
             }
-            accountDTO.setEmail(validateEmail(getCellValueAsString(row.getCell(0)), "Email"));
-            accountDTO.setFirstName(validateName(getCellValueAsString(row.getCell(1)), "First Name", FIRST_NAME_MAX_LENGTH));
-            accountDTO.setLastName(validateName(getCellValueAsString(row.getCell(2)), "Last Name", LAST_NAME_MAX_LENGTH));
-            accountDTO.setAddress(validateAddress(getCellValueAsString(row.getCell(3)), "Address"));
-            accountDTO.setGender(validateGender(getCellValueAsString(row.getCell(4)), "Gender"));
-            accountDTO.setDob(validateDateOfBirth(row.getCell(5), "Date of Birth"));
-            accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6)), "Phone"));
-            accountDTO.setStudentIdentifier(validateNonEmpty(getCellValueAsString(row.getCell(7)), "Student Identifier"));
-            accountDTO.setSchool(validateNonEmpty(getCellValueAsString(row.getCell(8)), "School"));
 
-            String plainPassword = generateRandomPassword(8);
-            accountDTO.setPassword(plainPassword);
+            try {
+                accountDTO.setFirstName(validateName(getCellValueAsString(row.getCell(1)), "First Name", FIRST_NAME_MAX_LENGTH));
+            } catch (IllegalArgumentException e) {
+                rowErrors.add(e.getMessage());
+            }
+
+            try {
+                accountDTO.setLastName(validateName(getCellValueAsString(row.getCell(2)), "Last Name", LAST_NAME_MAX_LENGTH));
+            } catch (IllegalArgumentException e) {
+                rowErrors.add(e.getMessage());
+            }
+
+            try {
+                accountDTO.setAddress(validateAddress(getCellValueAsString(row.getCell(3)), "Address"));
+            } catch (IllegalArgumentException e) {
+                rowErrors.add(e.getMessage());
+            }
+
+            try {
+                accountDTO.setGender(validateGender(getCellValueAsString(row.getCell(4)), "Gender"));
+            } catch (IllegalArgumentException e) {
+                rowErrors.add(e.getMessage());
+            }
+
+            try {
+                accountDTO.setDob(validateDateOfBirth(row.getCell(5), "Date of Birth"));
+            } catch (IllegalArgumentException e) {
+                rowErrors.add(e.getMessage());
+            }
+
+            try {
+                accountDTO.setPhone(validatePhone(getCellValueAsString(row.getCell(6)), "Phone"));
+            } catch (IllegalArgumentException e) {
+                rowErrors.add(e.getMessage());
+            }
+
+            try {
+                accountDTO.setStudentIdentifier(validateNonEmpty(getCellValueAsString(row.getCell(7)), "Student Identifier"));
+            } catch (IllegalArgumentException e) {
+                rowErrors.add(e.getMessage());
+            }
+
+            try {
+                accountDTO.setSchool(validateNonEmpty(getCellValueAsString(row.getCell(8)), "School"));
+            } catch (IllegalArgumentException e) {
+                rowErrors.add(e.getMessage());
+            }
+
+            accountDTO.setPassword(generateRandomPassword(8));
 
             Role defaultRole = roleRepository.findByRoleName(RoleEnum.PLAYER.name())
                     .orElseThrow(() -> new IllegalArgumentException("Default role 'PLAYER' not found in the database."));
             accountDTO.setRoleId(defaultRole);
 
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Row error: " + e.getMessage());
+        } catch (Exception e) {
+            rowErrors.add("Unexpected error parsing row: " + e.getMessage());
+        }
+
+        if (!rowErrors.isEmpty()) {
+            throw new IllegalArgumentException(String.join(" | ", rowErrors));
         }
 
         return accountDTO;
     }
+
 
     private void validateTeamLeader(Team team, boolean isLeader, Map<Long, Boolean> teamLeaderMap) {
         if (isLeader) {

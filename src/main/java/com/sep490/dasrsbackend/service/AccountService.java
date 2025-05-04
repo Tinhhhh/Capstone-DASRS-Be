@@ -12,6 +12,7 @@ import jakarta.mail.MessagingException;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface AccountService {
@@ -46,5 +47,8 @@ public interface AccountService {
 
     void lockAccountByAdmin(UUID accountId, boolean lock);
 
+    Map<String, String> getPlayerRegistrationTemplate();
+
+    AccountInfoResponse getOrganizerContactForLanding();
 
 }

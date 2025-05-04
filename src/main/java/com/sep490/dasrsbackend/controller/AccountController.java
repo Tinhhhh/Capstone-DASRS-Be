@@ -35,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -47,36 +48,56 @@ public class AccountController {
     private final ExcelImportService excelImportService;
     private final JwtTokenProvider jwtTokenProvider;
 
-    @Operation(summary = "Register a new account by importing an Excel file", description = "Register new accounts by importing an Excel file. All required fields must be filled. A confirmation email will be sent after successful registration.")
+    @Operation(
+            summary = "Register a new account by importing an Excel file",
+            description = "Register new accounts by importing an Excel file. All required fields must be filled. A confirmation email will be sent after successful registration."
+    )
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> importAccounts(@RequestParam("file") MultipartFile file) {
-        try {
-            if (file.isEmpty()) {
-                return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "The file must not be empty.");
-            }
+        if (file.isEmpty()) {
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "The file must not be empty.");
+        }
 
-            List<String> errorMessages = new ArrayList<>();
+        List<String> errorMessages = new ArrayList<>();
+
+        try {
             List<AccountDTO> accounts = excelImportService.importAccountsFromExcel(file.getInputStream(), errorMessages);
 
+            if (!errorMessages.isEmpty() && !accounts.isEmpty()) {
+                return ResponseBuilder.responseBuilderWithData(
+                        HttpStatus.OK,
+                        "Some rows were imported successfully, but some failed.",
+                        Map.of("imported", accounts, "errors", errorMessages)
+                );
+            }
+
             if (!errorMessages.isEmpty()) {
-                return ResponseBuilder.responseBuilderWithData(HttpStatus.BAD_REQUEST, "Some rows failed to import.", errorMessages);
+                return ResponseBuilder.responseBuilderWithData(
+                        HttpStatus.BAD_REQUEST,
+                        "Import failed due to invalid data.",
+                        errorMessages
+                );
             }
 
-            if (accounts.isEmpty()) {
-                return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "No accounts were imported. Please check the file content.");
+            if (!accounts.isEmpty()) {
+                return ResponseBuilder.responseBuilderWithData(
+                        HttpStatus.OK,
+                        "Accounts imported successfully.",
+                        accounts
+                );
             }
 
-            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Accounts imported successfully.", accounts);
+            return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, "No accounts were imported. Please check the file content.");
 
         } catch (IOException e) {
             return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to process the uploaded file. Please check the file and try again.");
         } catch (IllegalArgumentException e) {
             return ResponseBuilder.responseBuilder(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
-            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred. Please try again.");
+            e.printStackTrace();
+            return ResponseBuilder.responseBuilder(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred: " + e.getMessage());
         }
     }
-
 
     @Operation(summary = "Register a new account by admin", description = "Perform to register a new account, all the information must be filled out and cannot be blank, once requested an email will be send")
     @ApiResponses(value = {@ApiResponse(responseCode = "202", description = "Successfully Registered", content = @Content(examples = @ExampleObject(value = """
@@ -213,4 +234,25 @@ public class AccountController {
         accountService.lockAccountByAdmin(accountId, lock);
         return ResponseBuilder.responseBuilder(HttpStatus.OK, "Account locked successfully.");
     }
+
+    @Operation(summary = "Get sample Excel template for player registration", description = "Returns a sample Excel row to show users how to register player accounts.")
+    @GetMapping("/landing/player-template")
+    public ResponseEntity<Object> getPlayerRegistrationTemplate() {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Sample registration template retrieved.",
+                accountService.getPlayerRegistrationTemplate()
+        );
+    }
+
+    @Operation(summary = "Get one organizer contact info", description = "Returns the first found organizer account as a contact person on the landing page.")
+    @GetMapping("/landing/organizer-contact")
+    public ResponseEntity<Object> getOrganizerContact() {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Organizer contact retrieved successfully.",
+                accountService.getOrganizerContactForLanding()
+        );
+    }
+
 }

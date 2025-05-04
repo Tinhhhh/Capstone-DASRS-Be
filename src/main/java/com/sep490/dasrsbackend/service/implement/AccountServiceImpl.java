@@ -33,7 +33,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -380,4 +382,34 @@ public class AccountServiceImpl implements AccountService {
         account.setLocked(lock);
         accountRepository.save(account);
     }
+
+    @Override
+    public Map<String, String> getPlayerRegistrationTemplate() {
+        Map<String, String> sample = new LinkedHashMap<>();
+        sample.put("Email", "sample.user@example.com");
+        sample.put("First Name", "Sample");
+        sample.put("Last Name", "User");
+        sample.put("Address", "123 Example Street");
+        sample.put("Gender", "Male");
+        sample.put("Date of Birth", "Year-Month-Day");
+        sample.put("Phone", "0123456789");
+        sample.put("StudentIdentifier", "SE1xxxxx");
+        sample.put("School", "FPT University");
+        return sample;
+    }
+
+    @Override
+    public AccountInfoResponse getOrganizerContactForLanding() {
+        Pageable limitOne = PageRequest.of(0, 1);
+        Page<Account> organizerAccounts = accountRepository.findAccountsByRole(RoleEnum.ORGANIZER.getRole(), limitOne);
+
+        if (organizerAccounts.isEmpty()) {
+            throw new DasrsException(HttpStatus.NOT_FOUND, "No organizer account found");
+        }
+
+        Account organizer = organizerAccounts.getContent().get(0);
+        return accountConverter.convertToAccountInfoResponse(organizer);
+    }
+
+
 }
