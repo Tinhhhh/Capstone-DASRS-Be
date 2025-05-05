@@ -522,6 +522,7 @@ public class RoundServiceImpl implements RoundService {
         }
 
         round.setEndDate(DateUtil.convertToDate(newEndDate));
+        round.setStatus(RoundStatus.ACTIVE);
         roundRepository.save(round);
     }
 
