@@ -481,8 +481,8 @@ public class RoundServiceImpl implements RoundService {
 
         Round round = roundRepository.findById(id).orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Round not found."));
 
-        if (round.getStatus() != RoundStatus.TERMINATED) {
-            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Round must be active to extend end date.");
+        if (round.getStatus() == RoundStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails. Terminated round cannot be extended.");
         }
 
         LocalDateTime oldEndDate = DateUtil.convertToLocalDateTime(round.getEndDate());
