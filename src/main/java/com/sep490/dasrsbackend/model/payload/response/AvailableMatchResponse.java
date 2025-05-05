@@ -8,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,25 +15,19 @@ import java.util.UUID;
 @NoArgsConstructor
 public class AvailableMatchResponse {
 
+    List<TeamTournamentResponse> teams;
     @JsonProperty("match_id")
     private Long id;
-
     @JsonProperty("match_name")
     private String matchName;
-
     @JsonProperty("match_code")
     private String matchCode;
-
     @JsonProperty("time_start")
     private String timeStart;
-
     @JsonProperty("time_end")
     private String timeEnd;
-
     @JsonProperty("status")
     private MatchStatus status;
-
-    List<TeamTournamentResponse> teams;
 
 
 }

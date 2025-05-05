@@ -1,11 +1,11 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
-import com.sep490.dasrsbackend.model.entity.Complaint;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
-import com.sep490.dasrsbackend.model.payload.request.*;
-import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
+import com.sep490.dasrsbackend.model.payload.request.ComplaintReplyRequest;
+import com.sep490.dasrsbackend.model.payload.request.ComplaintRequest;
+import com.sep490.dasrsbackend.model.payload.request.ComplaintUpdateRequest;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
 import com.sep490.dasrsbackend.model.payload.response.PaginatedComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.RoundComplaintResponse;
@@ -15,11 +15,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/complaints")
@@ -192,7 +190,7 @@ public class ComplaintController {
             @RequestParam(name = "sortDirection", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDirection,
             @RequestParam(name = "status", required = false) ComplaintStatus status
     ) {
-            PaginatedComplaintResponse response = complaintService.getComplaintsByRoundId(roundId, status, pageNo, pageSize, sortBy, sortDirection);
-            return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints retrieved successfully.", response);
-        }
+        PaginatedComplaintResponse response = complaintService.getComplaintsByRoundId(roundId, status, pageNo, pageSize, sortBy, sortDirection);
+        return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Complaints retrieved successfully.", response);
+    }
 }

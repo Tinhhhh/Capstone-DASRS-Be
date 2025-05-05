@@ -1,8 +1,6 @@
 package com.sep490.dasrsbackend.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.TeamStatus;
 import com.sep490.dasrsbackend.model.enums.TournamentStatus;
 import jakarta.persistence.*;
 import lombok.*;

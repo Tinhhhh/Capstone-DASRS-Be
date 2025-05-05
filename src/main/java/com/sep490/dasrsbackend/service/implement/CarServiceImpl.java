@@ -8,7 +8,10 @@ import com.sep490.dasrsbackend.model.payload.request.EditCar;
 import com.sep490.dasrsbackend.model.payload.request.NewCar;
 import com.sep490.dasrsbackend.model.payload.response.CarResponse;
 import com.sep490.dasrsbackend.model.payload.response.ListCarResponse;
-import com.sep490.dasrsbackend.repository.*;
+import com.sep490.dasrsbackend.repository.AccountRepository;
+import com.sep490.dasrsbackend.repository.CarRepository;
+import com.sep490.dasrsbackend.repository.TeamRepository;
+import com.sep490.dasrsbackend.repository.TournamentRepository;
 import com.sep490.dasrsbackend.service.CarService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -30,7 +33,6 @@ public class CarServiceImpl implements CarService {
 
     private final CarRepository carRepository;
     private final ModelMapper modelMapper;
-    private final AccountCarRepository accountCarRepository;
     private final TournamentRepository tournamentRepository;
     private final TeamRepository teamRepository;
     private final AccountRepository accountRepository;

@@ -1,12 +1,10 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.Date;
 import java.util.UUID;
 
 @Data

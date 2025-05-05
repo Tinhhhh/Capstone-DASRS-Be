@@ -17,28 +17,23 @@ import java.util.Date;
 @EntityListeners(AuditingEntityListener.class)
 public class TournamentTeam {
 
+    @ManyToOne
+    @JoinColumn(name = "team_Id")
+    Team team;
+    @ManyToOne
+    @JoinColumn(name = "tournament_id")
+    Tournament tournament;
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    Account account;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "tournament_team_id")
     private Long id;
-
     @CreatedDate
     @Column(name = "created_date", nullable = false, updatable = false)
     private Date createdDate;
-
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
-
-    @ManyToOne
-    @JoinColumn(name = "team_Id")
-    Team team;
-
-    @ManyToOne
-    @JoinColumn(name = "tournament_id")
-    Tournament tournament;
-
-    @ManyToOne
-    @JoinColumn(name = "account_id")
-    Account account;
 
 }

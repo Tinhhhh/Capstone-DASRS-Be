@@ -1,7 +1,6 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sep490.dasrsbackend.model.enums.MapStatus;
 import com.sep490.dasrsbackend.model.enums.ResourceType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

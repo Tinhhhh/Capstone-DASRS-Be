@@ -1,15 +1,14 @@
 package com.sep490.dasrsbackend.service;
 
-import com.sep490.dasrsbackend.model.entity.Complaint;
 import com.sep490.dasrsbackend.model.enums.ComplaintStatus;
-import com.sep490.dasrsbackend.model.payload.request.*;
-import com.sep490.dasrsbackend.model.payload.response.ComplaintResponse;
+import com.sep490.dasrsbackend.model.payload.request.ComplaintReplyRequest;
+import com.sep490.dasrsbackend.model.payload.request.ComplaintRequest;
+import com.sep490.dasrsbackend.model.payload.request.ComplaintUpdateRequest;
 import com.sep490.dasrsbackend.model.payload.response.ComplaintResponseDetails;
 import com.sep490.dasrsbackend.model.payload.response.PaginatedComplaintResponse;
 import com.sep490.dasrsbackend.model.payload.response.RoundComplaintResponse;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface ComplaintService {
 //    Complaint reviewRecord(Long reviewId, String reply, ComplaintStatus status);

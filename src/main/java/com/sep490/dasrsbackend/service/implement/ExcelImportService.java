@@ -2,11 +2,12 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.converter.AccountConverter;
 import com.sep490.dasrsbackend.dto.AccountDTO;
-import com.sep490.dasrsbackend.model.entity.*;
+import com.sep490.dasrsbackend.model.entity.Account;
+import com.sep490.dasrsbackend.model.entity.Role;
+import com.sep490.dasrsbackend.model.entity.Team;
+import com.sep490.dasrsbackend.model.entity.Tournament;
 import com.sep490.dasrsbackend.model.enums.RoleEnum;
 import com.sep490.dasrsbackend.model.enums.TeamStatus;
-import com.sep490.dasrsbackend.model.enums.TournamentStatus;
-import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.EmailService;
 import jakarta.mail.MessagingException;
@@ -15,14 +16,11 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -31,6 +29,14 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class ExcelImportService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ExcelImportService.class);
+    private static final int FIRST_NAME_MAX_LENGTH = 50;
+    private static final String NAME_PATTERN_REGEX = "^[^0-9]*$";
+    private static final String NAME_PATTERN_MESSAGE = "must not contain numbers";
+    private static final int LAST_NAME_MAX_LENGTH = 50;
+    private static final int ADDRESS_MAX_LENGTH = 100;
+    private static final String PHONE_PATTERN_REGEX = "(84|0[3|5|7|8|9])([0-9]{8})\\b";
+    private static final String PHONE_PATTERN_MESSAGE = "Please enter a valid(+84) phone number";
     private final TeamRepository teamRepository;
     private final AccountRepository accountRepository;
     private final AccountConverter accountConverter;
@@ -39,17 +45,6 @@ public class ExcelImportService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final CarRepository carRepository;
-    private final AccountCarRepository accountCarRepository;
-
-    private static final Logger logger = LoggerFactory.getLogger(ExcelImportService.class);
-
-    private static final int FIRST_NAME_MAX_LENGTH = 50;
-    private static final String NAME_PATTERN_REGEX = "^[^0-9]*$";
-    private static final String NAME_PATTERN_MESSAGE = "must not contain numbers";
-    private static final int LAST_NAME_MAX_LENGTH = 50;
-    private static final int ADDRESS_MAX_LENGTH = 100;
-    private static final String PHONE_PATTERN_REGEX = "(84|0[3|5|7|8|9])([0-9]{8})\\b";
-    private static final String PHONE_PATTERN_MESSAGE = "Please enter a valid(+84) phone number";
 
     public List<AccountDTO> importAccountsFromExcel(InputStream inputStream, List<String> errorMessages) throws IOException {
         List<AccountDTO> accountDTOs = new ArrayList<>();
@@ -351,6 +346,7 @@ public class ExcelImportService {
         }
         return password.toString();
     }
+
     private boolean isRowEmpty(Row row) {
         if (row == null) {
             return true;

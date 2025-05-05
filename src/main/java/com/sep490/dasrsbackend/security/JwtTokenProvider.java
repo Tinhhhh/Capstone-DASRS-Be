@@ -31,17 +31,14 @@ public class JwtTokenProvider {
 
     private final AccountRepository accountRepository;
     private final RefreshTokenRepository refreshTokenRepository;
-    @Value("${app.jwt.secret-key}")
-    private String jwtSecret;
-
-    @Value("${app.jwt-access-expiration-milliseconds}")
-    private long jwtAccessExpiration;
-
-    @Value("${app.jwt-refresh-expiration-milliseconds}")
-    private long jwtRefreshExpiration;
-
     private final AccessTokenRepository accessTokenRepository;
     private final Logger logger = org.slf4j.LoggerFactory.getLogger(JwtTokenProvider.class);
+    @Value("${app.jwt.secret-key}")
+    private String jwtSecret;
+    @Value("${app.jwt-access-expiration-milliseconds}")
+    private long jwtAccessExpiration;
+    @Value("${app.jwt-refresh-expiration-milliseconds}")
+    private long jwtRefreshExpiration;
 
     private Key key() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));

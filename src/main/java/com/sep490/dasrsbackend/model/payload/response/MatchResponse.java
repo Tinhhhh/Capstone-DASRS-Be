@@ -6,7 +6,6 @@ import com.sep490.dasrsbackend.model.enums.MatchStatus;
 import lombok.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Setter

@@ -55,9 +55,6 @@ public class Match {
     @OneToMany(mappedBy = "match")
     private List<MatchTeam> matchTeamList;
 
-    @OneToMany(mappedBy = "match")
-    private List<Record> recordList;
-
     @ManyToOne
     @JoinColumn(name = "round_id", nullable = false)
     private Round round;

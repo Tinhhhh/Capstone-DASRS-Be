@@ -1,6 +1,5 @@
 package com.sep490.dasrsbackend.service;
 
-import com.sep490.dasrsbackend.model.entity.Tournament;
 import com.sep490.dasrsbackend.model.enums.TournamentSort;
 import com.sep490.dasrsbackend.model.enums.TournamentStatusFilter;
 import com.sep490.dasrsbackend.model.payload.request.EditTournament;

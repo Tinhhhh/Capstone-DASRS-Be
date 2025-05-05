@@ -2,19 +2,12 @@ package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.model.payload.response.TeamMemberResponse;
-import com.sep490.dasrsbackend.service.MatchService;
-import com.sep490.dasrsbackend.service.TeamService;
 import com.sep490.dasrsbackend.model.payload.response.TeamResponse;
 import com.sep490.dasrsbackend.service.TeamService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,6 +36,7 @@ public class TeamController {
                 "Member successfully removed from the team"
         );
     }
+
     @PutMapping("/unlock-members")
     public ResponseEntity<Object> unlockMember(@RequestParam Long teamId, @RequestParam Long memberId) {
         teamService.unlockMember(teamId, memberId);

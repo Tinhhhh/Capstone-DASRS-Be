@@ -2,11 +2,7 @@ package com.sep490.dasrsbackend;
 
 import com.sep490.dasrsbackend.config.FirebaseConfig;
 import com.sep490.dasrsbackend.controller.FileController;
-import com.sep490.dasrsbackend.controller.LeaderboardController;
-import com.sep490.dasrsbackend.model.entity.Leaderboard;
 import com.sep490.dasrsbackend.service.FirebaseStorageService;
-import com.sep490.dasrsbackend.service.LeaderboardService;
-import com.sep490.dasrsbackend.service.implement.LeaderboardServiceImpl;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
@@ -17,7 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
 @ComponentScan(
-        basePackages = { "com.sep490.dasrsbackend" },
+        basePackages = {"com.sep490.dasrsbackend"},
         excludeFilters = {
                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = FirebaseStorageService.class),
                 @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, value = FirebaseConfig.class),

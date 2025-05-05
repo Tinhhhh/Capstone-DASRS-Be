@@ -29,7 +29,7 @@ public class Round {
     @Column(name = "round_name", nullable = false)
     private String roundName;
 
-    @Column(name = "round_duration",    nullable = false)
+    @Column(name = "round_duration", nullable = false)
     private int roundDuration;
 
     @Column(name = "lap_number", nullable = false)
