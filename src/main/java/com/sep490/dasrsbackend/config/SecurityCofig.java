@@ -106,7 +106,7 @@ public class SecurityCofig {
                                         "/api/v1/complaints/match/*",
                                         "/api/v1/complaints/round/{roundId}/status/{status}").hasAnyAuthority("PLAYER", "ORGANIZER")
                                 //resource
-                                .requestMatchers("/api/v1/resources/map").permitAll()
+                                .requestMatchers("/api/v1/resources/map").hasAnyAuthority("PLAYER", "ORGANIZER")
                                 .requestMatchers("/api/v1/resources/map/round/{roundId}").hasAnyAuthority("PLAYER", "ORGANIZER", "ADMIN")
                                 .requestMatchers(HttpMethod.GET, "/api/v1/resources/admin").hasAnyAuthority("ORGANIZER", "ADMIN")
                                 .requestMatchers(HttpMethod.GET, "/api/v1/resources/{resourceId}").permitAll()
