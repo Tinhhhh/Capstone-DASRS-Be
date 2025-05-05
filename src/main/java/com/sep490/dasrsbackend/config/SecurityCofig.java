@@ -112,7 +112,7 @@ public class SecurityCofig {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/resources/{resourceId}").permitAll()
                                 .requestMatchers(HttpMethod.PUT, "/api/v1/resources/{resourceId}", "/api/v1/resources/change-status/{resourceId}").hasAuthority("ADMIN")
                                 .requestMatchers(HttpMethod.POST, "/api/v1/resources").hasAuthority("ADMIN")
-                                .requestMatchers(HttpMethod.GET, "/api/v1/resources").hasAnyAuthority("ORGANIZER", "ADMIN")
+                                .requestMatchers(HttpMethod.GET, "/api/v1/resources").permitAll()
                                 //Match
                                 .requestMatchers("/api/v1/matches/available").hasAnyAuthority("ORGANIZER", "PLAYER")
                                 .requestMatchers("/api/v1/matches/assign/{matchId}",
