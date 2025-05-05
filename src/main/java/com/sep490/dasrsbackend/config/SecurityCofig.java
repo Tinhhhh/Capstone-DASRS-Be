@@ -128,7 +128,7 @@ public class SecurityCofig {
                                         "/api/v1/matches/score-details/{matchId}/{teamId}").hasAuthority("ORGANIZER")
                                 .requestMatchers("/api/v1/matches/score-data",
                                         "/api/v1/matches/car-data",
-                                        "/api/v1/matches/unity").permitAll()
+                                        "/api/v1/matches/unity").hasAuthority("PLAYER")
                                 //Team
                                 .requestMatchers(HttpMethod.GET, "/api/v1/teams/**").hasAnyAuthority("ORGANIZER", "PLAYER", "ADMIN")
                                 .requestMatchers("/api/v1/teams/**").hasAuthority("PLAYER")
@@ -150,8 +150,8 @@ public class SecurityCofig {
                                 .requestMatchers(HttpMethod.GET, "/api/v1/environments/**").permitAll()
                                 .requestMatchers("/api/v1/environments/**").hasAuthority("ADMIN")
                                 //Scored Method
-                                .requestMatchers(HttpMethod.GET, "/api/v1/scored-methods/{scoredMethodId}").permitAll()
-                                .requestMatchers("/api/v1/scored-methods/**").hasAuthority("ORGANIZER")
+                                .requestMatchers(HttpMethod.GET, "/api/v1/scored-methods/{scoredMethodId}").hasAnyAuthority("ORGANIZER", "PLAYER", "ADMIN")
+                                .requestMatchers("/api/v1/scored-methods/**").hasAnyAuthority("ORGANIZER", "PLAYER", "ADMIN")
                                 .anyRequest().authenticated()
                 )
                 .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
