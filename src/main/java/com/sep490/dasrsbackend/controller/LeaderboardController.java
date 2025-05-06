@@ -28,6 +28,21 @@ public class LeaderboardController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved all leaderboards", leaderboardService.getLeaderboardByRoundId(roundId, pageNo, pageSize, sortBy, sortDirection));
     }
 
+    @GetMapping("/rounds/{roundId}")
+    public ResponseEntity<Object> getLeaderboardsByRoundIdWithMatchDetails(
+            @RequestParam(name = "pageNo", defaultValue = "0", required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = "10", required = false) int pageSize,
+            @RequestParam(name = "sortBy", defaultValue = "ranking", required = false) String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "ASC", required = false) String sortDirection,
+            @PathVariable Long roundId
+    ) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Successfully retrieved leaderboard with match details for round",
+                leaderboardService.getLeaderboardWithMatchDetails(roundId, pageNo, pageSize, sortBy, sortDirection)
+        );
+    }
+
     @GetMapping("/tournament/{tournamentId}")
     public ResponseEntity<Object> getLeaderboardsByTournamentId(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
