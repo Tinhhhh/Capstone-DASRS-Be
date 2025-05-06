@@ -817,12 +817,18 @@ public class MatchServiceImpl implements MatchService {
             if (matchTeam.getAttempt() != 0) {
                 attemptedTeam.add(matchTeam.getId().toString());
             }
+
+            Match match = matchTeam.getMatch();
+
+            if (match.getMatchForm() == MatchForm.REMATCH){
+                throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, match with id " + match.getId() + " is alr rematch, cannot rematch again");
+            }
+
         }
 
         if (!attemptedTeam.isEmpty()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "These matchTeamId had already been rematch once: " + String.join(", ", attemptedTeam));
         }
-
 
         roundUtilityService.generateRematch(matchTeams);
         for (MatchTeam matchTeam : matchTeams) {
