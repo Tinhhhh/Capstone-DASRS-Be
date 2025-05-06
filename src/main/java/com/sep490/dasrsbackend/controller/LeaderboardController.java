@@ -29,7 +29,7 @@ public class LeaderboardController {
     }
 
     @GetMapping("/rounds/{roundId}")
-    public ResponseEntity<Object> getLeaderboardsByRoundIdWithMatchDetails(
+    public ResponseEntity<Object> getLeaderboardWithTeamInfoByRoundId(
             @RequestParam(name = "pageNo", defaultValue = "0", required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = "10", required = false) int pageSize,
             @RequestParam(name = "sortBy", defaultValue = "ranking", required = false) String sortBy,
@@ -39,7 +39,7 @@ public class LeaderboardController {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK,
                 "Successfully retrieved leaderboard with match details for round",
-                leaderboardService.getLeaderboardWithMatchDetails(roundId, pageNo, pageSize, sortBy, sortDirection)
+                leaderboardService.getLeaderboardWithTeamInfoByRoundId(roundId, pageNo, pageSize, sortBy, sortDirection)
         );
     }
 

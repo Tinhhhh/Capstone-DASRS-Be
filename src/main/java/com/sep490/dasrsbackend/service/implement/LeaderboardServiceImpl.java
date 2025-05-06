@@ -360,106 +360,63 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     }
 
     @Override
-    public LeaderboardWithMatchDetailsResponse getLeaderboardWithMatchDetails(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir) {
+    public LeaderboardWithTeamInfoResponse getLeaderboardWithTeamInfoByRoundId(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir) {
 
-        // Fetch the round details
         Round round = roundRepository.findById(roundId).orElseThrow(
                 () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round not found")
         );
 
-        // Initialize the response list for leaderboard with match details
-        List<LeaderboardWithMatchDetails> leaderboardWithMatchDetailsList = new ArrayList<>();
+        if (round.getStatus() == RoundStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round is terminated");
+        }
 
-        // Fetch leaderboard data for the round with pagination
         Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
-        Page<Leaderboard> leaderboards = leaderboardRepository.findByRoundId(roundId, pageable);
+        Page<Leaderboard> leaderboards = leaderboardRepository.findByRoundId(round.getId(), pageable);
 
         if (leaderboards.isEmpty()) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Leaderboard not found, please check if the round is valid");
         }
 
-        // Map leaderboard data and match details for each leaderboard entry
-        for (Leaderboard leaderboard : leaderboards) {
-            LeaderboardWithMatchDetails details = new LeaderboardWithMatchDetails();
-            details.setLeaderboardId(leaderboard.getId());
-            details.setRanking(leaderboard.getRanking());
-            details.setTeamScore(leaderboard.getTeamScore());
-            details.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
-            details.setTeamId(leaderboard.getTeam().getId());
-            details.setTeamName(leaderboard.getTeam().getTeamName());
-            details.setTeamTag(leaderboard.getTeam().getTeamTag());
+        List<LeaderboardDataWithTeamInfo> leaderboardData = leaderboards.stream()
+                .map(leaderboard -> {
+                    LeaderboardDataWithTeamInfo data = new LeaderboardDataWithTeamInfo();
+                    data.setId(leaderboard.getId());
+                    data.setRanking(leaderboard.getRanking());
+                    data.setTeamScore(leaderboard.getTeamScore());
+                    data.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
 
-            // Fetch the matches for this round
-            List<Match> matches = round.getMatchList();  // We use the matchList from the Round entity
-            List<MatchDetails> matchDetailsList = new ArrayList<>();
+                    Team team = leaderboard.getTeam();
+                    data.setTeamId(team.getId());
+                    data.setTeamName(team.getTeamName());
+                    data.setTeamTag(team.getTeamTag());
 
-            // Loop through matches and populate match details
-            for (Match match : matches) {
-                if (match.getRound().getId().equals(roundId)) {
-                    MatchDetails matchDetails = new MatchDetails();
-                    matchDetails.setMatchId(match.getId());
-                    matchDetails.setMatchName(match.getMatchName());
-                    matchDetails.setDescription(match.getMatchCode());  // Assuming the match code as a description
-                    matchDetails.setFinishType(match.getMatchForm().toString()); // Using match form as finish type
+                    Round r = leaderboard.getRound();
+                    data.setRoundId(r.getId());
+                    data.setRoundName(r.getRoundName());
 
-                    // Handle Fastest Lap Time & Top Speed logic
-                    if (match.getMatchTeamList() != null) {
-                        for (MatchTeam matchTeam : match.getMatchTeamList()) {
-                            if (matchTeam.getScoreAttribute() != null) {
-                                if (matchDetails.getFastestLapTime() == null || matchTeam.getScoreAttribute().getFastestLapTime() < matchDetails.getFastestLapTime().getFastestLapTime()) {
-                                    matchDetails.setFastestLapTime(new FastestLapTimeTeam(
-                                            matchTeam.getScoreAttribute().getFastestLapTime(),
-                                            matchTeam.getTeam().getId(),
-                                            matchTeam.getTeam().getTeamName(),
-                                            matchTeam.getTeam().getTeamTag(),
-                                            matchTeam.getAccount().getAccountId(),
-                                            matchTeam.getAccount().fullName()
-                                    ));
-                                }
-                                if (matchDetails.getTopSpeed() == null || matchTeam.getScoreAttribute().getTopSpeed() > matchDetails.getTopSpeed().getTopSpeed()) {
-                                    matchDetails.setTopSpeed(new TopSpeedTeam(
-                                            matchTeam.getScoreAttribute().getTopSpeed(),
-                                            matchTeam.getTeam().getId(),
-                                            matchTeam.getTeam().getTeamName(),
-                                            matchTeam.getTeam().getTeamTag(),
-                                            matchTeam.getAccount().getAccountId(),
-                                            matchTeam.getAccount().fullName()
-                                    ));
-                                }
-                            }
-                        }
-                    }
+                    Tournament t = r.getTournament();
+                    data.setTournamentId(t.getId());
+                    data.setTournamentName(t.getTournamentName());
 
-                    matchDetailsList.add(matchDetails);
-                }
-            }
+                    return data;
+                })
+                .toList();
 
-            // Set the matches in the leaderboard details object
-            details.setMatches(matchDetailsList);
-            leaderboardWithMatchDetailsList.add(details);
-        }
+        Result result = getFastestLapTimeAndTopSpeed(round);
 
-        // Paginate the response content
-        Pageable sortedPageable = getPageable(pageNo, pageSize, sortBy, sortDir);
-        int start = (int) sortedPageable.getOffset();
-        int end = Math.min((start + sortedPageable.getPageSize()), leaderboardWithMatchDetailsList.size());
-        List<LeaderboardWithMatchDetails> pagedList = leaderboardWithMatchDetailsList.subList(start, end);
-
-        // Create a Page from the paged list
-        Page<LeaderboardWithMatchDetails> leaderboardPage = new PageImpl<>(pagedList, sortedPageable, leaderboardWithMatchDetailsList.size());
-
-        // Set response properties
-        LeaderboardWithMatchDetailsResponse response = new LeaderboardWithMatchDetailsResponse();
-        response.setRoundId(roundId);
-        response.setRoundName(round.getRoundName());
-        response.setContent(leaderboardPage.getContent());
-        response.setPageNo(leaderboardPage.getNumber());
-        response.setPageSize(leaderboardPage.getSize());
-        response.setTotalElements(leaderboardPage.getTotalElements());
-        response.setTotalPages(leaderboardPage.getTotalPages());
-        response.setLast(leaderboardPage.isLast());
-
-        return response;
+        return new LeaderboardWithTeamInfoResponse(
+                round.getId(),
+                round.getRoundName(),
+                round.getFinishType(),
+                result.fastestLapTime(),
+                result.topSpeed(),
+                leaderboardData,
+                leaderboards.getNumber(),
+                leaderboards.getSize(),
+                leaderboards.getTotalElements(),
+                leaderboards.getTotalPages(),
+                leaderboards.isLast()
+        );
     }
 
 }

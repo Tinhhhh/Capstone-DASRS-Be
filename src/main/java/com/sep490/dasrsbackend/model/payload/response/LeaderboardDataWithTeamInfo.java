@@ -1,0 +1,44 @@
+package com.sep490.dasrsbackend.model.payload.response;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.*;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class LeaderboardDataWithTeamInfo {
+
+    @JsonProperty("leaderboard_id")
+    private Long id;
+
+    @JsonProperty("ranking")
+    private int ranking;
+
+    @JsonProperty("team_score")
+    private double teamScore;
+
+    @JsonProperty("created_date")
+    private String createdDate;
+
+    @JsonProperty("team_id")
+    private Long teamId;
+
+    @JsonProperty("team_name")
+    private String teamName;
+
+    @JsonProperty("team_tag")
+    private String teamTag;
+
+    @JsonProperty("round_id")
+    private Long roundId;
+
+    @JsonProperty("round_name")
+    private String roundName;
+
+    @JsonProperty("tournament_id")
+    private Long tournamentId;
+
+    @JsonProperty("tournament_name")
+    private String tournamentName;
+}
