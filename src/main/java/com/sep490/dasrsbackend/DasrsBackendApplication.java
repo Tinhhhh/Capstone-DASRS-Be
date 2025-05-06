@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.TimeZone;
+
 @SpringBootApplication
 @ComponentScan(
         basePackages = {"com.sep490.dasrsbackend"},
@@ -26,6 +28,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class DasrsBackendApplication {
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         SpringApplication.run(DasrsBackendApplication.class, args);
     }
 
