@@ -3,7 +3,6 @@ package com.sep490.dasrsbackend.controller;
 import com.sep490.dasrsbackend.Util.AppConstants;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.service.LeaderboardService;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,7 +39,7 @@ public class LeaderboardController {
         return ResponseBuilder.responseBuilderWithData(
                 HttpStatus.OK,
                 "Successfully retrieved leaderboard with match details for round",
-                leaderboardService.getLeaderboardWithMatchDetails(roundId, pageNo, pageSize, sortBy, sortDirection)
+                leaderboardService.getLeaderboardWithTeamInfoByRoundId(roundId, pageNo, pageSize, sortBy, sortDirection)
         );
     }
 

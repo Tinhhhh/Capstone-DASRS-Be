@@ -13,7 +13,7 @@ public interface LeaderboardService {
 
     LeaderboardResponseForTournament getLeaderboardByTournamentId(Long tournamentId, int pageNo, int pageSize, String sortBy, String sortDir);
 
-    LeaderboardWithMatchDetailsResponse getLeaderboardWithMatchDetails(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir);
+    LeaderboardWithTeamInfoResponse getLeaderboardWithTeamInfoByRoundId(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir);
 
     LeaderboardForAll getLeaderboardForAllByRoundId(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir);
 }

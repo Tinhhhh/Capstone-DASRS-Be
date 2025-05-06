@@ -1,16 +1,13 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class LeaderboardData {
+public class LeaderboardDataWithTeamInfo {
 
     @JsonProperty("leaderboard_id")
     private Long id;
@@ -27,6 +24,12 @@ public class LeaderboardData {
     @JsonProperty("team_id")
     private Long teamId;
 
+    @JsonProperty("team_name")
+    private String teamName;
+
+    @JsonProperty("team_tag")
+    private String teamTag;
+
     @JsonProperty("round_id")
     private Long roundId;
 
@@ -38,10 +41,4 @@ public class LeaderboardData {
 
     @JsonProperty("tournament_name")
     private String tournamentName;
-
-    @JsonProperty("team_name")
-    private String teamName;
-
-    @JsonProperty("team_tag")
-    private String teamTag;
 }
