@@ -475,7 +475,7 @@ public class RoundServiceImpl implements RoundService {
     }
 
     @Override
-    public void extendRoundEndDate(Long id, LocalDateTime newEndDate) {
+        public void extendRoundEndDate(Long id, LocalDateTime newEndDate) {
 
         newEndDate = DateUtil.convertToLocalDateTime(DateUtil.convertToEndOfTheDay(DateUtil.convertToDate(newEndDate)));
 

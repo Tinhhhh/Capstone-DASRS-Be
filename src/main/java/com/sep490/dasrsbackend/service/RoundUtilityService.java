@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -41,8 +42,9 @@ public class RoundUtilityService {
         for (Round round : roundList) {
             //Kiểm tra xem có match nào đã khởi động không
             //Kiểm tra getTimeStart before new Date() => match đã khởi động
+            Date localDate = DateUtil.convertUtcToIctDate(Instant.now());
             List<Match> mathList = matchRepository.findByRoundId(round.getId()).stream()
-                    .filter(match -> match.getTimeStart().before(new Date())).toList();
+                    .filter(match -> match.getTimeStart().before(localDate)).toList();
             if (!mathList.isEmpty()) {
                 return true;
             }
@@ -51,8 +53,9 @@ public class RoundUtilityService {
     }
 
     public boolean isMatchStartedForRound(Long roundId) {
+        Date localDate = new Date();
         List<Match> mathList = matchRepository.findByRoundId(roundId).stream()
-                .filter(match -> match.getTimeStart().before(new Date())).toList();
+                .filter(match -> match.getTimeStart().before(localDate)).toList();
         if (!mathList.isEmpty()) {
             return true;
         }
