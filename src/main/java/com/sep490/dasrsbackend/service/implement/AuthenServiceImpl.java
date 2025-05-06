@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.service.implement;
 
+import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.AccessToken;
 import com.sep490.dasrsbackend.model.entity.Account;
 import com.sep490.dasrsbackend.model.entity.PasswordResetToken;
@@ -38,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
@@ -275,6 +277,9 @@ public class AuthenServiceImpl implements AuthenService {
 
     @Scheduled(cron = "1 * * * * ?")
     public void revokedExpiredPasswordResetTokens() {
+
+        logger.info("Time: " + DateUtil.convertUtcToIctDate(Instant.now()));
+
         logger.info("Detecting mark expired password reset tokens task started");
         List<PasswordResetToken> expiredTokens = resetPasswordTokenRepository.findAllByExpiredBefore(LocalDateTime.now());
         logger.info("Found {} expired password reset tokens", expiredTokens.size());
