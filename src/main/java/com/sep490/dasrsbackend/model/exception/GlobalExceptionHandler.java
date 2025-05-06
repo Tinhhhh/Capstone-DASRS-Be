@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
                 .body(
                         ExceptionResponse.builder()
                                 .httpStatus(HttpStatus.UNAUTHORIZED.value())
-                                .timestamp(DateUtil.formatTimestamp(DateUtil.convertUtcToIctDate(Instant.now()), DateUtil.DATE_TIME_FORMAT))
+                                .timestamp(DateUtil.formatTimestamp(new Date(), DateUtil.DATE_TIME_FORMAT))
                                 .message("Authentication failed. Please check your credentials.")
                                 .error(exception.getMessage())
                                 .build()
