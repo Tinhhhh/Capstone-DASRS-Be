@@ -151,7 +151,10 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         List<LeaderboardData> leaderboardData = leaderboards.stream()
                 .map(leaderboard -> {
                     LeaderboardData lbr = modelMapper.map(leaderboard, LeaderboardData.class);
+                    Team team = leaderboard.getTeam();
                     lbr.setTeamId(leaderboard.getTeam().getId());
+                    lbr.setTeamName(team.getTeamName());
+                    lbr.setTeamTag(team.getTeamTag());
                     lbr.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
                     return lbr;
                 })

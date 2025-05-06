@@ -38,4 +38,10 @@ public class LeaderboardData {
 
     @JsonProperty("tournament_name")
     private String tournamentName;
+
+    @JsonProperty("team_name")
+    private String teamName;
+
+    @JsonProperty("team_tag")
+    private String teamTag;
 }
