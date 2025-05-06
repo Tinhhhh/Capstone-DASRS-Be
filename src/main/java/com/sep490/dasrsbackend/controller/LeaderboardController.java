@@ -17,7 +17,7 @@ public class LeaderboardController {
 
     private final LeaderboardService leaderboardService;
 
-    @GetMapping("/round/{roundId}")
+    @GetMapping("/round/v1/{roundId}")
     public ResponseEntity<Object> getLeaderboardsByRoundId(
             @RequestParam(name = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
@@ -28,8 +28,8 @@ public class LeaderboardController {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved all leaderboards", leaderboardService.getLeaderboardByRoundId(roundId, pageNo, pageSize, sortBy, sortDirection));
     }
 
-    @GetMapping("/rounds/{roundId}")
-    public ResponseEntity<Object> getLeaderboardWithTeamInfoByRoundId(
+    @GetMapping("/round/v2/{roundId}")
+    public ResponseEntity<Object> getLeaderboardsByRoundIdWithMatchDetails(
             @RequestParam(name = "pageNo", defaultValue = "0", required = false) int pageNo,
             @RequestParam(name = "pageSize", defaultValue = "10", required = false) int pageSize,
             @RequestParam(name = "sortBy", defaultValue = "ranking", required = false) String sortBy,
@@ -40,6 +40,22 @@ public class LeaderboardController {
                 HttpStatus.OK,
                 "Successfully retrieved leaderboard with match details for round",
                 leaderboardService.getLeaderboardWithTeamInfoByRoundId(roundId, pageNo, pageSize, sortBy, sortDirection)
+        );
+    }
+
+    @Operation(summary = "Get leaderboard for all teams in a round", description = "Get leaderboard for all teams in a round")
+    @GetMapping("/round/v3/{roundId}")
+    public ResponseEntity<Object> getLeaderboardsByRoundIdForAll(
+            @RequestParam(name = "pageNo", defaultValue = "0", required = false) int pageNo,
+            @RequestParam(name = "pageSize", defaultValue = "10", required = false) int pageSize,
+            @RequestParam(name = "sortBy", defaultValue = "ranking", required = false) String sortBy,
+            @RequestParam(name = "sortDirection", defaultValue = "ASC", required = false) String sortDirection,
+            @PathVariable Long roundId
+    ) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK,
+                "Successfully retrieved leaderboard with match details for round",
+                leaderboardService.getLeaderboardForAllByRoundId(roundId, pageNo, pageSize, sortBy, sortDirection)
         );
     }
 
