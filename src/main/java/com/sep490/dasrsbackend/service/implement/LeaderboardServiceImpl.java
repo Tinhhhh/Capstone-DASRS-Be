@@ -462,4 +462,90 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         return response;
     }
 
+    @Override
+    public LeaderboardForAll getLeaderboardForAllByRoundId(Long roundId, int pageNo, int pageSize, String sortBy, String sortDir) {
+
+        Round round = roundRepository.findById(roundId).orElseThrow(
+                () -> new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round not found")
+        );
+
+        if (round.getStatus() == RoundStatus.TERMINATED) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Request fails, round is terminated");
+        }
+
+        Pageable pageable = getPageable(pageNo, pageSize, sortBy, sortDir);
+        Page<Leaderboard> leaderboards = leaderboardRepository.findByRoundId(round.getId(), pageable);
+
+        if (leaderboards.isEmpty()) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "Leaderboard not found, please check if the round is valid");
+        }
+
+        LeaderboardForAll leaderboardList = new LeaderboardForAll();
+
+        List<LeaderboardChildForAll> leaderboardData = leaderboards.stream()
+                .map(leaderboard -> {
+                    LeaderboardChildForAll lbr = modelMapper.map(leaderboard, LeaderboardChildForAll.class);
+                    lbr.setTeamId(leaderboard.getTeam().getId());
+                    lbr.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
+
+                    List<Match> matches = matchRepository.findByRoundId(round.getId());
+                    List<MatchResponseForLeaderboard> matchResponseForLeaderboards = new ArrayList<>();
+                    if (!matches.isEmpty()){
+                        for (Match match : matches) {
+                            MatchResponseForLeaderboard matchDetails = new MatchResponseForLeaderboard();
+                            List<MatchTeam> matchTeams = matchTeamRepository.findByTeamIdAndMatchId(leaderboard.getTeam().getId(), match.getId());
+                            double matchScore = 0.0;
+                            List<PlayerResponseForLeaderboard> players = new ArrayList<>();
+                            if (!matchTeams.isEmpty()){
+                                PlayerResponseForLeaderboard player = new PlayerResponseForLeaderboard();
+                                for (MatchTeam matchTeam : matchTeams) {
+
+                                    if (matchTeam.getAccount() == null) {
+                                        player.setPlayerId(null);
+                                        player.setPlayerName(null);
+                                    } else {
+                                        player.setPlayerId(matchTeam.getAccount().getAccountId());
+                                        player.setPlayerName(matchTeam.getAccount().fullName());
+                                    }
+
+                                    player.setScore(matchTeam.getScore());
+                                    matchScore+= matchTeam.getScore();
+                                    players.add(player);
+                                }
+                            }
+
+                            matchDetails.setMatchId(match.getId());
+                            matchDetails.setMatchName(match.getMatchName());
+                            matchDetails.setMatchType(match.getRound().getMatchType().getMatchTypeName());
+                            matchDetails.setMatchForm(match.getMatchForm());
+                            matchDetails.setMatchScore(matchScore);
+                            matchDetails.setPlayerList(players);
+                            matchResponseForLeaderboards.add(matchDetails);
+                        }
+                    }
+
+                    lbr.setMatchList(matchResponseForLeaderboards);
+                    return lbr;
+                })
+                .toList();
+
+        leaderboardList.setRoundId(round.getId());
+        leaderboardList.setRoundName(round.getRoundName());
+        leaderboardList.setFinishType(round.getFinishType());
+
+        leaderboardList.setContent(leaderboardData);
+        leaderboardList.setPageNo(leaderboards.getNumber());
+        leaderboardList.setPageSize(leaderboards.getSize());
+        leaderboardList.setTotalElements(leaderboards.getTotalElements());
+        leaderboardList.setTotalPages(leaderboards.getTotalPages());
+
+        Result result = getFastestLapTimeAndTopSpeed(round);
+
+        leaderboardList.setFastestLapTime(result.fastestLapTime());
+        leaderboardList.setTopSpeed(result.topSpeed());
+
+        return leaderboardList;
+
+    }
+
 }
