@@ -45,3 +45,4 @@ public class LeaderboardWithTeamInfoResponse {
     @JsonProperty("last")
     private boolean last;
 }
+
