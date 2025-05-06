@@ -4,6 +4,7 @@ import lombok.experimental.UtilityClass;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -67,6 +68,14 @@ public class DateUtil {
 
     public static Date convertToEndOfTheDay(Date endDate) {
         return DateUtil.convertToDate(DateUtil.convertToLocalDateTime(DateUtil.convertUTCtoICT(endDate)).withHour(23).withMinute(59).withSecond(59).withNano(99));
+    }
+
+    public static Date convertUtcToIctDate(Instant utcInstant) {
+        // Chuyển UTC -> ICT (GMT+7)
+        ZonedDateTime ictZoned = utcInstant.atZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+        // Từ ICT ZonedDateTime -> Instant -> Date
+        return Date.from(ictZoned.toInstant());
+
     }
 
 
