@@ -517,6 +517,11 @@ public class RoundServiceImpl implements RoundService {
                     if (nextRound.getStartDate().before(DateUtil.convertToDate(newEndDate))) {
                         throw new DasrsException(HttpStatus.BAD_REQUEST, "Round end date cannot change to the date after next round start date: " + DateUtil.formatTimestamp(nextRound.getStartDate()));
                     }
+
+                    if (roundUtilityService.isMatchStartedForRound(nextRound.getId())) {
+                        throw new DasrsException(HttpStatus.BAD_REQUEST, "Cannot extend round, there are matches in the next round that have started");
+                    }
+
                 }
             }
         }
