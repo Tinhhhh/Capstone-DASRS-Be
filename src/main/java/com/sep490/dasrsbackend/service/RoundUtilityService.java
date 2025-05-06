@@ -42,8 +42,9 @@ public class RoundUtilityService {
         for (Round round : roundList) {
             //Kiểm tra xem có match nào đã khởi động không
             //Kiểm tra getTimeStart before new Date() => match đã khởi động
+            Date localDate = DateUtil.convertUtcToIctDate(Instant.now());
             List<Match> mathList = matchRepository.findByRoundId(round.getId()).stream()
-                    .filter(match -> match.getTimeStart().before(new Date())).toList();
+                    .filter(match -> match.getTimeStart().before(localDate)).toList();
             if (!mathList.isEmpty()) {
                 return true;
             }
