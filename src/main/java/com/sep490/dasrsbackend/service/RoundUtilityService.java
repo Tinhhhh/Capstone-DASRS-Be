@@ -53,7 +53,7 @@ public class RoundUtilityService {
     }
 
     public boolean isMatchStartedForRound(Long roundId) {
-        Date localDate = DateUtil.convertUtcToIctDate(Instant.now());
+        Date localDate = new Date();
         List<Match> mathList = matchRepository.findByRoundId(roundId).stream()
                 .filter(match -> match.getTimeStart().before(localDate)).toList();
         if (!mathList.isEmpty()) {
