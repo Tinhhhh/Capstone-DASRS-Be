@@ -648,19 +648,12 @@ public class MatchServiceImpl implements MatchService {
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date date = calendar.getTime();
-        List<Tournament> tournaments = tournamentRepository.findByStatusAndStartDateBefore(TournamentStatus.ACTIVE, date);
 
-        if (!tournaments.isEmpty()) {
-            for (Tournament t : tournaments) {
-
-                List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(t.getId());
-                if (!rounds.isEmpty()) {
-                    for (Round r : rounds) {
                         //Tìm xem match nào đã kết thúc
-                        List<Match> matches = matchRepository.findByRoundId(r.getId());
+                        List<Match> matches = matchRepository.findByStatus(MatchStatus.PENDING);
                         for (Match match : matches) {
-                            if (match.getTimeEnd().before(DateUtil.convertToDate(LocalDateTime.now())) && match.getStatus() == MatchStatus.PENDING) {
-//                            if (match.getStatus() == MatchStatus.PENDING) {
+                            Round round = match.getRound();
+                            if (match.getTimeEnd().before(DateUtil.convertToDate(LocalDateTime.now()))) {
 
                                 List<MatchTeam> matchTeams = matchTeamRepository.findByMatchId(match.getId()).stream()
                                         .filter(matchTeam -> matchTeam.getStatus() != MatchTeamStatus.TERMINATED).toList();
@@ -677,7 +670,6 @@ public class MatchServiceImpl implements MatchService {
                                 logger.info("Match {} is still in progress", match.getId());
                             }
 
-
                             List<Team> teams = matchTeamRepository.findByMatchId(match.getId()).stream()
                                     .map(MatchTeam::getTeam)
                                     .filter(Objects::nonNull)
@@ -686,11 +678,11 @@ public class MatchServiceImpl implements MatchService {
 
                             for (Team team : teams) {
                                 //Kiểm tra xem team này đã có leaderboard chưa
-                                Optional<Leaderboard> lbOtp = leaderboardRepository.findByRoundIdAndTeamId(r.getId(), team.getId());
+                                Optional<Leaderboard> lbOtp = leaderboardRepository.findByRoundIdAndTeamId(round.getId(), team.getId());
                                 if (lbOtp.isEmpty()) {
                                     Leaderboard lb = new Leaderboard();
                                     lb.setTeam(team);
-                                    lb.setRound(r);
+                                    lb.setRound(round);
                                     lb.setTeamScore(0);
                                     lb.setRanking(0);
                                     leaderboardRepository.save(lb);
@@ -698,16 +690,9 @@ public class MatchServiceImpl implements MatchService {
                             }
 
                             //Cập nhật lại leaderboard
-                            leaderboardServiceImpl.updateLeaderboard(r.getId());
-                        }
-                    }
-                } else {
-                    logger.info("No active round found");
-                }
-            }
-        } else {
-            logger.info("No active tournament found");
+                            leaderboardServiceImpl.updateLeaderboard(round.getId());
         }
+
         logger.info("Detecting not finished match task finished at {}", LocalDateTime.now());
     }
 
