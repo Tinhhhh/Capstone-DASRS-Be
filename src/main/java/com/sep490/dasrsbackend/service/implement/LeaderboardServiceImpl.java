@@ -305,7 +305,6 @@ public class LeaderboardServiceImpl implements LeaderboardService {
 
             for (MatchTeam matchTeam : matchTeams) {
 
-                // hết Test thì cmt đoạn này lại
                 if (matchTeam.getScoreAttribute() == null) {
                     continue;
                 }
@@ -316,6 +315,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                     fastestLapTime.setTeamName(matchTeam.getTeam().getTeamName());
                     fastestLapTime.setTeamTag(matchTeam.getTeam().getTeamTag());
                     fastestLapTime.setAccountId(matchTeam.getAccount().getAccountId());
+                    fastestLapTime.setFullName(matchTeam.getAccount().fullName());
                     fastestLapTime.setFastestLapTime(fastestLapTimeValue);
                 }
 
@@ -325,6 +325,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                     topSpeed.setTeamName(matchTeam.getTeam().getTeamName());
                     topSpeed.setTeamTag(matchTeam.getTeam().getTeamTag());
                     topSpeed.setAccountId(matchTeam.getAccount().getAccountId());
+                    topSpeed.setFullName(matchTeam.getAccount().fullName());
                     topSpeed.setTopSpeed(topSpeedValue);
                 }
 
@@ -446,6 +447,8 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 .map(leaderboard -> {
                     LeaderboardChildForAll lbr = modelMapper.map(leaderboard, LeaderboardChildForAll.class);
                     lbr.setTeamId(leaderboard.getTeam().getId());
+                    lbr.setTeamName(leaderboard.getTeam().getTeamName());
+                    lbr.setTeamTag(leaderboard.getTeam().getTeamTag());
                     lbr.setCreatedDate(DateUtil.formatTimestamp(leaderboard.getCreatedDate()));
 
                     List<Match> matches = matchRepository.findByRoundId(round.getId());
