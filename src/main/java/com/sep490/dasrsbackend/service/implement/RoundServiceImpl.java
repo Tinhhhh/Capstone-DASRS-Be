@@ -497,6 +497,10 @@ public class RoundServiceImpl implements RoundService {
 
         Tournament tournament = round.getTournament();
 
+        if (tournament.getStatus() != TournamentStatus.ACTIVE) {
+            throw new DasrsException(HttpStatus.BAD_REQUEST, "The tournament is completed or terminated, can't edit round");
+        }
+
         if (newEndDate.isAfter(DateUtil.convertToLocalDateTime(tournament.getEndDate()))) {
             throw new DasrsException(HttpStatus.BAD_REQUEST, "Round end date cannot change to the date after current tournament end date: " + DateUtil.formatTimestamp(tournament.getEndDate()));
         }
