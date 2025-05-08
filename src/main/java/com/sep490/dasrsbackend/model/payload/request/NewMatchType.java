@@ -27,7 +27,7 @@ public class NewMatchType {
 
     @JsonProperty("match_duration")
     @DecimalMin(value = "0.5", message = "matchDuration must be at least 0.5")
-    @DecimalMax(value = "0.75", message = "matchDuration must not exceed 0.75")
+    @DecimalMax(value = "1", message = "matchDuration must not exceed 1")
     private double matchDuration;
 
 }
