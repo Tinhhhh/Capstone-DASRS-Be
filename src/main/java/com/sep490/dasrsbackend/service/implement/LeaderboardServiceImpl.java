@@ -459,7 +459,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                             List<MatchTeam> matchTeams = matchTeamRepository.findByTeamIdAndMatchId(leaderboard.getTeam().getId(), match.getId());
                             double matchScore = 0.0;
                             List<PlayerResponseForLeaderboard> players = new ArrayList<>();
-                            if (!matchTeams.isEmpty()){
+                            if (!matchTeams.isEmpty()) {
                                 PlayerResponseForLeaderboard player = new PlayerResponseForLeaderboard();
                                 for (MatchTeam matchTeam : matchTeams) {
 
@@ -472,18 +472,19 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                                     }
 
                                     player.setScore(matchTeam.getScore());
-                                    matchScore+= matchTeam.getScore();
+                                    matchScore += matchTeam.getScore();
                                     players.add(player);
                                 }
-                            }
 
-                            matchDetails.setMatchId(match.getId());
-                            matchDetails.setMatchName(match.getMatchName());
-                            matchDetails.setMatchType(match.getRound().getMatchType().getMatchTypeName());
-                            matchDetails.setMatchForm(match.getMatchForm());
-                            matchDetails.setMatchScore(matchScore);
-                            matchDetails.setPlayerList(players);
-                            matchResponseForLeaderboards.add(matchDetails);
+
+                                matchDetails.setMatchId(match.getId());
+                                matchDetails.setMatchName(match.getMatchName());
+                                matchDetails.setMatchType(match.getRound().getMatchType().getMatchTypeName());
+                                matchDetails.setMatchForm(match.getMatchForm());
+                                matchDetails.setMatchScore(matchScore);
+                                matchDetails.setPlayerList(players);
+                                matchResponseForLeaderboards.add(matchDetails);
+                            }
                         }
                     }
 
