@@ -617,7 +617,11 @@ public class MatchServiceImpl implements MatchService {
         unityRoomResponse.setSuccess(true);
         unityRoomResponse.setMatchCode(match.getMatchCode());
         unityRoomResponse.setScoredMethodId(round.getScoredMethod().getId());
+        unityRoomResponse.setRoundDuration(round.getRoundDuration());
+        unityRoomResponse.setLapNumber(round.getLapNumber());
+        unityRoomResponse.setFinishType(round.getFinishType());
         unityRoomResponse.setMessage("Valid player");
+
         return unityRoomResponse;
     }
 

@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.model.payload.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.sep490.dasrsbackend.model.enums.FinishType;
 import lombok.*;
 
 @Getter
@@ -21,4 +22,14 @@ public class UnityRoomResponse {
 
     @JsonProperty("message")
     private String message;
+
+    @JsonProperty("round_duration")
+    private int roundDuration;
+
+    @JsonProperty("lap_number")
+    private int lapNumber;
+
+    @JsonProperty("finish_type")
+    private FinishType finishType;
+
 }
