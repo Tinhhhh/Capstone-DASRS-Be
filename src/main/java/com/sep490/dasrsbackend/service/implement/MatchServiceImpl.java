@@ -355,7 +355,6 @@ public class MatchServiceImpl implements MatchService {
         leaderboardRepository.save(lb);
         leaderboardService.updateLeaderboard(round.getId());
 
-
     }
 
     @Override
@@ -533,15 +532,11 @@ public class MatchServiceImpl implements MatchService {
         Match match = matchOtp.get(0);
         Round round = match.getRound();
         if (round.getStatus() != RoundStatus.ACTIVE) {
-            throw new DasrsException(HttpStatus.NOT_FOUND, "match is not available due to round status");
+            throw new DasrsException(HttpStatus.NOT_FOUND, "match is not available due to round is not active");
         }
 
         if (match.getRound().getTournament().getStatus() != TournamentStatus.ACTIVE) {
-            throw new DasrsException(HttpStatus.NOT_FOUND, "match is not available due to tournament status");
-        }
-
-        if (round.getTournament().getId() != tournamentId) {
-            throw new DasrsException(HttpStatus.NOT_FOUND, "match is not available due to");
+            throw new DasrsException(HttpStatus.NOT_FOUND, "match is not available due to tournament is not active");
         }
 
         MatchResponse matchResponse = modelMapper.map(getMatchResponse(match), MatchResponse.class);
