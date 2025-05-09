@@ -73,6 +73,10 @@ public class AuthenServiceImpl implements AuthenService {
         Account account = accountRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new DasrsException(HttpStatus.UNAUTHORIZED, "Authentication fails, your email is not exist"));
 
+        if (account.isLocked()) {
+            throw new DasrsException(HttpStatus.UNAUTHORIZED, "Authentication fails, your account is locked. Please contact admin");
+        }
+
         //Create new token
         String accessToken = jwtTokenProvider.generateAccessToken(authentication);
         String refreshToken = jwtTokenProvider.generateRefreshToken(authentication);
