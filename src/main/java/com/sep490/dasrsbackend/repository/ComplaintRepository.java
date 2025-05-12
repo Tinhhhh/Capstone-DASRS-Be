@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ComplaintRepository extends JpaRepository<Complaint, Long>, JpaSpecificationExecutor<Complaint> {
@@ -31,4 +32,7 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>, Jpa
     List<Complaint> findByRoundId(@Param("roundId") Long roundId);
 
     List<Complaint> findByMatchTeam_Id(Long matchTeamId);
+
+    Optional<Complaint> findComplaintByMatchTeamId(Long matchTeamId);
+    Optional<Complaint> findComplaintByMatchId(Long matchId);
 }

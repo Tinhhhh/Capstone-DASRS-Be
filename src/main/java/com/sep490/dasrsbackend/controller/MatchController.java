@@ -145,4 +145,12 @@ public class MatchController {
                 matchService.getMatchByTeamIdAndRoundId(teamId, roundId));
     }
 
+    @Operation(summary = "Get match by rematch id", description = "Get match by rematch id")
+    @GetMapping("/rematch/{matchId}")
+    public ResponseEntity<Object> getMatchByRematchId(@PathVariable Long matchId) {
+        return ResponseBuilder.responseBuilderWithData(
+                HttpStatus.OK, "Successfully retrieved match",
+                matchService.getMatchByRematchId(matchId));
+    }
+
 }

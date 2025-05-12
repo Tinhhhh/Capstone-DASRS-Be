@@ -53,6 +53,7 @@ public class MatchServiceImpl implements MatchService {
     private final TournamentTeamRepository tournamentTeamRepository;
     private final RoundUtilityService roundUtilityService;
     private final LeaderboardServiceImpl leaderboardServiceImpl;
+    private final ComplaintRepository complaintRepository;
 
     @Override
     public List<MatchResponseForTeam> getMatches(Long teamId) {
@@ -502,6 +503,7 @@ public class MatchServiceImpl implements MatchService {
                 if (matchTeam.getMatch().getId() == match.getId()) {
                     if (matchTeam.getAccount() != null) {
                         teamTournamentResponse.setAccountId(matchTeam.getAccount().getAccountId());
+                        teamTournamentResponse.setPlayerName(matchTeam.getAccount().fullName());
                     }
                 }
                 teams.add(teamTournamentResponse);
@@ -815,9 +817,11 @@ public class MatchServiceImpl implements MatchService {
         }
 
         roundUtilityService.generateRematch(matchTeams);
+
         for (MatchTeam matchTeam : matchTeams) {
             matchTeam.setAttempt(1);
             matchTeamRepository.save(matchTeam);
+
         }
 
     }
@@ -847,6 +851,29 @@ public class MatchServiceImpl implements MatchService {
         }
 
         return matchResponses;
+    }
+
+    @Override
+    public MatchResponse getMatchByRematchId(Long matchId) {
+
+        Complaint complaint = complaintRepository.findComplaintByMatchId(matchId)
+                .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Complaint not found"));
+
+        Match oldMatch = complaint.getMatchTeam().getMatch();
+
+        MatchResponse matchResponse = modelMapper.map(oldMatch, MatchResponse.class);
+        List<TeamTournamentResponse> teams = new ArrayList<>();
+        TeamTournamentResponse teamTournamentResponse = new TeamTournamentResponse();
+        Team team = complaint.getMatchTeam().getTeam();
+        teamTournamentResponse.setId(team.getId());
+        teamTournamentResponse.setTeamName(team.getTeamName());
+        teamTournamentResponse.setTeamTag(team.getTeamTag());
+        teamTournamentResponse.setAccountId(complaint.getMatchTeam().getAccount().getAccountId());
+        teamTournamentResponse.setPlayerName(complaint.getMatchTeam().getAccount().fullName());
+        teams.add(teamTournamentResponse);
+        matchResponse.setTeams(teams);
+
+        return matchResponse;
     }
 
 }

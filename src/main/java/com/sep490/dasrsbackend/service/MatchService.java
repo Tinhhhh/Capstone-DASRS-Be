@@ -1,5 +1,6 @@
 package com.sep490.dasrsbackend.service;
 
+import com.sep490.dasrsbackend.model.enums.MatchForm;
 import com.sep490.dasrsbackend.model.enums.MatchSort;
 import com.sep490.dasrsbackend.model.payload.request.MatchCarData;
 import com.sep490.dasrsbackend.model.payload.request.MatchScoreData;
@@ -37,4 +38,7 @@ public interface MatchService {
     void createMatch(List<Long> matchTeamIds);
 
     List<MatchResponseForTeam> getMatchByTeamIdAndRoundId(Long teamId, Long roundId);
+
+    //Get old match by rematch id
+    MatchResponse getMatchByRematchId(Long matchId);
 }

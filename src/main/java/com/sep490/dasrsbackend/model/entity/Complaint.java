@@ -46,7 +46,12 @@ public class Complaint {
     @Column(name = "last_modified_date", nullable = false)
     private Date lastModifiedDate;
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "match_team_id", nullable = false)
     private MatchTeam matchTeam;
+
+    @OneToOne
+    @JoinColumn(name = "match_id")
+    private Match match;
+
 }

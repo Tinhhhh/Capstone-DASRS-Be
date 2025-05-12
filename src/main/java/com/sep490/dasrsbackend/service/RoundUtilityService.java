@@ -31,6 +31,7 @@ public class RoundUtilityService {
     private final MatchTeamRepository matchTeamRepository;
     private final LeaderboardRepository leaderboardRepository;
     private final TournamentTeamRepository tournamentTeamRepository;
+    private final ComplaintRepository complaintRepository;
 
     public boolean isMatchStarted(Long tournamentId) {
         List<Round> roundList = roundRepository.findAvailableRoundByTournamentId(tournamentId).stream().filter(round -> round.getStatus() == RoundStatus.ACTIVE).toList();
@@ -530,8 +531,15 @@ public class RoundUtilityService {
             matchTeam.setScore(0);
             matchTeam.setAttempt(0);
             matchTeamRepository.save(matchTeam);
-        }
 
+            Optional<Complaint> optComplaint = complaintRepository.findComplaintByMatchTeamId(matchTeams.get(i).getId());
+            if (optComplaint.isPresent()) {
+                Complaint complaint = optComplaint.get();
+                complaint.setMatch(rematchMatches.get(i));
+                complaintRepository.save(complaint);
+            }
+
+        }
 
     }
 }
