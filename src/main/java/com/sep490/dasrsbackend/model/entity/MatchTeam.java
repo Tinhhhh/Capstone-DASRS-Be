@@ -63,5 +63,7 @@ public class MatchTeam {
     @ManyToOne
     @JoinColumn(name = "car_id")
     private Car car;
+    @OneToOne(mappedBy = "matchTeam")
+    private Complaint complaint;
 
 }

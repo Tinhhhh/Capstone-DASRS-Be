@@ -25,4 +25,7 @@ public class TeamTournamentResponse {
 
     @JsonProperty("account_id")
     private UUID accountId;
+
+    @JsonProperty("account_name")
+    private String playerName;
 }

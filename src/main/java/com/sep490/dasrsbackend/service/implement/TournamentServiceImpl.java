@@ -322,6 +322,13 @@ public class TournamentServiceImpl implements TournamentService {
         tournament.setStatus(TournamentStatus.TERMINATED);
         tournamentRepository.save(tournament);
 
+        List<TournamentTeam> tournamentTeams = tournamentTeamRepository.findByTournamentId(id);
+        if (!tournamentTeams.isEmpty()) {
+            tournamentTeams.forEach(team -> {
+                team.setActive(false);
+                tournamentTeamRepository.save(team);
+            });
+        }
     }
 
 

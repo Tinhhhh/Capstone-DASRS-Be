@@ -59,4 +59,7 @@ public class Match {
     @JoinColumn(name = "round_id", nullable = false)
     private Round round;
 
+    @OneToOne(mappedBy = "match")
+    private Complaint complaint;
+
 }
