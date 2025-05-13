@@ -40,5 +40,5 @@ public interface MatchService {
     List<MatchResponseForTeam> getMatchByTeamIdAndRoundId(Long teamId, Long roundId);
 
     //Get old match by rematch id
-    MatchResponse getMatchByRematchId(Long matchId);
+    RematchResponse getMatchByRematchId(Long matchId);
 }

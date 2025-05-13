@@ -356,6 +356,47 @@ public class MatchServiceImpl implements MatchService {
         leaderboardRepository.save(lb);
         leaderboardService.updateLeaderboard(round.getId());
 
+        //Kiểm tra đây có phải rematch không
+        if (match.getMatchForm() == MatchForm.REMATCH){
+
+            if (round.getStatus() == RoundStatus.COMPLETED){
+                //Nếu đây là round cuối cùng thì chỉ cập nhật kết quả leaderboard thôi
+                if (round.isLast()) {
+                    return;
+                }
+
+                //Không phải round cuối cùng thì kiểm tra có round tiếp theo không.
+                List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(round.getTournament().getId()).stream()
+                        .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
+
+                if (rounds.size() != 1){
+                    //Mặc định round hiện tại
+                    Round currRound = round;
+
+                    for (int i = 0; i < rounds.size(); i++) {
+
+                        if (i+1 >= rounds.size()){
+                            break;
+                        }
+
+                        //Tìm round tiếp theo round tiếp theo phải là round = active
+                        if (rounds.get(i+1).getStatus() == RoundStatus.ACTIVE) {
+                            currRound = rounds.get(i+1);
+                        }
+
+                    }
+
+                    if (currRound != round){
+                        //Terminate match hiện tại của round
+                        //generate match mới
+                        roundUtilityService.terminateMatchesToRegenerate(currRound.getId());
+                        roundUtilityService.generateMatch(currRound, currRound.getTournament());
+                    }
+                }
+            }
+
+        }
+
     }
 
     @Override
@@ -854,14 +895,16 @@ public class MatchServiceImpl implements MatchService {
     }
 
     @Override
-    public MatchResponse getMatchByRematchId(Long matchId) {
+    public RematchResponse getMatchByRematchId(Long matchId) {
 
         Complaint complaint = complaintRepository.findComplaintByMatchId(matchId)
                 .orElseThrow(() -> new DasrsException(HttpStatus.BAD_REQUEST, "Complaint not found"));
 
         Match oldMatch = complaint.getMatchTeam().getMatch();
 
-        MatchResponse matchResponse = modelMapper.map(oldMatch, MatchResponse.class);
+        RematchResponse matchResponse = modelMapper.map(oldMatch, RematchResponse.class);
+        matchResponse.setTitle(complaint.getTitle());
+        matchResponse.setDescription(complaint.getDescription());
         List<TeamTournamentResponse> teams = new ArrayList<>();
         TeamTournamentResponse teamTournamentResponse = new TeamTournamentResponse();
         Team team = complaint.getMatchTeam().getTeam();

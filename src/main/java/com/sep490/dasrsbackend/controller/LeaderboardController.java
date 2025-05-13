@@ -1,6 +1,7 @@
 package com.sep490.dasrsbackend.controller;
 
 import com.sep490.dasrsbackend.Util.AppConstants;
+import com.sep490.dasrsbackend.model.entity.Leaderboard;
 import com.sep490.dasrsbackend.model.exception.ResponseBuilder;
 import com.sep490.dasrsbackend.service.LeaderboardService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -81,5 +82,13 @@ public class LeaderboardController {
     ) {
         return ResponseBuilder.responseBuilderWithData(HttpStatus.OK, "Successfully retrieved all leaderboards", leaderboardService.getLeaderboardByTeamId(teamId, pageNo, pageSize, sortBy, sortDirection));
     }
+
+    @Operation(summary = "Caution ! this api only use for test", description = "Update leaderboard by round id")
+    @PutMapping("/{roundId}")
+    public ResponseEntity<Object> updateLeaderboard(@PathVariable Long roundId) {
+        leaderboardService.updateLeaderboard(roundId);
+        return ResponseBuilder.responseBuilder(HttpStatus.OK, "Successfully updated leaderboard");
+    }
+
 
 }
