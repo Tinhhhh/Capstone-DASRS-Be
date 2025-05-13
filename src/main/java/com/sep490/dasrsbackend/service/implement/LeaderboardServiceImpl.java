@@ -2,15 +2,13 @@ package com.sep490.dasrsbackend.service.implement;
 
 import com.sep490.dasrsbackend.Util.DateUtil;
 import com.sep490.dasrsbackend.model.entity.*;
-import com.sep490.dasrsbackend.model.enums.MatchForm;
-import com.sep490.dasrsbackend.model.enums.MatchStatus;
-import com.sep490.dasrsbackend.model.enums.RoundStatus;
-import com.sep490.dasrsbackend.model.enums.TournamentStatus;
+import com.sep490.dasrsbackend.model.enums.*;
 import com.sep490.dasrsbackend.model.exception.DasrsException;
 import com.sep490.dasrsbackend.model.payload.response.*;
 import com.sep490.dasrsbackend.repository.*;
 import com.sep490.dasrsbackend.service.LeaderboardService;
 import com.sep490.dasrsbackend.service.RoundUtilityService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.*;
@@ -20,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +32,7 @@ public class LeaderboardServiceImpl implements LeaderboardService {
     private final MatchTeamRepository matchTeamRepository;
     private final TournamentRepository tournamentRepository;
     private final RoundUtilityService roundUtilityService;
+    private final ScoreAttributeRepository scoreAttributeRepository;
 
     private static Pageable getPageable(int pageNo, int pageSize, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
@@ -47,9 +47,91 @@ public class LeaderboardServiceImpl implements LeaderboardService {
         );
 
         //Xếp hạng lại leaderboard
+        //Lấy lại danh sách leaderboard
         List<Leaderboard> lbs = leaderboardRepository.findByRoundId(round.getId());
 
-        lbs.sort(Comparator.comparing(Leaderboard::getTeamScore).reversed());
+        //Sort leaderboard
+        lbs.sort((l1,l2) -> {
+
+            //So sánh điểm của team
+            int scoreCompare = Double.compare(l2.getTeamScore(), l1.getTeamScore());
+            if (scoreCompare == 0) {
+
+                if (l2.getTeamScore() == 0 && l1.getTeamScore() == 0) {
+                    return l1.getTeam().getTeamName().compareToIgnoreCase(l2.getTeam().getTeamName());
+                }
+
+                //Lấy matchteam của Team theo match trong round này.
+                List<MatchTeam> matchTeams = matchRepository.findByRoundId(round.getId()).stream()
+                        .filter(match -> match.getStatus() == MatchStatus.FINISHED)
+                        .flatMap(match -> match.getMatchTeamList().stream()).toList();
+
+                //Lấy matchteam của team theo match trong round này
+                List<MatchTeam> team1 = new ArrayList<>(matchTeams.stream().filter(matchTeam -> Objects.equals(matchTeam.getTeam().getId(), l1.getTeam().getId())).toList());
+                List<MatchTeam> team2 = new ArrayList<>(matchTeams.stream().filter(matchTeam -> Objects.equals(matchTeam.getTeam().getId(), l2.getTeam().getId())).toList());
+
+                //Trường hợp có điểm bằng nhau thì so sánh thời gian nếu thi đầu theo lap
+                if (round.getFinishType() == FinishType.LAP){
+
+                    //Sắp xếp matchteam theo fastestlaptime của từng team
+                    team1.sort((mt1,mt2) -> {
+                        ScoreAttribute attr1 = mt1.getScoreAttribute();
+                        ScoreAttribute attr2 = mt2.getScoreAttribute();
+
+                        if (attr1 == null && attr2 == null) return 0;
+                        if (attr1 == null) return 1; // attr1 null  đứng sau
+                        if (attr2 == null) return -1; // attr2 null  đứng sau
+
+                        return Double.compare(attr1.getFastestLapTime(), attr2.getFastestLapTime());
+                    });
+
+                    team2.sort((mt1,mt2) -> {
+                        ScoreAttribute attr1 = mt1.getScoreAttribute();
+                        ScoreAttribute attr2 = mt2.getScoreAttribute();
+
+                        if (attr1 == null && attr2 == null) return 0;
+                        if (attr1 == null) return 1; // attr1 null  đứng sau
+                        if (attr2 == null) return -1; // attr2 null  đứng sau
+
+                        return Double.compare(attr1.getFastestLapTime(), attr2.getFastestLapTime());
+                    });
+
+                    //So sánh fastestlaptime của từng team
+                    return Double.compare(team1.get(0).getScoreAttribute().getFastestLapTime(), team2.get(0).getScoreAttribute().getFastestLapTime());
+                }
+
+                //Trường hợp có điểm bằng nhau thì so sánh thời gian nếu thi đấu theo time
+                if (round.getFinishType() == FinishType.TIME){
+
+                    //Sắp xếp matchteam theo fastestlaptime của từng team
+                    team1.sort((mt1,mt2) -> {
+                        ScoreAttribute attr1 = mt1.getScoreAttribute();
+                        ScoreAttribute attr2 = mt2.getScoreAttribute();
+
+                        if (attr1 == null && attr2 == null) return 0;
+                        if (attr1 == null) return 1; // attr1 null  đứng sau
+                        if (attr2 == null) return -1; // attr2 null  đứng sau
+
+                        return Double.compare(attr2.getTotalDistance(), attr1.getTotalDistance());
+                    });
+
+                    team2.sort((mt1,mt2) -> {
+                        ScoreAttribute attr1 = mt1.getScoreAttribute();
+                        ScoreAttribute attr2 = mt2.getScoreAttribute();
+
+                        if (attr1 == null && attr2 == null) return 0;
+                        if (attr1 == null) return 1; // attr1 null  đứng sau
+                        if (attr2 == null) return -1; // attr2 null  đứng sau
+
+                        return Double.compare(attr2.getTotalDistance(), attr1.getTotalDistance());
+                    });
+
+                    return Double.compare(team2.get(0).getScoreAttribute().getTotalDistance(), team1.get(0).getScoreAttribute().getTotalDistance());
+                }
+            }
+
+            return scoreCompare;
+        });
 
         int rank = 1;
         for (Leaderboard leaderboard : lbs) {
@@ -77,50 +159,6 @@ public class LeaderboardServiceImpl implements LeaderboardService {
                 roundRepository.save(round);
             }
         }
-
-        //Nêếu round đã hoàn thành thì kiểm tra có rematch ko?
-        if (round.getStatus() == RoundStatus.COMPLETED) {
-
-            //Nếu đây là round cuối cuùng thì chỉ cập nhật kết quả leaderboard thôi
-            if (round.isLast()) {
-                return;
-            }
-
-            //Lấy danh sách rematch
-            List<Match> rematches = matchRepository.findByRoundId(round.getId()).stream()
-                    .filter(rematch -> rematch.getMatchForm() == MatchForm.REMATCH && rematch.getStatus() != MatchStatus.TERMINATED)
-                    .toList();
-
-            //Nếu có rematch thì round tiếp theo phải đc làm mới
-            if (!rematches.isEmpty()) {
-                List<Round> rounds = roundRepository.findAvailableRoundByTournamentId(round.getTournament().getId()).stream()
-                        .sorted(Comparator.comparing(Round::getTeamLimit).reversed()).toList();
-
-                //Mặc định nextRound là round hiện tại,
-                Round nextRound = new Round();
-
-                for (int i = 0; i < rounds.size(); i++) {
-                    //Tìm round tiếp theo, round tiếp theo phải là round = active
-                    if (rounds.get(i).getStatus() == RoundStatus.COMPLETED) {
-                        nextRound = rounds.get(i + 1);
-                    }
-                }
-
-                //Nếu nextRound == round => Nghĩa là hiện tại chỉ có 1 round
-                //Round tiếp theo chưa đc tạo
-
-                //Trường hợp có round tiếp theo
-                if (nextRound != round) {
-                    //Terminate match hiện tại của round
-                    //generate match mới
-                    roundUtilityService.terminateMatchesToRegenerate(nextRound.getId());
-                    roundUtilityService.generateMatch(nextRound, nextRound.getTournament());
-                }
-
-
-            }
-        }
-
 
     }
 
